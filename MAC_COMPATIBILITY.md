@@ -78,6 +78,11 @@ model:
   # Common settings
   api_url: "http://localhost:8000"
   backend: "auto"                   # "auto", "vllm", or "llama.cpp"
+  max_tokens: 200                   # Max tokens to generate for action decision
+  temperature: 0.2                  # Lower temperature for more focused responses
+  
+  # Response format configuration
+  json_schema_support: true         # Whether the model supports JSON schema responses
   
   # llama.cpp specific settings 
   autostart_server: false           # Whether to start the server automatically
@@ -85,6 +90,31 @@ model:
   n_gpu_layers: -1                  # -1 means use all GPU layers
   n_ctx: 2048                       # Context window size
 ```
+
+### JSON Schema Response Format
+
+EmuVLM now supports structured JSON responses from the model using JSON schema validation. This provides several benefits:
+
+1. **Validated Responses**: The model is forced to return a valid action from the predefined list
+2. **Reasoning Included**: Each action includes the model's reasoning, making debugging easier
+3. **Do Nothing Option**: The model can explicitly choose to do nothing when appropriate
+
+Example JSON response format:
+
+```json
+{
+  "action": "Up",
+  "reasoning": "I need to navigate upward in the menu to select the first option"
+}
+```
+
+If your LLM doesn't support JSON schema validation, you can disable it by setting:
+```yaml
+model:
+  json_schema_support: false
+```
+
+When disabled, the system falls back to the original text-based response parsing.
 
 ## Performance Tips
 

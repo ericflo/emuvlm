@@ -408,6 +408,10 @@ model:
   cache_dir: "output/cache"
   similarity_threshold: 0.95
   
+  # Response format configuration
+  json_schema_support: true         # Whether the model supports JSON schema responses
+  max_tokens: 200                   # Increased for JSON responses
+  
   # llama.cpp specific settings
   autostart_server: false
   model_path: "/path/to/llava-v1.5-7b-q4_k_s.gguf"
@@ -471,6 +475,29 @@ Additional scripts:
 - `test_emulator_example.sh` - Example script to test all emulator implementations
 
 ## Advanced Features
+
+### JSON Schema Response Validation
+
+EmuVLM uses JSON schema validation to ensure structured, validated responses from VLMs:
+
+```json
+{
+  "action": "Up",
+  "reasoning": "I need to navigate to the top menu option"
+}
+```
+
+Benefits:
+- **Improved Reliability**: Models must return a valid action from the predefined list
+- **Reasoning Included**: Each action comes with reasoning for better debugging
+- **Do Nothing Option**: Models can explicitly choose to do nothing when appropriate
+- **Fallback Mechanism**: If JSON parsing fails, the system falls back to text-based parsing
+
+You can configure this feature in `config.yaml`:
+```yaml
+model:
+  json_schema_support: true  # Enable/disable JSON schema validation
+```
 
 ### Frame Caching
 

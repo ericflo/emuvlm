@@ -83,6 +83,9 @@ class LLMAgent:
         self.last_frame = None
         self.last_frame_hash = None
         
+        # For debugging and testing
+        self._last_raw_response = None  # Store the raw response for debugging
+        
         # Create cache directory if it doesn't exist
         if self.enable_cache and not self.cache_dir.exists():
             self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -93,6 +96,7 @@ class LLMAgent:
         logger.info(f"Valid actions: {len(valid_actions)} possible actions")
         logger.info(f"Summary feature is {'enabled' if use_summary else 'disabled'}")
         logger.info(f"Frame caching is {'enabled' if self.enable_cache else 'disabled'}")
+        logger.info(f"JSON schema support is {'enabled' if model_config.get('json_schema_support', True) else 'disabled'}")
     
     def _maybe_start_server(self):
         """
@@ -206,22 +210,46 @@ class LLMAgent:
         # Query the model
         response = self._query_model(prompt)
         
-        # For empty responses or failures, use parse_action to get a valid action
-        if not response or response.strip() == "":
-            response = self.parse_action(response)
-            logger.info(f"Using fallback action: {response}")
+        # Handle different response formats
+        valid_action = None
+        
+        # If the response looks like JSON, parse it with our parse_action method
+        if response and (response.strip().startswith('{') and response.strip().endswith('}')):
+            valid_action = self.parse_action(response)
+            logger.info(f"Parsed JSON response into action: {valid_action}")
+        elif response in self.valid_actions:
+            # If the response is already a valid action, use it directly
+            valid_action = response
+            logger.info(f"Using direct action response: {valid_action}")
+        else:
+            # For any other responses, use parse_action to get a valid action
+            valid_action = self.parse_action(response)
+            logger.info(f"Parsed text response into action: {valid_action}")
         
         # Update history if summary feature is enabled
         if self.use_summary:
-            self._update_history(frame, response)
+            self._update_history(frame, valid_action)
+            
+            # Also store the reasoning if available and the response is JSON
+            try:
+                if response and response.strip().startswith('{'):
+                    json_data = json.loads(response)
+                    if 'reasoning' in json_data:
+                        reason = json_data['reasoning']
+                        # Append reasoning to the latest history entry
+                        if self.history:
+                            self.history[-1] += f" - Reasoning: {reason}"
+            except (json.JSONDecodeError, KeyError):
+                # Ignore any JSON parsing errors here
+                pass
         
         # Cache the result if frame caching is enabled
         if self.enable_cache and self.last_frame_hash is not None:
-            self.frame_cache[self.last_frame_hash] = response
+            self.frame_cache[self.last_frame_hash] = valid_action
             # Save the frame to disk for future analysis if needed
-            self._save_frame_to_cache(frame, self.last_frame_hash, response)
+            self._save_frame_to_cache(frame, self.last_frame_hash, valid_action)
             
-        return response
+        return valid_action
     
     def parse_action(self, action_text: str) -> str:
         """
@@ -233,6 +261,34 @@ class LLMAgent:
         Returns:
             str: A valid action or empty string if parsing failed
         """
+        # First, try to parse the response as JSON
+        try:
+            # Check if the response is a valid JSON
+            if action_text and (action_text.strip().startswith('{') and action_text.strip().endswith('}')):
+                response_json = json.loads(action_text)
+                
+                # Check if the JSON has the expected structure
+                if 'action' in response_json:
+                    chosen_action = response_json['action']
+                    
+                    # If the action is in our valid actions list, return it
+                    if chosen_action in self.valid_actions:
+                        logger.info(f"Parsed valid action from JSON: {chosen_action}")
+                        return chosen_action
+                    # Handle "None" action specifically
+                    elif chosen_action == "None":
+                        logger.info("Agent chose to do nothing (None action)")
+                        # Default to a "do nothing" action based on game context
+                        # For most games, pressing "B" or doing nothing is a safe default
+                        return "B" if "B" in self.valid_actions else self.valid_actions[0]
+                    
+                    # Log the reasoning if available
+                    if 'reasoning' in response_json:
+                        logger.debug(f"Agent reasoning: {response_json['reasoning']}")
+        except (json.JSONDecodeError, KeyError) as e:
+            logger.warning(f"Failed to parse JSON response: {e}")
+            # Continue with text-based parsing if JSON parsing fails
+        
         # Handle empty responses
         if not action_text or action_text.strip() == "":
             # For empty responses, default to a reasonable action like Up
@@ -314,16 +370,37 @@ class LLMAgent:
         # List available actions for the model
         action_list = ", ".join(self.valid_actions)
         
+        # Create JSON schema for response validation
+        action_enum = self.valid_actions.copy()
+        action_enum.append("None")  # Add None as a valid action
+        
+        json_schema = {
+            "type": "object",
+            "properties": {
+                "reasoning": {
+                    "type": "string",
+                    "description": "Brief explanation of why this action was chosen based on the game state"
+                },
+                "action": {
+                    "type": "string",
+                    "enum": action_enum,
+                    "description": f"The selected action from the list: {action_list} or None to do nothing"
+                }
+            },
+            "required": ["action", "reasoning"],
+            "additionalProperties": False
+        }
+        
         system_message = f"""You are an AI playing a turn-based video game.
 Analyze the game screen and decide the best action to take next.
-You can only choose from these actions: {action_list}.
-Respond with just the name of the action (e.g., "A" or "Up") without explanation."""
+You can only choose from these actions: {action_list}, or "None" to do nothing.
+Provide your reasoning and chosen action in JSON format."""
         
         # Include summary if enabled and available
         if self.use_summary and self.summary:
             system_message += f"\n\nHere's a summary of what has happened so far in the game:\n{self.summary}"
         
-        user_message = "What action should I take in this game? Choose one of the available actions."
+        user_message = "What action should I take in this game? Choose one of the available actions or 'None' to do nothing."
         
         # Construct the prompt differently based on backend
         if self.backend == 'llama.cpp':
@@ -353,9 +430,13 @@ Respond with just the name of the action (e.g., "A" or "Up") without explanation
         # Set model parameters based on backend
         params = {
             "messages": messages,
-            "max_tokens": self.model_config.get('max_tokens', 100),
+            "max_tokens": self.model_config.get('max_tokens', 200),  # Increased for JSON response
             "temperature": self.model_config.get('temperature', 0.2),  # Lower temperature for more focused responses
             "stream": False,
+            "response_format": {
+                "type": "json_schema",
+                "schema": json_schema
+            }
         }
         
         return params
@@ -368,10 +449,20 @@ Respond with just the name of the action (e.g., "A" or "Up") without explanation
             prompt: Complete prompt in the API's expected format
             
         Returns:
-            str: Model's text response
+            str: Model's text response or JSON string
         """
         try:
             start_time = time.time()
+            
+            # Check if backend supports JSON schema responses
+            supports_json_schema = True
+            # Some older versions of llama.cpp may not support JSON schema
+            if self.backend == 'llama.cpp' and self.model_config.get('json_schema_support', True) is False:
+                # Remove the response_format from the prompt if not supported
+                if 'response_format' in prompt:
+                    logger.warning("JSON schema not supported by this backend, removing response_format")
+                    prompt.pop('response_format')
+                    supports_json_schema = False
             
             # Both backends (vLLM and llama.cpp) provide OpenAI-compatible API
             logger.debug(f"Sending request to {self.backend} backend at {self.api_url}")
@@ -400,12 +491,53 @@ Respond with just the name of the action (e.g., "A" or "Up") without explanation
             # The exact path should be the same for both backends (OpenAI format)
             try:
                 text_response = result["choices"][0]["message"]["content"]
-                # Parse the response based on our valid actions
+                
+                # Store the raw response for debugging and testing
+                self._last_raw_response = text_response
+                
+                # Check for JSON format response (if we're using JSON schema)
+                if supports_json_schema:
+                    try:
+                        # If the response is already in JSON format, return it as-is
+                        if text_response.strip().startswith('{') and text_response.strip().endswith('}'):
+                            json_data = json.loads(text_response)
+                            
+                            # Validate that the JSON response has the action field
+                            if 'action' in json_data:
+                                chosen_action = json_data['action']
+                                
+                                # If it's a valid action, return it directly
+                                if chosen_action in self.valid_actions:
+                                    logger.info(f"Valid JSON action response: {chosen_action}")
+                                    
+                                    # Log reasoning if available
+                                    if 'reasoning' in json_data:
+                                        logger.debug(f"Agent reasoning: {json_data['reasoning']}")
+                                    
+                                    return chosen_action
+                                
+                                # If it's "None", default to B or the first valid action
+                                elif chosen_action == "None":
+                                    logger.info("Agent chose to do nothing ('None' action)")
+                                    return text_response  # Return the full JSON for parse_action to handle
+                            
+                            # Return the full JSON string for further parsing
+                            return text_response
+                    except json.JSONDecodeError:
+                        # Not JSON or invalid JSON, continue with text parsing
+                        logger.warning("Response is not valid JSON, falling back to text parsing")
+                
+                # Process as regular text response
                 clean_response = text_response.strip()
                 
                 # If the response is one of our valid actions, return it directly
                 for action in self.valid_actions:
-                    if action.lower() in clean_response.lower():
+                    if action.lower() == clean_response.lower():
+                        return action
+                    
+                    # Check if action appears as a word in the response
+                    action_pattern = rf'\b{re.escape(action.lower())}\b'
+                    if re.search(action_pattern, clean_response.lower()):
                         return action
                 
                 return clean_response

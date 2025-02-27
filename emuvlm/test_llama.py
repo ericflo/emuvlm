@@ -9,6 +9,7 @@ import argparse
 import logging
 import yaml
 import time
+import json
 from pathlib import Path
 from PIL import Image
 
@@ -162,11 +163,29 @@ def main():
                 port=args.port,
                 start_server=not args.no_autostart
             )
+            # Try to get the original JSON response before parsing
+            raw_response = None
+            if hasattr(agent, '_last_raw_response'):
+                raw_response = agent._last_raw_response
+            
             # If action is empty, let's indicate that the default fallback worked
             if not action or action.strip() == "":
                 print(f"\nModel returned empty response, defaulting to 'Up'")
             else:
                 print(f"\nFinal result: Model recommends action '{action}'")
+                
+                # If we have a JSON response, print it nicely
+                if raw_response and raw_response.strip().startswith('{') and raw_response.strip().endswith('}'):
+                    try:
+                        json_response = json.loads(raw_response)
+                        print("\nJSON Response:")
+                        print(json.dumps(json_response, indent=2))
+                        
+                        # Show reasoning if available
+                        if 'reasoning' in json_response:
+                            print(f"\nModel reasoning: {json_response['reasoning']}")
+                    except json.JSONDecodeError:
+                        pass  # Not valid JSON
         except Exception as e:
             print(f"Error during testing: {e}")
             raise
