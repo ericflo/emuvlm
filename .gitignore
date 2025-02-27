@@ -24,6 +24,25 @@ logs/
 .DS_Store
 Thumbs.db
 
+# Ignore ROMs
+roms/*/*.gb
+roms/*/*.gbc
+roms/*/*.gba
+roms/*/*.nes
+roms/*/*.snes
+roms/*/*.smc
+roms/*/*.md
+roms/*/*.smd
+roms/*/*.n64
+roms/*/*.z64
+roms/*/*.v64
+roms/*/*.bin
+roms/*/*.cue
+roms/*/*.iso
+roms/*/*.ccd
+roms/*/*.img
+roms/*/*.sub
+
 # IDEs and editors
 .idea/
 .vscode/
