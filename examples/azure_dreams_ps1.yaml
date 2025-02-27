@@ -1,0 +1,32 @@
+# Azure Dreams (PlayStation, 1998) Configuration
+
+# Game configuration
+rom: "/path/to/AzureDreams.iso"    # Replace with actual path to your ROM
+emulator: "duckstation"             # PlayStation emulator
+actions: ["Up", "Down", "Left", "Right", "Cross", "Circle", "Triangle", "Square", "L1", "R1", "L2", "R2", "Start", "Select"]
+action_delay: 0.5                   # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3               # Delay for menu navigation
+  battle_command_delay: 0.4         # Delay between selecting battle commands
+  battle_anim_delay: 0.9            # Delay for battle animations
+  text_scroll_delay: 0.6            # Delay for text scrolling
+  monster_animation_delay: 0.7      # Delay for monster animations
+  town_building_delay: 0.8          # Delay for town building selections
+
+# Game-specific settings
+settings:
+  save_states_enabled: true         # Enable save states for quick save/load
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Azure Dreams for PlayStation, a roguelike RPG with monster-catching and town-building elements."
+  - "You play as Koh, a monster tamer exploring the mysterious Monster Tower to follow in his father's footsteps."
+  - "The game uses a turn-based roguelike system where every action (moving, attacking, using items) counts as a turn."
+  - "Use the d-pad to move, X (Cross) to confirm and attack, O (Circle) to cancel, Triangle to open the menu."
+  - "When you die in the tower, you lose all items and your level resets to 1, but you keep any money and monsters."
+  - "Capture and raise monsters using eggs found in the tower, then bring them along as allies on future expeditions."
+  - "Monsters level up permanently and can be equipped with collars that grant special abilities."
+  - "Outside the tower, use the money you earn to develop the town of Monsbaiya, building facilities and courting girlfriends."
+  - "The tower's layout is randomly generated each time you enter, creating a unique experience with each expedition."

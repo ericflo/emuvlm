@@ -1,0 +1,33 @@
+# Final Fantasy Tactics Advance (GBA, 2003) Configuration
+
+# Game configuration
+rom: "/path/to/FFTacticsAdvance.gba"  # Replace with actual path to your ROM
+emulator: "mgba"                       # GBA emulator
+actions: ["Up", "Down", "Left", "Right", "A", "B", "L", "R", "Start", "Select"]
+action_delay: 0.5                      # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3                  # Delay for menu navigation
+  unit_movement_delay: 0.5             # Delay for moving units
+  ability_selection_delay: 0.4         # Delay for selecting abilities
+  battle_anim_delay: 1.2               # Delay for battle animations
+  judge_action_delay: 0.8              # Delay for judge actions and card displays
+  law_effect_delay: 0.7                # Delay for law effects
+
+# Game-specific settings
+settings:
+  save_states_enabled: true            # Enable save states for quick save/load
+  battle_animations: true              # Set to false to disable battle animations
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Final Fantasy Tactics Advance for GBA, a tactical RPG with job and law systems."
+  - "You control Marche and his friends who are transported to the fantasy world of Ivalice."
+  - "Battles are turn-based on isometric grid maps with terrain elevation affecting movement and combat."
+  - "Use the d-pad to move the cursor, A to select units and confirm actions, B to cancel."
+  - "The game features five playable races: Humans, Moogles, Nu Mou, Viera, and Bangaa, each with unique job classes."
+  - "The law system enforces different rules for each battle, prohibiting certain actions or weapons."
+  - "Breaking laws results in penalties like yellow/red cards, while following them earns Judge Points for powerful Combos."
+  - "Jobs are unlocked by learning abilities from equipment through the AP (Ability Points) system."
+  - "Missions are obtained from pubs in towns, with story missions advancing the plot and dispatch missions completed automatically."

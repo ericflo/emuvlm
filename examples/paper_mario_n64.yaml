@@ -1,0 +1,32 @@
+# Paper Mario (Nintendo 64, 2001) Configuration
+
+# Game configuration
+rom: "/path/to/PaperMario.z64"     # Replace with actual path to your ROM
+emulator: "mupen64plus"             # N64 emulator
+actions: ["Up", "Down", "Left", "Right", "A", "B", "Z", "Start", "C-Up", "C-Down", "C-Left", "C-Right", "L", "R"]
+action_delay: 0.5                   # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3               # Delay for menu navigation
+  battle_command_delay: 0.4         # Delay between selecting battle commands
+  battle_anim_delay: 1.2            # Delay for battle animations
+  text_scroll_delay: 0.6            # Delay for text scrolling
+  overworld_movement_delay: 0.4     # Delay for moving in the overworld
+  action_command_window: 0.2        # Small window for timed action commands
+
+# Game-specific settings
+settings:
+  save_states_enabled: true         # Enable save states for quick save/load
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Paper Mario for Nintendo 64, an RPG with a paper aesthetic and action commands."
+  - "You control Mario in his quest to rescue Princess Peach from Bowser, who has stolen the Star Rod."
+  - "Battles are turn-based with action commands - press A with the right timing for more powerful attacks."
+  - "Use the analog stick to move, A to jump and confirm selections, B to use the hammer or cancel."
+  - "Partner characters join Mario and provide special abilities both in battle and for solving puzzles."
+  - "Mario's attacks primarily use jumps and his hammer, while partners each have unique abilities."
+  - "The badge system allows you to customize Mario's abilities by equipping badges that use Badge Points (BP)."
+  - "Flower Points (FP) power special moves, while Heart Points (HP) represent Mario's health."
+  - "Star Pieces and Star Spirits are key collectibles that advance the story and unlock new abilities."

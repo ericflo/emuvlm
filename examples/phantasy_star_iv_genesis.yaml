@@ -1,0 +1,32 @@
+# Phantasy Star IV (Sega Genesis, 1995) Configuration
+
+# Game configuration
+rom: "/path/to/PhantasyStarIV.md"  # Replace with actual path to your ROM
+emulator: "genesis_plus_gx"         # Sega Genesis emulator
+actions: ["Up", "Down", "Left", "Right", "A", "B", "C", "Start"]
+action_delay: 0.5                   # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3               # Delay for menu navigation
+  battle_command_delay: 0.4         # Delay between selecting battle commands
+  battle_anim_delay: 1.1            # Delay for battle animations
+  text_scroll_delay: 0.6            # Delay for text scrolling
+  overworld_movement_delay: 0.4     # Delay for moving in the overworld
+  macro_setup_delay: 0.5            # Delay for setting up macro commands
+
+# Game-specific settings
+settings:
+  save_states_enabled: true         # Enable save states for quick save/load
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Phantasy Star IV for Sega Genesis, the culmination of the classic sci-fi RPG series."
+  - "You control Chaz and his companions as they investigate the return of biomonsters and the fate of Algo."
+  - "Battles are turn-based with a side view and manga-style panel cutscenes for storytelling."
+  - "Use the d-pad to navigate, A/B/C to confirm selections, B to cancel."
+  - "The battle system includes a macro feature to automate common command sequences."
+  - "Characters can perform combo techniques when specific party members use certain techniques in the same turn."
+  - "Each character has a set class with specific skills and equipment capabilities."
+  - "The game features vehicles for transportation, including land rovers and a spacecraft for interplanetary travel."
+  - "The story connects to previous Phantasy Star games, bringing closure to the original tetralogy."

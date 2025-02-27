@@ -1,0 +1,31 @@
+# Chrono Trigger (SNES, 1995) Configuration
+
+# Game configuration
+rom: "/path/to/ChronoTrigger.sfc"  # Replace with actual path to your ROM
+emulator: "snes9x"                  # SNES emulator
+actions: ["Up", "Down", "Left", "Right", "A", "B", "X", "Y", "L", "R", "Start", "Select"]
+action_delay: 0.5                   # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3               # Delay for menu navigation
+  battle_command_delay: 0.4         # Delay between selecting battle commands
+  battle_anim_delay: 1.2            # Delay for battle animations and techs
+  text_scroll_delay: 0.5            # Delay for text scrolling
+  overworld_movement_delay: 0.4     # Delay for moving in the overworld
+  tech_execution_delay: 1.5         # Longer delay for executing special techniques
+
+# Game-specific settings
+settings:
+  save_states_enabled: true         # Enable save states for quick save/load
+  active_time_battle: true          # ATB system is on
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Chrono Trigger for SNES, considered one of the greatest JRPGs ever made."
+  - "You control a party of characters in a time-traveling adventure with active-time battle system."
+  - "In battle, each character's turn comes when their ATB gauge fills up."
+  - "Battle commands include Attack, Tech (special abilities), Item, and combo Techs between characters."
+  - "Use the d-pad to navigate, A to confirm, B to cancel, Y to bring up the menu."
+  - "Enemies are visible on the map; no random encounters."
+  - "Characters can perform combination techniques with other party members for stronger effects."

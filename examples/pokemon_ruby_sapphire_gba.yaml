@@ -1,0 +1,33 @@
+# Pokémon Ruby/Sapphire (Game Boy Advance, 2003) Configuration
+
+# Game configuration
+rom: "/path/to/PokemonRuby.gba"    # Replace with actual path to your ROM (or Sapphire)
+emulator: "mgba"                    # GBA emulator
+actions: ["Up", "Down", "Left", "Right", "A", "B", "L", "R", "Start", "Select"]
+action_delay: 0.5                   # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3               # Delay for menu navigation
+  battle_command_delay: 0.4         # Delay between selecting battle commands
+  battle_anim_delay: 1.2            # Delay for battle animations
+  text_scroll_delay: 0.6            # Delay for text scrolling
+  overworld_movement_delay: 0.4     # Delay for moving in the overworld
+  evolution_delay: 2.0              # Longer delay for Pokémon evolution animations
+
+# Game-specific settings
+settings:
+  save_states_enabled: true         # Enable save states for quick save/load
+  fast_text: true                   # Set to true to speed up text display
+  battle_animations: true           # Set to false to disable battle animations
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Pokémon Ruby/Sapphire for Game Boy Advance, the third generation of Pokémon games."
+  - "You play as a trainer in the Hoenn region, catching and battling Pokémon while dealing with Team Magma/Aqua."
+  - "Battles are turn-based with new double battles that allow two Pokémon to fight simultaneously."
+  - "Use the d-pad to navigate, A to interact and confirm, B to cancel and run."
+  - "Battle commands include Fight (select a move), Pokémon (switch Pokémon), Bag (use items), and Run."
+  - "New features include Pokémon Contests, Secret Bases, and Berry growing."
+  - "The game introduced abilities and natures that affect Pokémon stats and performance."
+  - "Your goal is to defeat all 8 gym leaders, the Elite Four, and become the Champion while completing your Pokédex."

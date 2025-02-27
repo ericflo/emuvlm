@@ -1,0 +1,31 @@
+# Final Fantasy Mystic Quest (SNES, 1992) Configuration
+
+# Game configuration
+rom: "/path/to/FFMysticQuest.sfc"  # Replace with actual path to your ROM
+emulator: "snes9x"                  # SNES emulator
+actions: ["Up", "Down", "Left", "Right", "A", "B", "X", "Y", "L", "R", "Start", "Select"]
+action_delay: 0.5                   # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3               # Delay for menu navigation
+  battle_command_delay: 0.4         # Delay between selecting battle commands
+  battle_anim_delay: 1.0            # Delay for battle animations
+  text_scroll_delay: 0.6            # Delay for text scrolling
+  overworld_movement_delay: 0.4     # Delay for moving in the overworld
+
+# Game-specific settings
+settings:
+  save_states_enabled: true         # Enable save states for quick save/load
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Final Fantasy Mystic Quest for SNES, a simplified RPG designed as an entry point to the genre."
+  - "You control Benjamin, a young hero chosen to restore the crystals and defeat the Dark King."
+  - "Battles are simplified turn-based combat with a maximum of two characters (Benjamin and a temporary ally)."
+  - "Use the d-pad to navigate, A to confirm, B to cancel, Y to open the menu."
+  - "The game has linear progression with minimal exploration, focusing on accessibility."
+  - "Enemies are visible on the field before battles, and there are no random encounters."
+  - "Benjamin has access to weapons that also serve as tools for solving puzzles: the axe cuts trees, the claw grapples, etc."
+  - "Magic is divided into four elements: Fire, Water, Earth, and Air, with three levels of power for each."
+  - "The game shows enemy HP bars, making it easier to track battle progress."

@@ -1,0 +1,32 @@
+# Suikoden II (PlayStation, 1999) Configuration
+
+# Game configuration
+rom: "/path/to/SuikodenII.iso"     # Replace with actual path to your ROM
+emulator: "duckstation"             # PlayStation emulator
+actions: ["Up", "Down", "Left", "Right", "Cross", "Circle", "Triangle", "Square", "L1", "R1", "L2", "R2", "Start", "Select"]
+action_delay: 0.5                   # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3               # Delay for menu navigation
+  battle_command_delay: 0.4         # Delay between selecting battle commands
+  battle_anim_delay: 1.0            # Delay for battle animations
+  text_scroll_delay: 0.6            # Delay for text scrolling
+  overworld_movement_delay: 0.4     # Delay for moving in the overworld
+  unite_attack_delay: 1.2           # Delay for unite attack animations
+
+# Game-specific settings
+settings:
+  save_states_enabled: true         # Enable save states for quick save/load
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Suikoden II for PlayStation, widely regarded as one of the best RPGs of its era."
+  - "You play as Riou, a young man who becomes the leader of the New State Army against Highland Kingdom."
+  - "Battles are turn-based with up to six party members fighting simultaneously, similar to the first game."
+  - "Use the d-pad to navigate, X (Cross) to confirm, O (Circle) to cancel, Triangle to open the menu."
+  - "Battle commands include Attack, Rune (magic), Item, and Unite (combination attacks)."
+  - "The game features three battle systems: standard battles, large-scale strategic war battles, and one-on-one duels."
+  - "Your castle headquarters grows as you recruit more of the 108 Stars of Destiny (characters)."
+  - "You can import save data from the first Suikoden to unlock special scenes and a returning character."
+  - "The narrative focuses on the friendship between Riou and Jowy, and their diverging paths during the war."

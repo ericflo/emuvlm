@@ -1,0 +1,32 @@
+# Wild Arms (PlayStation, 1997) Configuration
+
+# Game configuration
+rom: "/path/to/WildArms.iso"       # Replace with actual path to your ROM
+emulator: "duckstation"             # PlayStation emulator
+actions: ["Up", "Down", "Left", "Right", "Cross", "Circle", "Triangle", "Square", "L1", "R1", "L2", "R2", "Start", "Select"]
+action_delay: 0.5                   # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3               # Delay for menu navigation
+  battle_command_delay: 0.4         # Delay between selecting battle commands
+  battle_anim_delay: 1.1            # Delay for battle animations
+  text_scroll_delay: 0.6            # Delay for text scrolling
+  overworld_movement_delay: 0.4     # Delay for moving in the overworld
+  tool_use_delay: 0.7               # Delay for using character tools
+
+# Game-specific settings
+settings:
+  save_states_enabled: true         # Enable save states for quick save/load
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Wild Arms for PlayStation, a JRPG with Western/fantasy themes and puzzle-focused dungeons."
+  - "You control three characters: Rudy (with his ARM weapon), Jack (a treasure hunter), and Cecilia (a sorceress)."
+  - "Battles are traditional turn-based combat where you select actions from menus for each character."
+  - "Use the d-pad to navigate, X (Cross) to confirm, O (Circle) to cancel, Triangle to open the menu."
+  - "Each character has unique field tools for solving puzzles: Rudy's bombs, Jack's lighter, and Cecilia's magic wand."
+  - "Battle commands include Attack, Force (special abilities), Items, and Guard."
+  - "The battle system uses a Force Point (FP) meter that builds up during battle to power special abilities."
+  - "Rudy's ARM weapons require ammunition and can break if used too much without repair."
+  - "The game features anime-style cutscenes and a distinctive Western-themed soundtrack with whistling."

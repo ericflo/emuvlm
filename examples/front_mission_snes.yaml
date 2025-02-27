@@ -1,0 +1,31 @@
+# Front Mission (SNES, 1995) Configuration
+
+# Game configuration
+rom: "/path/to/FrontMission.sfc"   # Replace with actual path to your ROM
+emulator: "snes9x"                  # SNES emulator
+actions: ["Up", "Down", "Left", "Right", "A", "B", "X", "Y", "L", "R", "Start", "Select"]
+action_delay: 0.5                   # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3               # Delay for menu navigation
+  unit_movement_delay: 0.6          # Delay for moving wanzers on the grid
+  battle_anim_delay: 1.2            # Delay for battle animations
+  text_scroll_delay: 0.6            # Delay for text scrolling
+  wanzer_customization_delay: 0.8   # Delay for customizing wanzers in the shop
+
+# Game-specific settings
+settings:
+  save_states_enabled: true         # Enable save states for quick save/load
+  battle_animations: true           # Set to false to disable battle animations
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Front Mission for SNES, a tactical RPG centered on mech warfare."
+  - "You control a squad of wanzers (mechs) in turn-based, grid-based combat against enemy forces."
+  - "The game is set on a fictional island called Huffman Island during a conflict between two superpowers."
+  - "Use the d-pad to navigate, A to confirm, B to cancel, X to open menus during battle."
+  - "Combat is turn-based with movement and attack phases, similar to games like Fire Emblem."
+  - "Wanzers have separate parts (body, left arm, right arm, legs) that can be targeted and damaged individually."
+  - "Between missions, you can buy, sell, and customize wanzer parts to optimize your squad."
+  - "There are two different scenarios to play through: OCU (Oceania Cooperative Union) and UCS (United Continental States)."

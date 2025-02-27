@@ -1,0 +1,30 @@
+# Shining Force (Sega Genesis, 1993) Configuration
+
+# Game configuration
+rom: "/path/to/ShiningForce.md"    # Replace with actual path to your ROM
+emulator: "genesis_plus_gx"         # Sega Genesis emulator
+actions: ["Up", "Down", "Left", "Right", "A", "B", "C", "Start"]
+action_delay: 0.5                   # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3               # Delay for menu navigation
+  battle_command_delay: 0.4         # Delay between selecting battle commands
+  battle_anim_delay: 1.2            # Delay for battle animations
+  text_scroll_delay: 0.6            # Delay for text scrolling
+  unit_movement_delay: 0.5          # Delay for moving units on battle map
+
+# Game-specific settings
+settings:
+  save_states_enabled: true         # Enable save states for quick save/load
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Shining Force for Sega Genesis, a turn-based tactical RPG."
+  - "You command the Shining Force, a group of heroes battling the evil Darksol."
+  - "Battles are played on grid-based maps where units take turns moving and attacking."
+  - "Use the d-pad to move the cursor, A to select and confirm, B or C to cancel."
+  - "Characters have different classes with unique abilities and movement ranges."
+  - "Between battles, explore towns in traditional RPG style to talk to NPCs, buy equipment, and advance the story."
+  - "Promote characters at level 10 or higher for class upgrades."
+  - "Characters who fall in battle can be revived at churches in towns."

@@ -1,0 +1,31 @@
+# Mario & Luigi: Superstar Saga (GBA, 2003) Configuration
+
+# Game configuration
+rom: "/path/to/MarioLuigiSuperstarSaga.gba"  # Replace with actual path to your ROM
+emulator: "mgba"                              # GBA emulator
+actions: ["Up", "Down", "Left", "Right", "A", "B", "L", "R", "Start", "Select"]
+action_delay: 0.5                             # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3                         # Delay for menu navigation
+  battle_command_delay: 0.4                   # Delay between selecting battle commands
+  battle_anim_delay: 1.0                      # Delay for battle animations
+  text_scroll_delay: 0.6                      # Delay for text scrolling
+  overworld_movement_delay: 0.4               # Delay for moving in the overworld
+  timed_hit_window: 0.2                       # Small window for timed hits in battle
+
+# Game-specific settings
+settings:
+  save_states_enabled: true                   # Enable save states for quick save/load
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Mario & Luigi: Superstar Saga for GBA, an RPG featuring the Mario Brothers in the Beanbean Kingdom."
+  - "You control both Mario and Luigi simultaneously, with A button controlling Mario and B button controlling Luigi."
+  - "Battles are turn-based but feature timed button presses for attacks and dodges, similar to Super Mario RPG."
+  - "Use the d-pad to navigate, A for Mario's actions, B for Luigi's actions, and combinations for duo moves."
+  - "Each brother can perform solo attacks or Bros. Attacks that use both characters working together."
+  - "Press the corresponding button just before an enemy attack lands to dodge or counter."
+  - "In the overworld, Mario and Luigi have special moves like spin jumps, high jumps, and hammer strikes to solve puzzles."
+  - "The storyline involves Bowser, Cackletta, and the quest to recover Princess Peach's stolen voice."

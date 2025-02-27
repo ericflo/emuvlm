@@ -1,0 +1,33 @@
+# Pokémon Gold/Silver (Game Boy Color, 2000) Configuration
+
+# Game configuration
+rom: "/path/to/PokemonGold.gbc"    # Replace with actual path to your ROM (or Silver)
+emulator: "pyboy"                   # Game Boy Color emulator
+actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
+action_delay: 0.5                   # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3               # Delay for menu navigation
+  battle_command_delay: 0.4         # Delay between selecting battle commands
+  battle_anim_delay: 1.2            # Delay for battle animations
+  text_scroll_delay: 0.6            # Delay for text scrolling
+  overworld_movement_delay: 0.4     # Delay for moving in the overworld
+  evolution_delay: 2.0              # Longer delay for Pokémon evolution animations
+
+# Game-specific settings
+settings:
+  save_states_enabled: true         # Enable save states for quick save/load
+  fast_text: true                   # Set to true to speed up text display
+  battle_animations: true           # Set to false to disable battle animations
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Pokémon Gold/Silver for Game Boy Color, the second generation of Pokémon games."
+  - "You play as a trainer catching and battling Pokémon across the Johto and Kanto regions."
+  - "The game features turn-based battles where Pokémon take turns using moves."
+  - "Use the d-pad to navigate, A to interact and confirm, B to cancel and run."
+  - "Battle commands include Fight (select a move), PKMN (switch Pokémon), Item, and Run."
+  - "The day/night system affects which Pokémon appear at different times."
+  - "Collect 8 gym badges in Johto, then travel to Kanto for 8 more."
+  - "Your ultimate goal is to become the Pokémon League Champion and complete your Pokédex."

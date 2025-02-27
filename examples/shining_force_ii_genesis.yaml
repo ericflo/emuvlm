@@ -1,0 +1,31 @@
+# Shining Force II (Sega Genesis, 1994) Configuration
+
+# Game configuration
+rom: "/path/to/ShiningForceII.md"  # Replace with actual path to your ROM
+emulator: "genesis_plus_gx"         # Sega Genesis emulator
+actions: ["Up", "Down", "Left", "Right", "A", "B", "C", "Start"]
+action_delay: 0.5                   # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3               # Delay for menu navigation
+  battle_command_delay: 0.4         # Delay between selecting battle commands
+  battle_anim_delay: 1.2            # Delay for battle animations
+  text_scroll_delay: 0.6            # Delay for text scrolling
+  unit_movement_delay: 0.5          # Delay for moving units on battle map
+
+# Game-specific settings
+settings:
+  save_states_enabled: true         # Enable save states for quick save/load
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Shining Force II for Sega Genesis, a turn-based tactical RPG sequel."
+  - "You control Bowie and the Shining Force to recover the stolen jewels and defeat an ancient evil."
+  - "Battles are played on grid-based maps where units take turns moving and attacking."
+  - "Use the d-pad to move the cursor, A/B/C to select and confirm (they all do the same thing), B or C to cancel."
+  - "Characters have different classes with unique abilities and movement ranges."
+  - "Between battles, explore an overworld and towns in traditional RPG style."
+  - "Promote characters at level 20 for class upgrades (compared to level 10 in the first game)."
+  - "The game is more open-world than its predecessor, with secret characters and hidden items to discover."
+  - "Healing and support spells can earn experience, unlike many RPGs where only offensive actions reward XP."

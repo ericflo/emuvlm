@@ -1,0 +1,32 @@
+# Ogre Battle 64: Person of Lordly Caliber (Nintendo 64, 2000) Configuration
+
+# Game configuration
+rom: "/path/to/OgreBattle64.z64"   # Replace with actual path to your ROM
+emulator: "mupen64plus"             # N64 emulator
+actions: ["Up", "Down", "Left", "Right", "A", "B", "Z", "Start", "C-Up", "C-Down", "C-Left", "C-Right", "L", "R"]
+action_delay: 0.5                   # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3               # Delay for menu navigation
+  unit_movement_delay: 0.6          # Delay for moving units on map
+  battle_anim_delay: 1.2            # Delay for battle animations
+  text_scroll_delay: 0.6            # Delay for text scrolling
+  formation_change_delay: 0.7       # Delay for changing unit formations
+
+# Game-specific settings
+settings:
+  save_states_enabled: true         # Enable save states for quick save/load
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Ogre Battle 64: Person of Lordly Caliber for Nintendo 64, a tactical RPG with real-time elements."
+  - "You control Magnus and his rebellion against the corrupt Holy Lodis Empire."
+  - "The game uses a unique real-time strategic movement with automated turn-based battles."
+  - "Use the analog stick to move the cursor, A to confirm selections, B to cancel."
+  - "Units move on the map in real-time, and when they encounter enemies, battles occur automatically."
+  - "You organize characters into units of up to 5 members with front and back row formations."
+  - "Before battles, you set general tactics but do not directly control individual attacks."
+  - "Unit alignment (Lawful, Neutral, Chaotic) changes based on actions and affects recruitment and story outcomes."
+  - "Character classes change through stat requirements, items, and storyline decisions."
+  - "The game features multiple story branches and endings based on your actions and reputation."
