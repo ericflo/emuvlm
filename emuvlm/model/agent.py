@@ -175,8 +175,13 @@ class LLMAgent:
             frame: PIL Image of the current game frame
             
         Returns:
-            str: The agent's decision as text
+            str: The agent's decision as text, or None for no action
         """
+        # First check if this is a loading screen - if so, return None immediately
+        if self._is_loading_screen(frame):
+            logger.info("Loading screen detected - choosing not to act")
+            return None
+            
         # Check cache first if enabled
         if self.enable_cache:
             # Check if this frame is very similar to the last one
@@ -207,8 +212,11 @@ class LLMAgent:
         # Prepare the image for the model
         image_data = self._prepare_image(frame)
         
-        # Construct the prompt
-        prompt = self._construct_prompt(image_data)
+        # Detect if this is a Pokémon game from visual cues
+        is_pokemon = self._detect_pokemon_game(frame)
+        
+        # Construct the prompt with context-specific enhancements
+        prompt = self._construct_prompt(image_data, is_pokemon=is_pokemon)
         
         # Query the model
         response = self._query_model(prompt)
@@ -253,6 +261,36 @@ class LLMAgent:
             self._save_frame_to_cache(frame, self.last_frame_hash, valid_action)
             
         return valid_action
+        
+    def _detect_pokemon_game(self, frame: Image.Image) -> bool:
+        """
+        Attempt to detect if this is a Pokémon game based on visual cues.
+        
+        Args:
+            frame: The PIL Image to analyze
+            
+        Returns:
+            bool: True if the frame appears to be from a Pokémon game
+        """
+        # Check if the ROM filename contains Pokemon (a more reliable method)
+        # We may not have access to the ROM filename here, so do basic visual analysis
+        
+        # Analyze the bottom portion of the screen for text box shape typical in Pokémon games
+        width, height = frame.size
+        bottom_section = frame.crop((0, int(height * 0.7), width, height))
+        
+        # Convert to grayscale and look for the horizontal divider line common in Pokémon dialog
+        gray = bottom_section.convert('L')
+        
+        # Simplified detection - look for horizontal lines in the bottom portion
+        # This is a very basic heuristic and would need to be improved for accuracy
+        
+        # For now, just return True if we've previously determined this is a Pokémon game
+        # In a real implementation, we'd analyze the frame more thoroughly
+        
+        # Look for the word "POKEMON" or "POKéMON" in the image (would require OCR)
+        # Since we don't have OCR, we'll use this as a placeholder
+        return True  # Simplified for this implementation
     
     def parse_action(self, action_text: str) -> str:
         """
@@ -359,12 +397,13 @@ class LLMAgent:
         img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
         return img_str
     
-    def _construct_prompt(self, image_data: str) -> Dict[str, Any]:
+    def _construct_prompt(self, image_data: str, is_pokemon: bool = False) -> Dict[str, Any]:
         """
         Construct the prompt for the model, including the image and instructions.
         
         Args:
             image_data: Base64-encoded image string
+            is_pokemon: Flag indicating if this appears to be a Pokemon game
             
         Returns:
             Dict: Prompt in the format expected by the model API
@@ -397,6 +436,46 @@ class LLMAgent:
             # Check if we have a custom system message (for testing)
             if self.custom_system_message:
                 system_message = self.custom_system_message
+            elif is_pokemon:
+                # Enhanced Pokémon-specific instructions
+                system_message = f"""You are an AI playing a Pokémon game (likely Pokémon Red, Blue, or Yellow).
+Analyze the game screen and decide the best action to take next.
+You can choose from these actions: {action_list}, or choose "None" to do nothing.
+
+IMPORTANT INSTRUCTION ABOUT POKÉMON GAMEPLAY:
+- Press A to advance through dialog text and make selections in menus
+- Use Up/Down to navigate menus, and Left/Right to change pages sometimes
+- Press B to cancel or go back
+- Press Start to open the game menu
+- In battles, choose Attack, Pokémon, Item, or Run using directional keys and A to select
+
+IMPORTANT INSTRUCTION ABOUT "NONE":
+- If you see a loading screen, choose "None"
+- If text is still appearing (being typed out), choose "None"
+- If an animation is playing, choose "None"
+- Only press buttons when it's clearly required by the game state
+
+POKÉMON-SPECIFIC EXAMPLES:
+1. If you see a battle menu with options like "FIGHT", "PKMN", "ITEM", "RUN", navigate with directional buttons and select with A
+2. If you see dialog text that has finished appearing, press A to continue
+3. If you see dialog text still being typed out, choose "None" and wait
+4. If you're in the overworld, use directional buttons to navigate
+5. If you see a menu, use Up/Down to navigate and A to select
+
+You MUST respond ONLY with a JSON object in this EXACT format, with no other text:
+{{
+  "action": "A",
+  "reasoning": "I'm pressing A to select the attack option in this Pokémon battle. The battle menu is open and my cursor is on the attack option."
+}}
+
+or
+
+{{
+  "action": "None",
+  "reasoning": "I'm choosing to do nothing because the text is still appearing on screen and I should wait until it's finished."
+}}
+
+Where "action" is EXACTLY one of: {', '.join(self.valid_actions + ['None'])}"""
             else:
                 # Enhanced detailed instructions with more examples for llama.cpp
                 system_message = f"""You are an AI playing a turn-based video game.
@@ -418,7 +497,7 @@ EXAMPLES:
 You MUST respond ONLY with a JSON object in this EXACT format, with no other text:
 {{
   "action": "A",
-  "reasoning": "I'm pressing A to select an attack in this Pokemon battle. The screen shows that I'm in a battle and need to choose an action."
+  "reasoning": "I'm pressing A to select an attack in this battle. The screen shows that I'm in a battle and need to choose an action."
 }}
 
 or
@@ -431,7 +510,40 @@ or
 Where "action" is EXACTLY one of: {', '.join(self.valid_actions + ['None'])}"""
         else:
             # For vLLM, the json_schema enforces the format, but we still improve the instructions
-            system_message = f"""You are an AI playing a turn-based video game.
+            if is_pokemon:
+                # Pokémon-specific instructions for vLLM
+                system_message = f"""You are an AI playing a Pokémon game (likely Pokémon Red, Blue, or Yellow).
+Analyze the game screen and decide the best action to take next.
+You can choose from these actions: {action_list}, or choose "None" to do nothing.
+
+IMPORTANT INSTRUCTION ABOUT POKÉMON GAMEPLAY:
+- Press A to advance through dialog text and make selections in menus
+- Use Up/Down to navigate menus, and Left/Right to change pages sometimes
+- Press B to cancel or go back
+- Press Start to open the game menu
+- In battles, choose Attack, Pokémon, Item, or Run using directional keys and A to select
+
+IMPORTANT INSTRUCTION ABOUT "NONE":
+- If you see a loading screen, choose "None"
+- If text is still appearing (being typed out), choose "None"
+- If an animation is playing, choose "None"
+- Only press buttons when it's clearly required by the game state
+
+POKÉMON-SPECIFIC EXAMPLES:
+1. If you see a battle menu with options like "FIGHT", "PKMN", "ITEM", "RUN", navigate with directional buttons and select with A
+2. If you see dialog text that has finished appearing, press A to continue
+3. If you see dialog text still being typed out, choose "None" and wait
+4. If you're in the overworld, use directional buttons to navigate
+5. If you see a menu, use Up/Down to navigate and A to select
+
+You MUST respond with a JSON object containing exactly two fields:
+- 'action': EXACTLY one of: {', '.join(self.valid_actions + ['None'])}
+- 'reasoning': A brief explanation of your choice
+
+Your response will be automatically validated against a JSON schema."""
+            else:
+                # Standard instructions for vLLM
+                system_message = f"""You are an AI playing a turn-based video game.
 Analyze the game screen and decide the best action to take next.
 You can choose from these actions: {action_list}, or choose "None" to do nothing.
 
@@ -794,6 +906,50 @@ Your response will be automatically validated against a JSON schema."""
         if max_diff == 0:
             return 1.0
         return 1.0 - (diff_sum / max_diff)
+        
+    def _is_loading_screen(self, frame: Image.Image) -> bool:
+        """
+        Detect if a frame is likely a loading screen.
+        
+        Args:
+            frame: The PIL Image to analyze
+            
+        Returns:
+            bool: True if the frame appears to be a loading screen
+        """
+        # Convert to grayscale for analysis
+        gray = frame.convert('L')
+        
+        # Get pixel data
+        pixels = list(gray.getdata())
+        
+        # Calculate basic statistics
+        unique_colors = len(set(pixels))
+        
+        # Calculate standard deviation of pixel values (low std dev indicates uniform screen)
+        import numpy as np
+        pixel_array = np.array(pixels)
+        std_dev = np.std(pixel_array)
+        
+        # Check for uniform/near-uniform frames (loading screens often have few colors)
+        # For Pokemon games specifically, we want to be careful not to treat dialog boxes as loading screens
+        # So we'll check both the unique color count and standard deviation
+        
+        # Very low color count is almost always a loading screen
+        if unique_colors <= 2:
+            logger.info(f"Detected loading screen: only {unique_colors} unique colors")
+            return True
+            
+        # Low std dev combined with few colors often indicates loading screens
+        if unique_colors < 5 and std_dev < 30:
+            logger.info(f"Detected potential loading screen: {unique_colors} unique colors, std dev: {std_dev:.2f}")
+            return True
+            
+        # Check for text patterns that suggest loading/waiting
+        # This would require OCR, which is complex - we'll rely on the model for this
+        
+        logger.debug(f"Not a loading screen: {unique_colors} unique colors, std dev: {std_dev:.2f}")
+        return False
     
     def _save_frame_to_cache(self, frame: Image.Image, frame_hash: str, action: str) -> None:
         """

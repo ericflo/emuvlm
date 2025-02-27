@@ -36,7 +36,8 @@ def load_config(config_path: str) -> dict:
 # Global agent variable for accessing from main()
 _agent = None
 
-def test_llama(config_path: str, model_path: str, test_image: str, actions: list = None, port: int = 8000, start_server: bool = True):
+def test_llama(config_path: str, model_path: str, test_image: str, actions: list = None, port: int = 8000, 
+             start_server: bool = True, test_loading_detection: bool = False):
     """
     Test the llama.cpp integration with a single image.
     
@@ -47,6 +48,7 @@ def test_llama(config_path: str, model_path: str, test_image: str, actions: list
         actions: Optional list of valid actions
         port: Port to use for the API server
         start_server: Whether to start the server before testing
+        test_loading_detection: Whether to test the loading screen detection
     """
     global _agent
     
@@ -94,6 +96,51 @@ Where "action" is EXACTLY one of: {', '.join(actions)}"""
         _agent.custom_system_message = system_msg
         logger.info("Using custom system message for controller test")
     
+    # Pokemon-specific testing
+    elif "pokemon" in test_image.lower():
+        system_msg = f"""You are an AI playing a Pokémon game (Pokémon Red, Blue, or Yellow).
+Analyze the game screen and decide the best action to take next.
+You can choose from these actions: {', '.join(actions)}.
+
+IMPORTANT INSTRUCTION ABOUT POKÉMON GAMEPLAY:
+- Press A to advance through dialog text and make selections in menus
+- Use Up/Down to navigate menus, and Left/Right to change pages sometimes
+- Press B to cancel or go back
+- Press Start to open the game menu
+- In battles, choose Attack, Pokémon, Item, or Run using directional keys and A to select
+
+IMPORTANT INSTRUCTION ABOUT "NONE":
+- If you see a loading screen, choose "None"
+- If text is still appearing (being typed out), choose "None"
+- If an animation is playing, choose "None"
+- Only press buttons when it's clearly required by the game state
+
+POKÉMON-SPECIFIC EXAMPLES:
+1. If you see a battle menu with options like "FIGHT", "PKMN", "ITEM", "RUN", navigate with directional buttons and select with A
+2. If you see dialog text that has finished appearing, press A to continue
+3. If you see dialog text still being typed out, choose "None" and wait
+4. If you're in the overworld, use directional buttons to navigate
+5. If you see a menu, use Up/Down to navigate and A to select
+
+You MUST respond ONLY with a JSON object in this EXACT format, with no other text:
+{{
+  "action": "A",
+  "reasoning": "I'm pressing A to select the attack option in this Pokémon battle. The battle menu is open and my cursor is on the attack option."
+}}
+
+or
+
+{{
+  "action": "None",
+  "reasoning": "I'm choosing to do nothing because the text is still appearing on screen and I should wait until it's finished."
+}}
+
+Where "action" is EXACTLY one of: {', '.join(actions)}"""
+        
+        # Apply the custom system message
+        _agent.custom_system_message = system_msg
+        logger.info("Using custom system message for Pokemon test")
+    
     # Special handling for do-nothing tests
     elif "do_nothing" in test_image.lower() or "none" in test_image.lower() or "loading" in test_image.lower():
         system_msg = f"""You are an AI playing a turn-based video game.
@@ -131,6 +178,23 @@ Where "action" is EXACTLY one of: {', '.join(actions)}"""
     # Load test image
     image = Image.open(test_image)
     
+    # Test loading screen detection if requested
+    if test_loading_detection:
+        logger.info("Testing loading screen detection...")
+        is_loading = _agent._is_loading_screen(image)
+        logger.info(f"Loading screen detection result: {is_loading}")
+        
+        # Get more detailed image statistics
+        gray = image.convert('L')
+        pixels = list(gray.getdata())
+        unique_colors = len(set(pixels))
+        logger.info(f"Image statistics: {unique_colors} unique colors in grayscale")
+        
+        # If detected as loading screen, return None without asking the model
+        if is_loading:
+            logger.info("Loading screen detected automatically, returning None action")
+            return None
+    
     # Get action recommendation
     logger.info(f"Sending test image to model: {test_image}")
     start_time = time.time()
@@ -154,6 +218,7 @@ def main():
     parser.add_argument("--port", type=int, default=8000, help="Port for the server (default: 8000)")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind the server to")
     parser.add_argument("--no-autostart", action="store_true", help="Don't automatically start the server")
+    parser.add_argument("--test-loading", action="store_true", help="Test the loading screen detection logic")
     
     args = parser.parse_args()
     
@@ -228,7 +293,8 @@ def main():
                 args.image, 
                 action_list, 
                 port=args.port,
-                start_server=not args.no_autostart
+                start_server=not args.no_autostart,
+                test_loading_detection=args.test_loading
             )
             # Try to get the original JSON response before parsing
             raw_response = None
