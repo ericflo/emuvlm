@@ -1,0 +1,6 @@
+pyboy>=2.6.0
+requests>=2.28.0
+pillow>=9.0.0
+pyyaml>=6.0
+transformers>=4.30.0
+qwen-vl-utils[decord]>=0.0.8
