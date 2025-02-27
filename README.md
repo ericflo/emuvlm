@@ -2,6 +2,8 @@
 
 EmuVLM (Emulator Vision-Language Model) is a Python framework that combines emulators and vision-language models (VLMs) to play turn-based games. The system uses vision capabilities of the VLM to analyze game screens and decide on optimal in-game actions.
 
+Our system now supports game-specific configurations that enhance AI gameplay for different game genres, with specialized detection and prompt systems for Pokémon, Zelda, and other game types.
+
 ## Features
 
 - Support for multiple gaming platforms with dedicated emulators:
@@ -22,6 +24,11 @@ EmuVLM (Emulator Vision-Language Model) is a Python framework that combines emul
 - Enhanced logging with frame capture for debugging
 - Demo mode with built-in simple game (no ROM required)
 - Monitoring interface for viewing and intervening in gameplay
+- Game-specific enhancements:
+  - Genre-specific instruction prompts (RPG, action-adventure, etc.)
+  - Specialized loading screen detection for different game types
+  - Game-type configuration system for customized AI behavior
+  - Anti-stalling mechanisms to prevent getting stuck
 
 ## Installation
 
@@ -418,15 +425,38 @@ model:
   n_gpu_layers: -1                  # -1 means use all available layers
 
 games:
-  pokemon_red:
-    rom: "/path/to/PokemonRed.gb"
+  pokemon_blue:
+    rom: "/path/to/PokemonBlue.gb"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.5
+    game_type: "pokemon"            # Game type for specialized handling
     timing:
       menu_nav_delay: 0.3
       battle_anim_delay: 1.5
       text_scroll_delay: 0.8
+    settings:
+      detect_loading_screens: true  # Enable loading screen detection
+      max_blank_frames: 5           # Anti-stalling setting
+
+  zelda_links_awakening:
+    rom: "/path/to/ZeldaLinksAwakening.gb"
+    emulator: "pyboy"
+    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
+    action_delay: 0.4
+    game_type: "zelda"              # Game type identifier
+    timing:
+      menu_nav_delay: 0.3           # Zelda-specific timing
+      dialog_delay: 1.0
+      screen_transition_delay: 0.7
+      item_use_delay: 0.5
+    settings:
+      detect_loading_screens: true
+      frame_analysis: true          # More detailed frame analysis
+    prompt_additions:
+      - "This is The Legend of Zelda: Link's Awakening for Game Boy."
+      - "Press A to use your sword or interact with objects and people."
+      - "Press B to use your equipped item."
 ```
 
 ## Project Structure

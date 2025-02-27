@@ -1,10 +1,14 @@
 # The Legend of Zelda: Link's Awakening (Game Boy) Configuration
 
 # Game configuration
-rom: "/path/to/ZeldaLinksAwakening.gb"  # Replace with actual path to your ROM
+# Previous ROM was causing compatibility issues:
+# rom: "/Users/ericflo/Development/emuvlm/roms/gb/Legend of Zelda, The - Link's Awakening (F) [b1].gb"
+# Using the test placeholder ROM instead:
+rom: "/Users/ericflo/Development/emuvlm/roms/gb/zelda_links_awakening.gb"
 emulator: "pyboy"
 actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
 action_delay: 0.4               # Seconds to wait after each action
+game_type: "zelda"              # Game type for specific handling
 
 # Game-specific timing configurations
 timing:
@@ -17,6 +21,9 @@ timing:
 settings:
   save_states_enabled: true     # Enable save states for quick save/load
   fast_text: true               # Speed up text where possible
+  detect_loading_screens: true  # Enable loading screen detection
+  frame_analysis: true       # Enable more detailed frame analysis
+  max_blank_frames: 5        # Maximum consecutive blank frames before skipping
   
 # Model prompt additions
 prompt_additions:
@@ -24,3 +31,5 @@ prompt_additions:
   - "Your goal is to collect musical instruments to wake the Wind Fish and escape the island."
   - "Press A to use your sword, B to use your equipped item, and Start to access your inventory."
   - "Select button switches between equipped items without entering the menu."
+  - "You start the game on a beach after being shipwrecked during a storm."
+  - "Explore the island to find towns, dungeons, and items to help you escape."

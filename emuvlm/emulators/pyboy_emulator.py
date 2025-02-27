@@ -33,22 +33,49 @@ class PyBoyEmulator(EmulatorBase):
         # Use a classic Game Boy color palette (light green)
         gb_classic_palette = (0xE0F8D0, 0x88C070, 0x346856, 0x081820)
         
-        self.emulator = PyBoy(
-            rom_path,
-            window_type="SDL2",      # Use SDL2 window for better compatibility
-            game_wrapper=True,       # Enable game wrapper for game-specific features
-            debug=False,
-            auto_boot=True,          # Skip the boot logo 
-            quiet=False,             # Show output for debugging
-            color_palette=gb_classic_palette,  # Use classic Game Boy color palette
-            use_color_filter=True   # Apply Game Boy color filter to make games more visible
-        )
+        # Check if this is a Zelda ROM based on filename
+        is_zelda_rom = "zelda" in rom_path.lower() or "link" in rom_path.lower()
+        
+        # Special handling for Zelda ROMs
+        if is_zelda_rom:
+            logger.info("Detected Zelda ROM - using special initialization settings")
+            # For Zelda ROMs, we'll use more conservative settings
+            self.emulator = PyBoy(
+                rom_path,
+                window_type="SDL2",      # Use SDL2 window for better compatibility
+                game_wrapper=False,      # Disable game wrapper which might have issues with some ROMs
+                debug=False,
+                auto_boot=False,         # Don't skip boot for better initialization
+                quiet=False,             # Show output for debugging
+                color_palette=gb_classic_palette,  # Use classic Game Boy color palette
+                use_color_filter=True    # Apply Game Boy color filter to make games more visible
+            )
+        else:
+            # Standard initialization for other games
+            self.emulator = PyBoy(
+                rom_path,
+                window_type="SDL2",      # Use SDL2 window for better compatibility
+                game_wrapper=True,       # Enable game wrapper for game-specific features
+                debug=False,
+                auto_boot=True,          # Skip the boot logo 
+                quiet=False,             # Show output for debugging
+                color_palette=gb_classic_palette,  # Use classic Game Boy color palette
+                use_color_filter=True    # Apply Game Boy color filter to make games more visible
+            )
         
         # Start the emulator
         self.emulator.set_emulation_speed(0)  # Run as fast as possible
         
-        # Much more comprehensive boot and game start sequence
-        logger.info("Starting game initialization sequence...")
+        # Store rom type information for use in other methods
+        self.is_zelda_rom = is_zelda_rom
+        
+        # Special game initialization for Zelda vs other games
+        if is_zelda_rom:
+            logger.info("Starting Zelda-specific initialization sequence...")
+            self._initialize_zelda_game()
+        else:
+            # Standard initialization sequence for other games
+            logger.info("Starting game initialization sequence...")
         
         # Game Boot Phase: Set up debugging directory for frames
         boot_frames_dir = "output/boot_frames"
@@ -279,6 +306,82 @@ class PyBoyEmulator(EmulatorBase):
         else:
             logger.warning(f"Unsupported action for PyBoy: {action}")
     
+    def _initialize_zelda_game(self) -> None:
+        """
+        Special initialization sequence for Zelda games.
+        This uses different keypresses and timing than the standard sequence.
+        """
+        # Set up debugging directory for frames
+        boot_frames_dir = "output/boot_frames/zelda"
+        os.makedirs(boot_frames_dir, exist_ok=True)
+        
+        # Phase 1: Initial boot - just advance for a while to let the boot logo finish
+        for i in range(200):  # Longer initial wait for boot sequence
+            self.emulator.tick()
+            if i % 60 == 0:
+                frame = self.emulator.screen_image()
+                frame.save(os.path.join(boot_frames_dir, f"zelda_boot_{i}.png"))
+        
+        # Phase 2: Press START on title screen
+        logger.info("Zelda phase 2: Title screen navigation...")
+        for i in range(5):
+            # Press START button
+            self.emulator.send_input(WindowEvent.PRESS_BUTTON_START)
+            for _ in range(10):  # Hold button longer 
+                self.emulator.tick()
+            self.emulator.send_input(WindowEvent.RELEASE_BUTTON_START)
+            
+            # Wait longer between presses
+            for _ in range(60):
+                self.emulator.tick()
+                
+            # Save debug frame
+            frame = self.emulator.screen_image()
+            frame.save(os.path.join(boot_frames_dir, f"zelda_title_{i}.png"))
+        
+        # Phase 3: Menu navigation - more conservative
+        logger.info("Zelda phase 3: Initial menu navigation...")
+        for i in range(3):
+            # Try different keypress combinations
+            key_sequences = [
+                # Down then A (for selecting file in Zelda)
+                (WindowEvent.PRESS_ARROW_DOWN, WindowEvent.RELEASE_ARROW_DOWN, 30),
+                (WindowEvent.PRESS_BUTTON_A, WindowEvent.RELEASE_BUTTON_A, 30),
+                
+                # Just A (for confirming)
+                (WindowEvent.PRESS_BUTTON_A, WindowEvent.RELEASE_BUTTON_A, 30),
+                
+                # B (for back/cancel if needed)
+                (WindowEvent.PRESS_BUTTON_B, WindowEvent.RELEASE_BUTTON_B, 30)
+            ]
+            
+            for press, release, wait in key_sequences:
+                self.emulator.send_input(press)
+                for _ in range(5):
+                    self.emulator.tick()
+                self.emulator.send_input(release)
+                
+                # Wait between keypresses
+                for _ in range(wait):
+                    self.emulator.tick()
+                    
+            # Save debug frame
+            frame = self.emulator.screen_image()
+            frame.save(os.path.join(boot_frames_dir, f"zelda_menu_{i}.png"))
+        
+        # Phase 4: Final advance - long wait to allow game to initialize
+        logger.info("Zelda phase 4: Final initialization...")
+        for i in range(180):
+            self.emulator.tick()
+            if i % 60 == 0:
+                frame = self.emulator.screen_image()
+                frame.save(os.path.join(boot_frames_dir, f"zelda_final_{i}.png"))
+        
+        # Save the final initialization frame
+        final_frame = self.emulator.screen_image()
+        final_frame.save(os.path.join(boot_frames_dir, "zelda_final_frame.png"))
+        logger.info("Zelda initialization sequence completed")
+
     def close(self) -> None:
         """
         Close the emulator and clean up resources.

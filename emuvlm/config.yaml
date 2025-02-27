@@ -59,16 +59,22 @@ games:
       overworld_movement_delay: 0.4 # Delay for moving in the overworld
 
   zelda_links_awakening:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Legend of Zelda, The - Link's Awakening (F) [b1].gb"
+    rom: "/Users/ericflo/Development/emuvlm/roms/gb/zelda_links_awakening.gb"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.4               # Seconds to wait after each action
+    game_type: "zelda"              # Game type for specific handling
     # Game-specific timing configurations
     timing:
       menu_nav_delay: 0.3           # Delay for inventory navigation
       dialog_delay: 1.0             # Delay for NPC dialog
       screen_transition_delay: 0.7  # Delay for screen transitions
       item_use_delay: 0.5           # Delay after using items
+    # Game-specific settings
+    settings:
+      detect_loading_screens: true  # Enable loading screen detection
+      frame_analysis: true          # Enable more detailed frame analysis
+      max_blank_frames: 5           # Maximum consecutive blank frames before skipping
   
   # Game Boy Advance game configuration  
   pokemon_emerald:

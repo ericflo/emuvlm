@@ -137,14 +137,67 @@ The CLI design with multiple entry points allows for easy extension:
 2. Register these functions in pyproject.toml's [project.scripts] section
 3. Implement the new command's functionality in a dedicated module
 
+## Game-Specific Improvements
+
+To better support different game genres, we've implemented a game-type configuration system that customizes the AI's behavior based on the type of game being played.
+
+### Configuration-Driven Architecture
+
+Each game can specify:
+- `game_type`: Identifier for the game category (e.g., "pokemon", "zelda", "final_fantasy")
+- Game-specific timing parameters for different contexts
+- Custom prompt additions with game-specific instructions
+- Detection settings for loading screens and transitions
+
+Example configuration:
+```yaml
+zelda_links_awakening:
+  rom: "/path/to/zelda_links_awakening.gb"
+  emulator: "pyboy"
+  actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
+  action_delay: 0.4
+  game_type: "zelda"                # Game type identifier
+  timing:
+    menu_nav_delay: 0.3             # Zelda-specific menu timing
+    dialog_delay: 1.0
+    screen_transition_delay: 0.7
+    item_use_delay: 0.5
+  settings:
+    detect_loading_screens: true    # Enable loading screen detection
+    frame_analysis: true            # More detailed frame analysis
+    max_blank_frames: 5             # Anti-stalling setting
+```
+
+### Enhanced Game-Type Specific Features
+
+1. **Loading Screen Detection**:
+   - Customized algorithms for different game types
+   - Grid-based analysis for complex transitions
+   - Black screen detection for area transitions
+   - Tracking of consecutive blank frames to prevent stalling
+
+2. **Game-Specific Prompting**:
+   - Specialized instructions based on game type
+   - Examples tailored to the specific game genre
+   - Control guidance based on game mechanics
+
+3. **Anti-Stalling Mechanisms**:
+   - Consecutive action tracking
+   - Fallback actions when the system gets stuck
+   - Customizable thresholds for different game types
+
 ## Future Directions
 
 1. **UI Improvements**: Develop a more comprehensive GUI for monitoring and controlling games
 
 2. **Advanced VLM Integration**: Test with more capable models and experiment with custom fine-tuning
 
-3. **Game Detection**: Automatically identify games to adjust parameters
+3. **ROM Compatibility Enhancement**: Improve emulator compatibility with different ROM formats
 
 4. **State Tracking**: Implement more sophisticated game state tracking beyond basic summaries
 
 5. **Text Recognition**: Add OCR to better understand text boxes and dialog
+
+6. **Multi-Step Planning**: Enable the AI to plan sequences of actions for complex game scenarios
+
+7. **Learning from Gameplay**: Build systems to learn from successful play sessions to improve future performance
