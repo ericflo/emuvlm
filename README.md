@@ -12,7 +12,10 @@ EmuVLM (Emulator Vision-Language Model) is a Python framework that combines emul
   - Sega Genesis / Mega Drive (Genesis Plus GX)
   - Nintendo 64 (Mupen64Plus)
   - PlayStation (DuckStation)
-- Integration with Qwen2.5-VL vision-language model
+- Multi-platform VLM support:
+  - Linux: Integration with Qwen2.5-VL via vLLM
+  - macOS: Integration with LLaVA via llama.cpp
+  - Cross-platform compatibility with automatic backend selection
 - Frame caching to reduce redundant model calls and improve performance
 - Session management for saving and resuming gameplay
 - Dynamic timing system that adjusts delays based on context
@@ -60,9 +63,18 @@ EmuVLM (Emulator Vision-Language Model) is a Python framework that combines emul
   - CMake (build dependency)
 
 #### VLM Requirements
+
+**Option 1: vLLM server (Linux recommended)**
 - vLLM server (v0.2.5+)
 - Qwen2.5-VL-3B-Instruct model
 - HuggingFace Transformers (4.35.0+)
+- CUDA-compatible GPU with at least 16GB VRAM
+
+**Option 2: llama.cpp (macOS, Windows, Linux)**
+- llama-cpp-python (v0.2.50+)
+- llama-cpp-python-server (v0.2.0+)
+- LLaVA compatible GGUF model (e.g., llava-v1.6-mistral-7b.Q5_K_M.gguf)
+- Metal GPU acceleration on macOS (optional but recommended)
 
 ### Platform-Specific Installation Instructions
 
@@ -188,20 +200,22 @@ EmuVLM (Emulator Vision-Language Model) is a Python framework that combines emul
    pip install torch torchvision torchaudio
    ```
 
-6. **Install vLLM and set up Qwen2.5-VL model**
+6. **Install llama-cpp-python for macOS compatibility**
    ```bash
-   pip install vllm==0.2.5
-   # Download model (requires huggingface-cli)
-   pip install huggingface_hub
-   huggingface-cli download Qwen/Qwen2.5-VL-3B-Instruct --local-dir ./models/Qwen2.5-VL-3B-Instruct
+   pip install llama-cpp-python>=0.2.50
    ```
 
-7. **Install EmuVLM**
+7. **Install EmuVLM with macOS dependencies**
    ```bash
    git clone https://github.com/yourusername/emuvlm.git
    cd emuvlm
-   pip install -e .
+   pip install -e ".[macos]"  # Install with macOS-specific dependencies
+   
+   # Download the recommended LLaVA model
+   emuvlm-download-model
    ```
+
+Note: macOS users will use llama.cpp with LLaVA model for VLM functions, which is fully supported and optimized for Apple Silicon with Metal GPU acceleration.
 
 ### Verifying Installation
 
@@ -282,13 +296,33 @@ If you encounter persistent issues:
 
 ### Starting the VLM Server
 
-First, start the VLM server with the Qwen2.5-VL model:
+You can start one of the two supported VLM servers:
+
+#### Option 1: vLLM server (Linux)
+
+Start the vLLM server with the Qwen2.5-VL model:
 
 ```bash
 emuvlm-vllm-server
 ```
 
 This will start a vLLM server with the Qwen2.5-VL-3B-Instruct model on port 8000.
+
+#### Option 2: llama.cpp server (macOS, Windows, Linux)
+
+Start the llama.cpp server with a LLaVA model:
+
+```bash
+# First, download the recommended LLaVA model:
+emuvlm-download-model
+
+# Then start the server
+emuvlm-llama-server
+```
+
+This will start a llama.cpp server with OpenAI-compatible API endpoints on port 8000.
+
+The system will automatically select the appropriate backend based on your platform.
 
 ### Playing a Game
 
@@ -351,7 +385,11 @@ A sample script for testing all emulators is provided in `test_emulator_example.
 Test the VLM model with a specific image:
 
 ```bash
+# Test with the default VLM backend
 emuvlm-test-model --image /path/to/game_screenshot.png
+
+# Test specifically with llama.cpp backend
+emuvlm-test-llama --model /path/to/llava-v1.5-7b-q4_k_s.gguf --image /path/to/game_screenshot.png
 ```
 
 ## Configuration
@@ -360,13 +398,20 @@ You can configure games, model parameters, and more in the `config.yaml` file:
 
 ```yaml
 model:
+  # Common settings
   api_url: "http://localhost:8000"
+  backend: "auto"                   # "auto", "vllm", or "llama.cpp"
   summary_interval: 10
   max_tokens: 100
   temperature: 0.2
   enable_cache: true
   cache_dir: "output/cache"
   similarity_threshold: 0.95
+  
+  # llama.cpp specific settings
+  autostart_server: false
+  model_path: "/path/to/llava-v1.5-7b-q4_k_s.gguf"
+  n_gpu_layers: -1                  # -1 means use all available layers
 
 games:
   pokemon_red:
@@ -392,7 +437,8 @@ emuvlm/
 ├── test_emulators.py    - Emulator testing utilities
 ├── test_model.py        - VLM testing utilities
 ├── config.yaml          - Default configuration
-├── start_vllm_server.sh - Script to start VLM server
+├── start_vllm_server.sh  - Script to start vLLM server
+├── start_llama_server.sh - Script to start llama.cpp server
 ├── emulators/           - Emulator implementations
 │   ├── __init__.py
 │   ├── base.py                    - Base emulator interface
@@ -405,7 +451,10 @@ emuvlm/
 │   └── duckstation_emulator.py    - PlayStation emulator implementation
 └── model/               - AI model components
     ├── __init__.py
-    └── agent.py         - VLM agent implementation
+    ├── agent.py         - VLM agent implementation
+    └── llama_cpp/       - llama.cpp integration
+        ├── __init__.py
+        └── server.py    - llama.cpp server management
 
 output/                  - All generated files (gitignored)
 ├── boot_frames/         - Frames captured during game initialization
@@ -459,6 +508,8 @@ MIT License
 - [DuckStation](https://github.com/stenzek/duckstation) - PlayStation emulator
 - [Qwen2.5-VL](https://github.com/QwenLM/Qwen2-VL) - Vision-language model
 - [vLLM](https://github.com/vllm-project/vllm) - LLM inference engine
+- [llama.cpp](https://github.com/ggerganov/llama.cpp) - Efficient LLM inference
+- [LLaVA](https://github.com/haotian-liu/LLaVA) - Large language and vision assistant
 
 For more details on implementation and design decisions, see `PLAN.md`.
 For current development status and upcoming features, see `TODO.md`.
