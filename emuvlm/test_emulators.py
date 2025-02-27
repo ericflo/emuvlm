@@ -51,9 +51,9 @@ def test_emulator(emulator, actions=None, iterations=10, delay=0.5):
         logger.info(f"Initial frame size: {initial_frame.size}")
         
         # Create a test output directory
-        os.makedirs("test_output", exist_ok=True)
-        initial_frame.save("test_output/initial_frame.png")
-        logger.info("Saved initial frame to test_output/initial_frame.png")
+        os.makedirs("output/test_output", exist_ok=True)
+        initial_frame.save("output/test_output/initial_frame.png")
+        logger.info("Saved initial frame to output/test_output/initial_frame.png")
         
         # Run the test iterations
         for i in range(iterations):
@@ -68,7 +68,7 @@ def test_emulator(emulator, actions=None, iterations=10, delay=0.5):
             
             # Get and save the frame after the action
             frame = emulator.get_frame()
-            frame.save(f"test_output/frame_{i+1}_{action}.png")
+            frame.save(f"output/test_output/frame_{i+1}_{action}.png")
             
         logger.info("Emulator test completed successfully")
         return True
@@ -120,8 +120,11 @@ def test_all_emulators(rom_paths, iterations=5, delay=0.5):
                 continue
                 
             # Create a subdirectory for this emulator's test output
-            emulator_output_dir = f"test_output/{emulator_type}"
+            # Use the base name of the ROM file (without full path) to avoid spaces and special chars
+            rom_name = os.path.basename(rom_path).replace(' ', '_').replace('[', '').replace(']', '').replace('(', '').replace(')', '')
+            emulator_output_dir = f"output/test_output/{emulator_type}_{rom_name}"
             os.makedirs(emulator_output_dir, exist_ok=True)
+            logger.info(f"Saving test output to: {emulator_output_dir}")
             
             # Modify the test_emulator function to save frames in the emulator-specific directory
             def emulator_specific_save(frame, filename):
@@ -196,7 +199,7 @@ def main():
     args = parser.parse_args()
     
     # Create test output directory
-    os.makedirs("test_output", exist_ok=True)
+    os.makedirs("output/test_output", exist_ok=True)
     
     if args.all:
         # Test all emulators with provided ROM paths
@@ -267,5 +270,76 @@ def main():
         parser.print_help()
         return 1
 
+def test_game_boy_roms():
+    """
+    Test all Game Boy ROMs found in the roms/gb directory.
+    """
+    # Find all Game Boy ROMs
+    gb_rom_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "roms", "gb")
+    
+    if not os.path.exists(gb_rom_dir):
+        logger.error(f"Game Boy ROM directory not found: {gb_rom_dir}")
+        return False
+    
+    # Get a list of all .gb files
+    gb_roms = [os.path.join(gb_rom_dir, f) for f in os.listdir(gb_rom_dir) if f.lower().endswith('.gb')]
+    
+    if not gb_roms:
+        logger.warning(f"No Game Boy ROMs found in {gb_rom_dir}")
+        return False
+    
+    logger.info(f"Found {len(gb_roms)} Game Boy ROMs")
+    success = True
+    
+    # Test each ROM
+    for rom_path in gb_roms:
+        try:
+            rom_name = os.path.basename(rom_path)
+            logger.info(f"\n==== Testing ROM: {rom_name} ====")
+            
+            # Initialize the emulator
+            emulator = PyBoyEmulator(rom_path)
+            
+            # Create a clean output directory name
+            clean_rom_name = rom_name.replace(' ', '_').replace('[', '').replace(']', '').replace('(', '').replace(')', '')
+            output_dir = f"output/test_output/gb_{clean_rom_name}"
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # Get and save initial frame
+            initial_frame = emulator.get_frame()
+            initial_frame_path = os.path.join(output_dir, "initial_frame.png")
+            initial_frame.save(initial_frame_path)
+            logger.info(f"Saved initial frame to {initial_frame_path}")
+            
+            # Test a sequence of actions
+            for i in range(5):  # 5 iterations per ROM
+                action = STANDARD_ACTIONS[i % len(STANDARD_ACTIONS)]
+                logger.info(f"Testing action: {action}")
+                
+                # Send input
+                emulator.send_input(action)
+                time.sleep(0.5)  # Short delay
+                
+                # Get and save the frame
+                frame = emulator.get_frame()
+                frame_path = os.path.join(output_dir, f"frame_{i+1}_{action}.png")
+                frame.save(frame_path)
+            
+            # Close the emulator
+            emulator.close()
+            logger.info(f"Successfully tested {rom_name}")
+            
+        except Exception as e:
+            logger.error(f"Error testing {rom_path}: {e}")
+            success = False
+    
+    return success
+
 if __name__ == "__main__":
-    sys.exit(main())
+    if len(sys.argv) > 1 and sys.argv[1] == "--test-gb-roms":
+        # Special command to test all GB ROMs
+        success = test_game_boy_roms()
+        sys.exit(0 if success else 1)
+    else:
+        # Normal operation
+        sys.exit(main())

@@ -9,21 +9,21 @@ model:
   
   # Frame caching configuration
   enable_cache: true                # Enable frame caching to reduce API calls
-  cache_dir: "cache"                # Directory to store cached frames
+  cache_dir: "output/cache"         # Directory to store cached frames
   similarity_threshold: 0.95        # Threshold for considering frames similar (0-1)
 
 # Logging configuration
 logging:
   level: "INFO"                     # Logging level (DEBUG, INFO, WARNING, ERROR)
   save_frames: true                 # Save frames to disk for debugging
-  frames_dir: "logs/frames"         # Directory to save frames
-  log_file: "logs/emuvlm.log"       # Log file path
+  frames_dir: "output/logs/frames"  # Directory to save frames
+  log_file: "output/logs/emuvlm.log" # Log file path
 
 # Game configurations
 games:
   # Game Boy / Game Boy Color game configuration
-  pokemon_red:
-    rom: "/path/to/PokemonRed.gb"   # Replace with actual path to your ROM
+  pokemon_blue:
+    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Pokemon - Blue Version (UE) [S][T+Por1.2_CBT].gb"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.5               # Seconds to wait after each action
@@ -33,6 +33,31 @@ games:
       battle_anim_delay: 1.5        # Longer delay for battle animations
       text_scroll_delay: 0.8        # Medium delay for text scrolling
 
+  final_fantasy_legend_ii:
+    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Final Fantasy Legend II (U) [b2].gb"
+    emulator: "pyboy"
+    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
+    action_delay: 0.5               # Seconds to wait after each action
+    # Game-specific timing configurations
+    timing:
+      menu_nav_delay: 0.3           # Delay for menu navigation
+      battle_command_delay: 0.4     # Delay between selecting battle commands
+      battle_anim_delay: 1.0        # Delay for battle animations
+      text_scroll_delay: 0.6        # Delay for text scrolling
+      overworld_movement_delay: 0.4 # Delay for moving in the overworld
+
+  zelda_links_awakening:
+    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Legend of Zelda, The - Link's Awakening (F) [b1].gb"
+    emulator: "pyboy"
+    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
+    action_delay: 0.4               # Seconds to wait after each action
+    # Game-specific timing configurations
+    timing:
+      menu_nav_delay: 0.3           # Delay for inventory navigation
+      dialog_delay: 1.0             # Delay for NPC dialog
+      screen_transition_delay: 0.7  # Delay for screen transitions
+      item_use_delay: 0.5           # Delay after using items
+  
   # Game Boy Advance game configuration  
   pokemon_emerald:
     rom: "/path/to/PokemonEmerald.gba"  # Replace with actual path to your ROM
@@ -50,5 +75,5 @@ games:
 # Session configuration
 sessions:
   enable_save: true                 # Enable session saving/loading
-  save_dir: "sessions"              # Directory to store session data
+  save_dir: "output/sessions"       # Directory to store session data
   auto_save_interval: 50            # Auto-save session every X turns

@@ -16,8 +16,9 @@ dist/
 build/
 *.egg-info/
 
-# Logs
+# Logs and output
 logs/
+output/
 *.log
 
 # OS specific files
@@ -42,6 +43,7 @@ roms/*/*.iso
 roms/*/*.ccd
 roms/*/*.img
 roms/*/*.sub
+roms/*/*.ram
 
 # IDEs and editors
 .idea/

@@ -365,7 +365,7 @@ model:
   max_tokens: 100
   temperature: 0.2
   enable_cache: true
-  cache_dir: "cache"
+  cache_dir: "output/cache"
   similarity_threshold: 0.95
 
 games:
@@ -406,6 +406,15 @@ emuvlm/
 └── model/               - AI model components
     ├── __init__.py
     └── agent.py         - VLM agent implementation
+
+output/                  - All generated files (gitignored)
+├── boot_frames/         - Frames captured during game initialization
+├── cache/               - Cached frames for performance optimization
+├── debug_frames/        - Debug frames for development
+├── logs/                - Log files
+│   └── frames/          - Frames captured during gameplay
+├── sessions/            - Saved game sessions
+└── test_output/         - Test output files and frames
 ```
 
 Additional scripts:
@@ -425,7 +434,7 @@ Save gameplay progress and resume later:
 ```bash
 # Save happens automatically at intervals, or press Ctrl+C
 # Resume a session
-emuvlm --session sessions/pokemon_red_20240227_123456.session
+emuvlm --session output/sessions/pokemon_red_20240227_123456.session
 ```
 
 ### Dynamic Timing

@@ -30,13 +30,13 @@ def setup_logging(config):
     log_level = getattr(logging, log_config.get('level', 'INFO'))
     
     # Create logs directory
-    log_file = log_config.get('log_file', 'logs/emuvlm.log')
+    log_file = log_config.get('log_file', 'output/logs/emuvlm.log')
     log_dir = os.path.dirname(log_file)
     os.makedirs(log_dir, exist_ok=True)
     
     # Create frames directory if frame saving is enabled
     if log_config.get('save_frames', False):
-        frames_dir = log_config.get('frames_dir', 'logs/frames')
+        frames_dir = log_config.get('frames_dir', 'output/logs/frames')
         os.makedirs(frames_dir, exist_ok=True)
     
     # Set up file handler
@@ -165,7 +165,7 @@ def main():
     # Session configuration
     session_config = config.get('sessions', {})
     enable_session_save = session_config.get('enable_save', False)
-    session_save_dir = session_config.get('save_dir', 'sessions')
+    session_save_dir = session_config.get('save_dir', 'output/sessions')
     auto_save_interval = args.session_save_interval or session_config.get('auto_save_interval', 50)
     
     # Resume from session if provided
@@ -257,13 +257,15 @@ def main():
     # Configure frame saving
     log_config = config.get('logging', {})
     save_frames = log_config.get('save_frames', False)
-    frames_dir = log_config.get('frames_dir', 'logs/frames')
+    frames_dir = log_config.get('frames_dir', 'output/logs/frames')
     
     # If we're saving frames, ensure the directory exists
     if save_frames:
         # Create a subdirectory for this specific game session
+        # Clean the game name to avoid directory naming issues
+        clean_game_name = game_name.replace(' ', '_').replace('[', '').replace(']', '').replace('(', '').replace(')', '')
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        session_frames_dir = os.path.join(frames_dir, f"{game_name}_{timestamp}")
+        session_frames_dir = os.path.join(frames_dir, f"{clean_game_name}_{timestamp}")
         os.makedirs(session_frames_dir, exist_ok=True)
         logger.info(f"Saving frames to {session_frames_dir}")
     
