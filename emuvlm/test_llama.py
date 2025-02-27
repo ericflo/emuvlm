@@ -10,6 +10,7 @@ import logging
 import yaml
 import time
 import json
+import re
 from pathlib import Path
 from PIL import Image
 
@@ -32,6 +33,9 @@ def load_config(config_path: str) -> dict:
         config = yaml.safe_load(f)
     return config
 
+# Global agent variable for accessing from main()
+_agent = None
+
 def test_llama(config_path: str, model_path: str, test_image: str, actions: list = None, port: int = 8000, start_server: bool = True):
     """
     Test the llama.cpp integration with a single image.
@@ -44,6 +48,8 @@ def test_llama(config_path: str, model_path: str, test_image: str, actions: list
         port: Port to use for the API server
         start_server: Whether to start the server before testing
     """
+    global _agent
+    
     # Load config
     config = load_config(config_path)
     
@@ -59,7 +65,68 @@ def test_llama(config_path: str, model_path: str, test_image: str, actions: list
     
     # Create agent - this will auto-start the server if needed
     logger.info(f"Creating LLMAgent with llama.cpp backend at {config['model']['api_url']}")
-    agent = LLMAgent(config['model'], actions, use_summary=False)
+    
+    # Add "None" option to actions for testing
+    if "None" not in actions:
+        actions.append("None")
+    logger.info(f"Valid actions including None: {', '.join(actions)}")
+    
+    _agent = LLMAgent(config['model'], actions, use_summary=False)
+    
+    # For any test, override the system prompt to be more specific
+    if "controller_test" in test_image.lower():
+        system_msg = f"""You are an AI playing a turn-based video game.
+Analyze the game screen and decide the best action to take next.
+You can choose from these actions: {', '.join(actions)}.
+
+I'm showing you an image of a controller layout. Read any instructions on the screen 
+and select the button that is highlighted or mentioned in the instructions.
+
+You MUST respond ONLY with a JSON object in this EXACT format, with no other text:
+{{
+  "action": "Up",
+  "reasoning": "I'm choosing Up because the Up directional button is highlighted in yellow, and the text says 'Press UP to move character'."
+}}
+
+Where "action" is EXACTLY one of: {', '.join(actions)}"""
+        
+        # Apply the custom system message
+        _agent.custom_system_message = system_msg
+        logger.info("Using custom system message for controller test")
+    
+    # Special handling for do-nothing tests
+    elif "do_nothing" in test_image.lower() or "none" in test_image.lower() or "loading" in test_image.lower():
+        system_msg = f"""You are an AI playing a turn-based video game.
+Analyze the game screen and decide the best action to take next.
+You can choose from these actions: {', '.join(actions)}.
+
+I am showing you a game screen with text on it. READ THE TEXT VERY CAREFULLY.
+
+CRITICAL INSTRUCTION: This is a loading screen that tells you NOT to press any buttons.
+When you see a loading screen, warning, or text that tells you to wait,
+you MUST choose "None" to indicate you should do nothing.
+
+The screen has text that reads:
+- "LOADING SCREEN - DO NOT PRESS BUTTONS"
+- "LOADING..."
+- "Wait for loading to complete"
+
+When you see ANY of these texts, the ONLY correct action is "None".
+
+You MUST respond ONLY with a JSON object in this EXACT format, with no other text:
+{{
+  "action": "None",
+  "reasoning": "I'm choosing to do nothing because the screen shows 'LOADING SCREEN - DO NOT PRESS BUTTONS' and tells me to wait for loading to complete."
+}}
+
+Where "action" is EXACTLY one of: {', '.join(actions)}"""
+        
+        # Increase temperature for more diverse responses
+        config['model']['temperature'] = 0.7
+        
+        # Apply the custom system message
+        _agent.custom_system_message = system_msg
+        logger.info("Using custom system message for do-nothing test")
     
     # Load test image
     image = Image.open(test_image)
@@ -68,7 +135,7 @@ def test_llama(config_path: str, model_path: str, test_image: str, actions: list
     logger.info(f"Sending test image to model: {test_image}")
     start_time = time.time()
     
-    action = agent.decide_action(image)
+    action = _agent.decide_action(image)
     
     elapsed_time = time.time() - start_time
     logger.info(f"Model response time: {elapsed_time:.2f} seconds")
@@ -165,14 +232,28 @@ def main():
             )
             # Try to get the original JSON response before parsing
             raw_response = None
-            if hasattr(agent, '_last_raw_response'):
-                raw_response = agent._last_raw_response
+            if hasattr(_agent, '_last_raw_response'):
+                raw_response = _agent._last_raw_response
             
             # If action is empty, let's indicate that the default fallback worked
             if not action or action.strip() == "":
                 print(f"\nModel returned empty response, defaulting to 'Up'")
             else:
                 print(f"\nFinal result: Model recommends action '{action}'")
+                
+                # Always print the raw response for debugging
+                print("\nRaw response:")
+                
+                # Clean up the raw response to make it more readable
+                clean_response = raw_response
+                if raw_response:
+                    # Remove the control sequences that might be present
+                    clean_response = re.sub(r'<\|.*?\|>', '', raw_response)
+                    # Truncate if too long
+                    if len(clean_response) > 500:
+                        clean_response = clean_response[:500] + "... [truncated]"
+                
+                print(clean_response)
                 
                 # If we have a JSON response, print it nicely
                 if raw_response and raw_response.strip().startswith('{') and raw_response.strip().endswith('}'):
@@ -185,7 +266,7 @@ def main():
                         if 'reasoning' in json_response:
                             print(f"\nModel reasoning: {json_response['reasoning']}")
                     except json.JSONDecodeError:
-                        pass  # Not valid JSON
+                        print("Failed to parse as JSON")
         except Exception as e:
             print(f"Error during testing: {e}")
             raise

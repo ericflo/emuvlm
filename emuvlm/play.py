@@ -239,9 +239,10 @@ def main():
     # Initialize LLM agent
     use_summary = args.summary.lower() == 'on'
     
-    # Update model config for caching
+    # Update model config for caching and enable autostart
     model_config = config.get('model', {}).copy()
     model_config['enable_cache'] = args.cache.lower() == 'on'
+    model_config['autostart_server'] = True
     
     agent = LLMAgent(
         model_config=model_config,
@@ -290,6 +291,7 @@ def main():
             # Parse action and execute
             action = agent.parse_action(action_text)
             if action:
+                # A valid action was chosen
                 logger.info(f"Executing: {action}")
                 emulator.send_input(action)
                 
@@ -302,7 +304,21 @@ def main():
                 if save_frames:
                     after_frame = emulator.get_frame()
                     save_frame(after_frame, session_frames_dir, turn_count, f"after_{action}")
+            elif action is None:
+                # Model explicitly chose to do nothing
+                logger.info("Model chose to do nothing this turn")
+                
+                # Still wait a short delay to allow the game to progress
+                delay = game_config.get('action_delay', 0.5) / 2  # Half the normal delay
+                logger.debug(f"Waiting {delay:.2f}s with no action")
+                time.sleep(delay)
+                
+                # Save the frame after the delay if enabled
+                if save_frames:
+                    after_frame = emulator.get_frame()
+                    save_frame(after_frame, session_frames_dir, turn_count, "after_none")
             else:
+                # Could not parse a valid action
                 logger.warning(f"Could not parse action: {action_text}")
             
             # Increment turn counter

@@ -49,6 +49,9 @@ class LLMAgent:
         self.valid_actions = valid_actions
         self.use_summary = use_summary
         
+        # For custom system message in testing
+        self.custom_system_message = None
+        
         # Determine backend type
         self.backend = model_config.get('backend', 'auto')
         if self.backend == 'auto':
@@ -278,9 +281,8 @@ class LLMAgent:
                     # Handle "None" action specifically
                     elif chosen_action == "None":
                         logger.info("Agent chose to do nothing (None action)")
-                        # Default to a "do nothing" action based on game context
-                        # For most games, pressing "B" or doing nothing is a safe default
-                        return "B" if "B" in self.valid_actions else self.valid_actions[0]
+                        # Return None to indicate no action should be taken
+                        return None
                     
                     # Log the reasoning if available
                     if 'reasoning' in response_json:
@@ -391,10 +393,65 @@ class LLMAgent:
             "additionalProperties": False
         }
         
-        system_message = f"""You are an AI playing a turn-based video game.
+        if self.backend == 'llama.cpp':
+            # Check if we have a custom system message (for testing)
+            if self.custom_system_message:
+                system_message = self.custom_system_message
+            else:
+                # Enhanced detailed instructions with more examples for llama.cpp
+                system_message = f"""You are an AI playing a turn-based video game.
 Analyze the game screen and decide the best action to take next.
-You can only choose from these actions: {action_list}, or "None" to do nothing.
-Provide your reasoning and chosen action in JSON format."""
+You can choose from these actions: {action_list}, or choose "None" to do nothing.
+
+IMPORTANT INSTRUCTION ABOUT "NONE":
+- If you see a loading screen, choose "None"
+- If text tells you to wait or not press buttons, choose "None"
+- If the game is processing something and no input is needed, choose "None"
+- Only press buttons when it's clearly required by the game state
+
+EXAMPLES:
+1. If you see a battle menu with options, choose an appropriate button ("A" to select, etc.)
+2. If you see a character that needs to move, choose a direction ("Up", "Down", etc.)
+3. If you see text saying "Loading..." or "Please wait", choose "None"
+4. If you see a warning saying "Do not press buttons", choose "None"
+
+You MUST respond ONLY with a JSON object in this EXACT format, with no other text:
+{{
+  "action": "A",
+  "reasoning": "I'm pressing A to select an attack in this Pokemon battle. The screen shows that I'm in a battle and need to choose an action."
+}}
+
+or
+
+{{
+  "action": "None",
+  "reasoning": "I'm choosing to do nothing because the screen shows a loading message and indicates I should wait."
+}}
+
+Where "action" is EXACTLY one of: {', '.join(self.valid_actions + ['None'])}"""
+        else:
+            # For vLLM, the json_schema enforces the format, but we still improve the instructions
+            system_message = f"""You are an AI playing a turn-based video game.
+Analyze the game screen and decide the best action to take next.
+You can choose from these actions: {action_list}, or choose "None" to do nothing.
+
+IMPORTANT INSTRUCTION ABOUT "NONE":
+- If you see a loading screen, choose "None"
+- If text tells you to wait or not press buttons, choose "None"
+- If the game is processing something and no input is needed, choose "None"
+- Only press buttons when it's clearly required by the game state
+
+EXAMPLES:
+1. If you see a battle menu with options, choose an appropriate button ("A" to select, etc.)
+2. If you see a character that needs to move, choose a direction ("Up", "Down", etc.) 
+3. If you see text saying "Loading..." or "Please wait", choose "None"
+4. If you see a warning saying "Do not press buttons", choose "None"
+
+You MUST respond with a JSON object containing exactly two fields:
+- 'action': EXACTLY one of: {', '.join(self.valid_actions + ['None'])}
+- 'reasoning': A brief explanation of your choice
+
+Your response will be automatically validated against a JSON schema."""
         
         # Include summary if enabled and available
         if self.use_summary and self.summary:
@@ -432,12 +489,21 @@ Provide your reasoning and chosen action in JSON format."""
             "messages": messages,
             "max_tokens": self.model_config.get('max_tokens', 200),  # Increased for JSON response
             "temperature": self.model_config.get('temperature', 0.2),  # Lower temperature for more focused responses
-            "stream": False,
-            "response_format": {
+            "stream": False
+        }
+        
+        # Add appropriate response format based on backend
+        if self.backend == 'llama.cpp':
+            # llama.cpp uses json_object type format
+            params["response_format"] = {
+                "type": "json_object"
+            }
+        else:
+            # vLLM uses json_schema type format
+            params["response_format"] = {
                 "type": "json_schema",
                 "schema": json_schema
             }
-        }
         
         return params
     
@@ -454,15 +520,16 @@ Provide your reasoning and chosen action in JSON format."""
         try:
             start_time = time.time()
             
-            # Check if backend supports JSON schema responses
-            supports_json_schema = True
-            # Some older versions of llama.cpp may not support JSON schema
-            if self.backend == 'llama.cpp' and self.model_config.get('json_schema_support', True) is False:
+            # Check if backend supports JSON response format
+            supports_json_response = True
+            
+            # Some older versions may not support response_format at all
+            if self.model_config.get('json_schema_support', True) is False:
                 # Remove the response_format from the prompt if not supported
                 if 'response_format' in prompt:
-                    logger.warning("JSON schema not supported by this backend, removing response_format")
+                    logger.warning("JSON response format not supported by this backend, removing response_format")
                     prompt.pop('response_format')
-                    supports_json_schema = False
+                    supports_json_response = False
             
             # Both backends (vLLM and llama.cpp) provide OpenAI-compatible API
             logger.debug(f"Sending request to {self.backend} backend at {self.api_url}")
@@ -495,31 +562,97 @@ Provide your reasoning and chosen action in JSON format."""
                 # Store the raw response for debugging and testing
                 self._last_raw_response = text_response
                 
-                # Check for JSON format response (if we're using JSON schema)
-                if supports_json_schema:
+                # Check for JSON format response (if we're using JSON response format)
+                if supports_json_response:
                     try:
-                        # If the response is already in JSON format, return it as-is
-                        if text_response.strip().startswith('{') and text_response.strip().endswith('}'):
-                            json_data = json.loads(text_response)
+                        # If the response starts with { it's likely a JSON 
+                        if text_response.strip().startswith('{'): 
+                            # Sometimes the model generates invalid JSON with extra tokens at the end
+                            # Find the last valid closing brace
+                            json_str = text_response.strip()
+                            
+                            # First try: Look for a complete JSON object
+                            try:
+                                # Try to find a valid JSON object by looking for matching brackets
+                                brace_count = 0
+                                for i, char in enumerate(json_str):
+                                    if char == '{':
+                                        brace_count += 1
+                                    elif char == '}':
+                                        brace_count -= 1
+                                        if brace_count == 0:
+                                            # We found a complete JSON object
+                                            json_str = json_str[:i+1]
+                                            break
+                                        
+                                # Now try to parse the cleaned JSON
+                                json_data = json.loads(json_str)
+                            except json.JSONDecodeError:
+                                # Second try: Look for a partial JSON with just the action key
+                                logger.warning("Failed first JSON parse attempt, trying to extract partial JSON")
+                                # Try to directly extract an action field 
+                                full_text = json_str
+                                
+                                # Try to find the action field
+                                action_match = re.search(r'"action"\s*:\s*"([^"]+)"', full_text, re.IGNORECASE)
+                                if not action_match:
+                                    # Also try with single quotes
+                                    action_match = re.search(r'"action"\s*:\s*\'([^\']+)\'', full_text, re.IGNORECASE)
+                                
+                                if not action_match:
+                                    # Try capitalized version
+                                    action_match = re.search(r'"Action"\s*:\s*"([^"]+)"', full_text, re.IGNORECASE)
+                                
+                                # Direct check for action terms
+                                if not action_match:
+                                    # Look for any of our valid actions surrounded by quotes
+                                    actions_pattern = '|'.join(self.valid_actions + ['None'])
+                                    direct_action = re.search(rf'"({actions_pattern})"', full_text)
+                                    if direct_action:
+                                        action_val = direct_action.group(1)
+                                        logger.info(f"Found direct action mention: {action_val}")
+                                        json_data = {"action": action_val}
+                                    else:
+                                        # If we can't find an action, re-raise to fall back to text parsing
+                                        raise
+                                else:
+                                    action_val = action_match.group(1)
+                                    logger.info(f"Extracted action from partial JSON: {action_val}")
+                                    # Create a minimal valid JSON
+                                    json_data = {"action": action_val}
                             
                             # Validate that the JSON response has the action field
                             if 'action' in json_data:
                                 chosen_action = json_data['action']
+                            elif 'Action' in json_data:  # Try different capitalization
+                                chosen_action = json_data['Action']
+                            else:
+                                # Try finding something that looks like an action, allowing for the most flexibility
+                                for key, value in json_data.items():
+                                    if (isinstance(value, str) and 
+                                        (value in self.valid_actions or value == "None")):
+                                        logger.info(f"Found action key '{key}' with valid value: {value}")
+                                        chosen_action = value
+                                        break
+                                else:
+                                    chosen_action = None
                                 
-                                # If it's a valid action, return it directly
-                                if chosen_action in self.valid_actions:
-                                    logger.info(f"Valid JSON action response: {chosen_action}")
-                                    
-                                    # Log reasoning if available
-                                    if 'reasoning' in json_data:
-                                        logger.debug(f"Agent reasoning: {json_data['reasoning']}")
-                                    
-                                    return chosen_action
+                            # If it's a valid action, return it directly
+                            if chosen_action in self.valid_actions:
+                                logger.info(f"Valid JSON action response: {chosen_action}")
                                 
-                                # If it's "None", default to B or the first valid action
-                                elif chosen_action == "None":
-                                    logger.info("Agent chose to do nothing ('None' action)")
-                                    return text_response  # Return the full JSON for parse_action to handle
+                                # Log reasoning if available
+                                if 'reasoning' in json_data:
+                                    logger.debug(f"Agent reasoning: {json_data['reasoning']}")
+                                elif 'Reasoning' in json_data:
+                                    logger.debug(f"Agent reasoning: {json_data['Reasoning']}")
+                                
+                                return chosen_action
+                            
+                            # If it's "None", return None to indicate no action
+                            elif chosen_action == "None":
+                                logger.info("Agent chose to do nothing ('None' action)")
+                                return None  # Return None to indicate no action
                             
                             # Return the full JSON string for further parsing
                             return text_response
