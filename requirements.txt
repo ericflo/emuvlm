@@ -4,3 +4,4 @@ pillow>=9.0.0
 pyyaml>=6.0
 transformers>=4.30.0
 qwen-vl-utils[decord]>=0.0.8
+-e .

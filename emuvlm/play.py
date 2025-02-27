@@ -13,9 +13,9 @@ import shutil
 from pathlib import Path
 from PIL import Image
 
-from emulators.pyboy_emulator import PyBoyEmulator
-from emulators.mgba_emulator import MGBAEmulator
-from model.agent import LLMAgent
+from emuvlm.emulators.pyboy_emulator import PyBoyEmulator
+from emuvlm.emulators.mgba_emulator import MGBAEmulator
+from emuvlm.model.agent import LLMAgent
 
 # Initialize basic logging
 logging.basicConfig(

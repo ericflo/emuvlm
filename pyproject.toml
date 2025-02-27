@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "emuvlm"
+version = "0.1.0"
+description = "LLM-powered turn-based game player using vision-language models"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "EmuVLM Contributors"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Games/Entertainment",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "pyboy>=2.6.0",
+    "requests>=2.28.0",
+    "pillow>=9.0.0",
+    "pyyaml>=6.0",
+    "transformers>=4.30.0",
+    "qwen-vl-utils[decord]>=0.0.8",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "isort",
+    "pytest",
+]
+
+[project.scripts]
+emuvlm = "emuvlm.cli:main"
+emuvlm-demo = "emuvlm.cli:demo"
+emuvlm-monitor = "emuvlm.cli:monitor"
+emuvlm-test-emulators = "emuvlm.cli:test_emulators"
+emuvlm-test-model = "emuvlm.cli:test_model"
+emuvlm-vllm-server = "emuvlm.cli:start_vllm_server"
+
+[tool.setuptools.packages.find]
+include = ["emuvlm*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py38"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
