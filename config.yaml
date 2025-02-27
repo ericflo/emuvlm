@@ -6,21 +6,49 @@ model:
   summary_interval: 10              # Generate summary every X turns when summary feature is enabled
   max_tokens: 100                   # Max tokens to generate for action decision
   temperature: 0.2                  # Lower temperature for more focused responses
+  
+  # Frame caching configuration
+  enable_cache: true                # Enable frame caching to reduce API calls
+  cache_dir: "cache"                # Directory to store cached frames
+  similarity_threshold: 0.95        # Threshold for considering frames similar (0-1)
+
+# Logging configuration
+logging:
+  level: "INFO"                     # Logging level (DEBUG, INFO, WARNING, ERROR)
+  save_frames: true                 # Save frames to disk for debugging
+  frames_dir: "logs/frames"         # Directory to save frames
+  log_file: "logs/emuvlm.log"       # Log file path
 
 # Game configurations
 games:
-  # Example Game Boy / Game Boy Color game configuration
+  # Game Boy / Game Boy Color game configuration
   pokemon_red:
     rom: "/path/to/PokemonRed.gb"   # Replace with actual path to your ROM
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.5               # Seconds to wait after each action
+    # Game-specific timing configurations
+    timing:
+      menu_nav_delay: 0.3           # Faster delay for menu navigation
+      battle_anim_delay: 1.5        # Longer delay for battle animations
+      text_scroll_delay: 0.8        # Medium delay for text scrolling
 
-  # Example Game Boy Advance game configuration  
+  # Game Boy Advance game configuration  
   pokemon_emerald:
     rom: "/path/to/PokemonEmerald.gba"  # Replace with actual path to your ROM
     emulator: "mgba"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "L", "R", "Start", "Select"]
     action_delay: 1.0               # Seconds to wait after each action
+    # Game-specific timing configurations
+    timing:
+      menu_nav_delay: 0.5           # Delay for menu navigation
+      battle_anim_delay: 2.0        # Longer delay for battle animations
+      text_scroll_delay: 1.0        # Delay for text scrolling
 
   # Add more games as needed
+
+# Session configuration
+sessions:
+  enable_save: true                 # Enable session saving/loading
+  save_dir: "sessions"              # Directory to store session data
+  auto_save_interval: 50            # Auto-save session every X turns

@@ -19,30 +19,41 @@
 - [x] Implement monitoring GUI for visualizing gameplay (monitor_game.py)
 - [x] Add VLM server startup script (start_vllm_server.sh)
 
+### Enhanced Features
+- [x] Implement frame caching for common game screens
+- [x] Add save/load functionality for game sessions
+- [x] Optimize timing parameters for menu navigation vs. battle animations
+- [x] Create logs directory structure for better debugging
+- [x] Add detailed logging for model inputs and outputs
+- [x] Implement gameplay frame recording for debugging
+
 ### Documentation
 - [x] Create comprehensive README with usage instructions
 - [x] Maintain PLAN.md with detailed design and implementation notes
 - [x] Update TODO.md with current status and next steps
 
-## 🔄 Next Tasks
+## 🔄 Current Priority Tasks
 
 ### Testing & Refinement
-- [ ] Test with multiple real game ROMs
-- [ ] Refine model prompts for more accurate action decisions
-- [ ] Optimize timing parameters for different game types
-- [ ] Improve error handling for unexpected model outputs
+- [ ] Test with real Pokémon Red and Emerald ROMs
+- [ ] Refine model prompts for more accurate action decisions in battle sequences
+- [ ] Tune similarity threshold for frame cache to optimize hit rate
+- [ ] Test session save/load functionality
+- [ ] Analyze frame cache performance and optimize storage
 
 ### Enhanced Features
-- [ ] Add frame caching for repetitive game screens
-- [ ] Implement save/load functionality for game sessions
-- [ ] Create more sophisticated game state tracking
-- [ ] Develop better visualization for model decision-making
+- [ ] Create detection for text boxes and menus for better timing
+- [ ] Develop visualization dashboard for model decision-making
+- [ ] Add gameplay video export functionality from saved frames
+- [ ] Implement smart retry for failed model actions
+- [ ] Add support for game-specific prompt templates
 
 ### Extensibility
-- [ ] Add support for NES/SNES via RetroArch
-- [ ] Create plugin system for easier emulator additions
-- [ ] Support additional VLMs besides Qwen2.5-VL
-- [ ] Build web interface for configuration and monitoring
+- [ ] Add support for NES/SNES via RetroArch connector
+- [ ] Create plugin architecture for easier emulator integration
+- [ ] Add support for Claude 3 Sonnet as alternative VLM
+- [ ] Design config generator tool for easier game setup
+- [ ] Create launcher script with ROM browser UI
 
 ## 🔮 Future Ideas
 - [ ] Training data collection system for fine-tuning models
@@ -50,3 +61,8 @@
 - [ ] Multi-modal prompting with audio input from games
 - [ ] Advanced OCR integration for better text understanding
 - [ ] Comparative benchmarking system for different VLMs
+- [ ] Memory map integration for more reliable game state tracking
+- [ ] Reinforcement learning mode to improve model performance
+- [ ] Auto-discovery of valid game actions through experimentation
+- [ ] Distributed frame processing system for faster response times
+- [ ] Web interface for remote monitoring and control

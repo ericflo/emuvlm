@@ -7,8 +7,11 @@ import logging
 import re
 import requests
 import time
-from PIL import Image
-from typing import Dict, List, Optional, Any, Union
+import hashlib
+import os
+from pathlib import Path
+from PIL import Image, ImageChops
+from typing import Dict, List, Optional, Any, Union, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +42,22 @@ class LLMAgent:
         self.summary_interval = model_config.get('summary_interval', 10)  # Summarize every X turns
         self.turn_count = 0
         
+        # For frame caching
+        self.enable_cache = model_config.get('enable_cache', True)
+        self.cache_dir = Path(model_config.get('cache_dir', 'cache'))
+        self.frame_cache = {}  # Map from frame hash to (action, confidence)
+        self.similarity_threshold = model_config.get('similarity_threshold', 0.95)
+        self.last_frame = None
+        self.last_frame_hash = None
+        
+        # Create cache directory if it doesn't exist
+        if self.enable_cache and not self.cache_dir.exists():
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+            logger.info(f"Created cache directory: {self.cache_dir}")
+        
         logger.info(f"LLM Agent initialized with {len(valid_actions)} possible actions")
         logger.info(f"Summary feature is {'enabled' if use_summary else 'disabled'}")
+        logger.info(f"Frame caching is {'enabled' if self.enable_cache else 'disabled'}")
     
     def decide_action(self, frame: Image.Image) -> str:
         """
@@ -52,6 +69,33 @@ class LLMAgent:
         Returns:
             str: The agent's decision as text
         """
+        # Check cache first if enabled
+        if self.enable_cache:
+            # Check if this frame is very similar to the last one
+            if self.last_frame is not None:
+                similarity = self._calculate_frame_similarity(frame, self.last_frame)
+                if similarity > self.similarity_threshold:
+                    logger.info(f"Frame is similar to previous frame (similarity: {similarity:.4f})")
+                    # If we have a cached action for the last frame, use it
+                    if self.last_frame_hash in self.frame_cache:
+                        cached_action = self.frame_cache[self.last_frame_hash]
+                        logger.info(f"Using cached action: {cached_action}")
+                        return cached_action
+            
+            # Calculate frame hash for caching
+            frame_hash = self._calculate_frame_hash(frame)
+            
+            # Save for next frame comparison
+            self.last_frame = frame.copy()
+            self.last_frame_hash = frame_hash
+            
+            # Check if we have this exact frame cached
+            if frame_hash in self.frame_cache:
+                cached_action = self.frame_cache[frame_hash]
+                logger.info(f"Cache hit for frame hash {frame_hash[:8]}... - Action: {cached_action}")
+                return cached_action
+        
+        # If we get here, we need to query the model
         # Prepare the image for the model
         image_data = self._prepare_image(frame)
         
@@ -64,6 +108,12 @@ class LLMAgent:
         # Update history if summary feature is enabled
         if self.use_summary:
             self._update_history(frame, response)
+        
+        # Cache the result if frame caching is enabled
+        if self.enable_cache and self.last_frame_hash is not None:
+            self.frame_cache[self.last_frame_hash] = response
+            # Save the frame to disk for future analysis if needed
+            self._save_frame_to_cache(frame, self.last_frame_hash, response)
             
         return response
     
@@ -170,8 +220,8 @@ Respond with just the name of the action (e.g., "A" or "Up") without explanation
         
         return {
             "messages": messages,
-            "max_tokens": 100,
-            "temperature": 0.2,  # Lower temperature for more focused responses
+            "max_tokens": self.model_config.get('max_tokens', 100),
+            "temperature": self.model_config.get('temperature', 0.2),  # Lower temperature for more focused responses
         }
     
     def _query_model(self, prompt: Dict[str, Any]) -> str:
@@ -185,6 +235,8 @@ Respond with just the name of the action (e.g., "A" or "Up") without explanation
             str: Model's text response
         """
         try:
+            start_time = time.time()
+            
             # Assuming vLLM API with OpenAI-compatible endpoint
             response = requests.post(
                 f"{self.api_url}/v1/chat/completions",
@@ -192,6 +244,9 @@ Respond with just the name of the action (e.g., "A" or "Up") without explanation
                 headers={"Content-Type": "application/json"},
                 timeout=30  # Models with vision can take longer
             )
+            
+            elapsed_time = time.time() - start_time
+            logger.info(f"Model API call took {elapsed_time:.2f} seconds")
             
             if response.status_code != 200:
                 logger.error(f"API error: {response.status_code} - {response.text}")
@@ -269,3 +324,87 @@ Respond with just the name of the action (e.g., "A" or "Up") without explanation
                 
         except requests.RequestException as e:
             logger.error(f"Summary request failed: {e}")
+    
+    def _calculate_frame_hash(self, frame: Image.Image) -> str:
+        """
+        Calculate a hash for a frame to use as a cache key.
+        
+        Args:
+            frame: The PIL Image to hash
+            
+        Returns:
+            str: Hexadecimal hash string
+        """
+        # Convert to bytes
+        buffered = io.BytesIO()
+        # Use a lower quality JPEG to ignore minor pixel differences
+        frame.save(buffered, format="JPEG", quality=90)
+        img_bytes = buffered.getvalue()
+        
+        # Calculate hash
+        return hashlib.md5(img_bytes).hexdigest()
+    
+    def _calculate_frame_similarity(self, frame1: Image.Image, frame2: Image.Image) -> float:
+        """
+        Calculate similarity between two frames.
+        
+        Args:
+            frame1: First PIL Image
+            frame2: Second PIL Image
+            
+        Returns:
+            float: Similarity score between 0 and 1
+        """
+        # Ensure the frames are the same size
+        if frame1.size != frame2.size:
+            frame2 = frame2.resize(frame1.size)
+        
+        # Calculate difference
+        diff = ImageChops.difference(frame1.convert('RGB'), frame2.convert('RGB'))
+        
+        # Get statistics
+        stat = diff.convert('L').getdata()
+        diff_sum = sum(stat)
+        max_diff = 255 * len(stat)
+        
+        # Calculate similarity (inverted difference)
+        if max_diff == 0:
+            return 1.0
+        return 1.0 - (diff_sum / max_diff)
+    
+    def _save_frame_to_cache(self, frame: Image.Image, frame_hash: str, action: str) -> None:
+        """
+        Save a frame to the cache directory for later analysis.
+        
+        Args:
+            frame: The PIL Image to save
+            frame_hash: The frame's hash
+            action: The action that was chosen for this frame
+        """
+        if not self.enable_cache:
+            return
+            
+        # Only save a subset of frames to avoid filling up the disk
+        # Save 1 in every 10 frames, or if it's an important action
+        important_actions = ['A', 'Start', 'Select']
+        
+        should_save = (self.turn_count % 10 == 0) or any(a in action for a in important_actions)
+        
+        if should_save:
+            # Create a filename with the hash and action
+            short_hash = frame_hash[:8]  # First 8 characters is enough to identify
+            filename = f"{short_hash}_{action.replace(' ', '_')}.png"
+            filepath = self.cache_dir / filename
+            
+            # Save the frame
+            frame.save(filepath)
+            logger.debug(f"Saved frame to cache: {filepath}")
+    
+    def clear_cache(self) -> None:
+        """
+        Clear the frame cache.
+        """
+        self.frame_cache = {}
+        self.last_frame = None
+        self.last_frame_hash = None
+        logger.info("Frame cache cleared")

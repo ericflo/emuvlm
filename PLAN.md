@@ -133,10 +133,14 @@ We've completed the core implementation of the EMU-VLM system with the following
    - Added `start_vllm_server.sh` script to launch the vLLM server
    - Created `config.yaml` for game and model configuration
    - Added `requirements.txt` with all necessary dependencies
+   - Built `demo_game.py` for testing with predefined actions
+   - Developed `test_model.py` for prompt engineering experiments
+   - Implemented `monitor_game.py` with GUI for visualizing gameplay
 
 5. **Documentation:**
    - Updated `README.md` with installation and usage instructions
    - Maintained detailed design document in `PLAN.md`
+   - Created `TODO.md` to track project tasks and progress
 
 **Step 2: Set Up Qwen2.5-VL Model via vLLM**  
  2.1. Launch the vLLM server hosting Qwen2.5-VL-3B-Instruct. Confirm it’s accessible (e.g., via an API endpoint or local port). If using a Python-based approach instead, load the model with HuggingFace Transformers (ensuring Qwen2.5-VL is supported ([Qwen/Qwen2.5-VL-3B-Instruct · Hugging Face](https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct#:~:text=Requirements)) ([Qwen/Qwen2.5-VL-3B-Instruct · Hugging Face](https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct#:~:text=and%20Transformers)) and the `qwen-vl-utils` for image handling is installed ([Qwen/Qwen2.5-VL-3B-Instruct · Hugging Face](https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct#:~:text=We%20offer%20a%20toolkit%20to,it%20using%20the%20following%20command))).  
@@ -187,35 +191,68 @@ This loop runs until `game_over` is True. Determining game over can be game-spec
 
 By following this plan, we have successfully built a robust system where a Python AI agent can play turn-based games through emulators, using the Qwen2.5-VL model to interpret game screens and decide actions. The implementation emphasizes clarity (via modular code per emulator/game), stability (timing and error handling), and extensibility (easy to add new games or improve the prompt/summary logic).
 
-## 9. Next Steps and Improvements
+## 9. Advanced Features Implementation
 
-Now that we've completed the initial implementation, here are the next areas to focus on:
+We've enhanced the system with several advanced features that improve performance, reliability, and usability:
+
+### 1. Frame Caching System ✅
+We've implemented a sophisticated frame caching system to reduce redundant model calls:
+
+- **Image Hashing**: Using MD5 hashing of images to create unique identifiers for frames
+- **Similarity Detection**: Computing frame similarity to identify nearly identical screens
+- **Action Caching**: Storing model decisions for previously seen frames
+- **Configurable Thresholds**: Tunable similarity threshold to balance cache hit rate vs. accuracy
+- **Debug Snapshots**: Saving key frames to disk for analysis and debugging
+
+This system dramatically reduces API calls and improves response time, especially for repetitive game screens like menus or battle sequences.
+
+### 2. Session Management ✅
+We've added comprehensive session management capabilities:
+
+- **Save/Load System**: Ability to pause and resume games at any point
+- **Auto-save**: Configurable auto-save at regular intervals to prevent progress loss
+- **State Preservation**: Saving game state, turn count, and context summaries
+- **Session Recovery**: Seamless resumption of gameplay from saved points
+
+### 3. Dynamic Timing ✅
+We've implemented context-aware timing adjustments:
+
+- **Action-Specific Delays**: Different delays for different action types (navigation, battles, dialogue)
+- **Game-Specific Timing**: Custom timing configurations for each game
+- **Context Detection**: Determining appropriate delays based on game context
+
+### 4. Enhanced Logging ✅
+We've added comprehensive logging and debugging facilities:
+
+- **Structured Logs**: Organized logging with configurable levels
+- **Performance Metrics**: Tracking model API call times and cache performance
+- **Frame Capture**: Saving frames before and after actions for analysis
+- **Directory Structure**: Organized storage of logs, frames, and sessions
+
+## 10. Next Steps and Improvements
+
+After implementing these advanced features, here are the next areas to focus on:
 
 ### 1. Testing and Refinement
 - **Game Compatibility**: Test the system with more turn-based games to ensure broad compatibility
 - **Prompt Engineering**: Refine prompts to get more consistent and accurate actions from the LLM
-- **Error Handling**: Strengthen error handling, especially for unexpected model outputs
-- **Parameter Tuning**: Optimize timing parameters for different game types and scenarios
+- **Cache Optimization**: Fine-tune the similarity threshold for optimal cache performance
+- **Session Testing**: Verify session save/load functionality across various games
 
-### 2. Enhanced Features
-- **Advanced Game State Tracking**: Implement more sophisticated tracking for complex games
-- **Memory Management**: Optimize the history and summarization system to prevent context bloat
-- **Session Management**: Add ability to save and resume game sessions
-- **Visualization Tools**: Create tools for monitoring and visualizing AI gameplay decisions
+### 2. Additional Enhanced Features
+- **Text Box Detection**: Implement computer vision to detect text boxes and menus for better timing
+- **Visualization Dashboard**: Create a real-time dashboard for monitoring gameplay and decisions
+- **Video Export**: Add ability to generate gameplay videos from saved frame sequences
+- **Smart Retry**: Implement intelligent retry logic for failed model actions
+- **Game-Specific Prompts**: Create tailored prompts for different game types and contexts
 
 ### 3. Extensibility
 - **Additional Emulators**: Extend support to more emulators like NES/SNES via RetroArch
 - **Plugin Architecture**: Create a plugin system for easier addition of new emulators
-- **Configuration Interface**: Develop a user-friendly UI for configuring games and model settings
-- **AI Models**: Support additional VLMs beyond Qwen2.5-VL for comparison and optimization
+- **Alternative VLMs**: Add support for Claude 3 Sonnet and other vision-language models
+- **Configuration Tools**: Develop user-friendly tools for game and system configuration
 
-### 4. Performance Optimization
-- **Frame Processing**: Profile and optimize the frame capture and model inference pipeline
-- **Caching**: Implement caching for repetitive game screens to reduce redundant processing
-- **Resolution Control**: Add options for lower resolution frames to reduce processing time
-- **Batch Processing**: Explore batch processing for smoother gameplay experience
-
-### 5. Community Engagement
+### 4. Community Engagement
 - **Example Games**: Create detailed examples and tutorials for popular turn-based games
 - **Documentation**: Expand documentation for contributors and users
 - **Demonstrations**: Add demo videos and screenshots to showcase the system in action
