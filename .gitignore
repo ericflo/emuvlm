@@ -21,6 +21,12 @@ logs/
 output/
 *.log
 
+# Model files
+models/
+*.gguf
+*.ggml
+*.bin
+
 # OS specific files
 .DS_Store
 Thumbs.db
