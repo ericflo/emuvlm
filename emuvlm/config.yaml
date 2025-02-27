@@ -3,7 +3,7 @@
 # Model configuration
 model:
   # Common settings
-  api_url: "http://localhost:8000"  # API server URL for both backends
+  api_url: "http://127.0.0.1:8000"  # API server URL for both backends
   backend: "auto"                   # "auto", "vllm", or "llama.cpp"
   summary_interval: 10              # Generate summary every X turns when summary feature is enabled
   max_tokens: 200                   # Max tokens to generate for action decision (increased for JSON responses)

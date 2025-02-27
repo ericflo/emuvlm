@@ -79,7 +79,7 @@ def main():
     parser = argparse.ArgumentParser(description='Test the LLM agent')
     parser.add_argument('--image', type=str, required=True, help='Path to the test image file')
     parser.add_argument('--api-url', type=str, default='http://localhost:8000', help='URL of the model API')
-    parser.add_argument('--output', type=str, default='test_output/model_test_results.json', help='Path to save results')
+    parser.add_argument('--output', type=str, default='output/test_output/model_test_results.json', help='Path to save results')
     args = parser.parse_args()
     
     # Validate image file

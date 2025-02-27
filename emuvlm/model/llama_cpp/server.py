@@ -119,9 +119,7 @@ def start_server(
         "--n_gpu_layers", str(n_gpu_layers),
         "--n_ctx", str(n_ctx),
         "--n_batch", str(n_batch),
-        "--chat_format", "chatml",
-        "--temperature", str(temperature),
-        "--top_p", str(top_p)
+        "--chat_format", "chatml"
     ]
     
     # Add multimodal support for LLaVA models
@@ -129,12 +127,13 @@ def start_server(
         try:
             mmproj_path = download_mmproj_file()
             logger.info(f"Using multimodal projector: {mmproj_path}")
-            cmd.extend(["--mmproj", mmproj_path])
+            # Use a new parameter name that the server script supports
+            cmd.extend(["--clip_model_path", mmproj_path])
         except Exception as e:
             logger.error(f"Failed to set up multimodal support: {e}")
     
     if verbose:
-        cmd.append("--verbose")
+        cmd.extend(["--verbose", "1"])
     
     logger.info(f"Starting llama.cpp server with command: {' '.join(cmd)}")
     
