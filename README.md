@@ -568,5 +568,98 @@ MIT License
 - [llama.cpp](https://github.com/ggerganov/llama.cpp) - Efficient LLM inference
 - [LLaVA](https://github.com/haotian-liu/LLaVA) - Large language and vision assistant
 
+## Game-Specific Enhancements
+
+EmuVLM now uses a configuration-driven approach to provide specialized AI behaviors for different game genres.
+
+### Configuration-Driven Game Agents
+
+Instead of hardcoding game-specific logic, we use configuration files to define game behaviors:
+
+```yaml
+# In your game config file:
+game_type: "pokemon"  # Specifies the game type
+prompt_additions:
+  - "This is Pokemon Blue for Game Boy, a classic RPG."
+  - "Use A to interact and confirm, B to cancel."
+  - "During battles, select FIGHT to use moves against opponents."
+settings:
+  detect_loading_screens: true  # Enable loading screen detection
+```
+
+Supported game types include:
+- `pokemon` - For Pokemon games (GB, GBC, GBA)
+- `zelda` - For Legend of Zelda games
+- Additional types can be added as needed
+
+### Pokemon-Specific Improvements
+
+We've enhanced EmuVLM to better handle Pokemon gameplay:
+
+1. **Automatic Loading Screen Detection**
+   - Detects loading screens based on image statistics
+   - Chooses "None" action automatically without model query
+   - Prevents unnecessary actions during transitions
+
+2. **Pokemon-Specific Knowledge**
+   - Battle mechanics (FIGHT, PKMN, ITEM, RUN)
+   - Dialog handling (wait for text to finish)
+   - Menu navigation patterns
+
+3. **Intelligent "None" Action Handling**
+   - Improved waiting during text scrolling
+   - Better handling of battle animations
+   - Specialized delay timing for Pokemon gameplay
+
+### Zelda-Specific Improvements
+
+For action-adventure games like Zelda:
+
+1. **Enhanced Loading Screen Detection**
+   - Grid-based screen section analysis for complex transitions
+   - Black screen detection for area transitions
+   - Tracking of consecutive blank frames
+
+2. **Zelda-Specific Prompting**
+   - Instructions for sword combat using A button
+   - Guidance for NPC interactions and chest opening
+   - Examples of common Zelda gameplay scenarios
+
+3. **Anti-Stalling Mechanisms**
+   - Consecutive action tracking
+   - Fallback actions when the system gets stuck
+   - Customizable thresholds for different game types
+
+## macOS Compatibility
+
+EmuVLM supports two VLM backends:
+
+1. **vLLM with Qwen2.5-VL-3B (Linux)**: The original implementation which requires CUDA.
+2. **llama.cpp with LLaVA (macOS, Windows, Linux)**: Implementation that works on any platform, ideal for macOS.
+
+The system automatically selects the appropriate backend based on your platform.
+
+### Using on macOS
+
+1. Install with macOS dependencies:
+   ```bash
+   pip install -e ".[macos]"
+   ```
+
+2. Download the recommended LLaVA model:
+   ```bash
+   emuvlm-download-model
+   ```
+
+3. Start the server:
+   ```bash
+   emuvlm-llama-server
+   ```
+
+4. Play games:
+   ```bash
+   emuvlm --game pokemon_blue
+   ```
+
 For more details on implementation and design decisions, see `PLAN.md`.
 For current development status and upcoming features, see `TODO.md`.
