@@ -244,6 +244,16 @@ def main():
     model_config['enable_cache'] = args.cache.lower() == 'on'
     model_config['autostart_server'] = True
     
+    # Pass game-specific properties to model config
+    if 'game_type' in game_config:
+        model_config['game_type'] = game_config['game_type']
+        logger.info(f"Using game-specific instructions for game type: {game_config['game_type']}")
+        
+    # Add prompt additions from game config
+    if 'prompt_additions' in game_config:
+        model_config['prompt_additions'] = game_config['prompt_additions']
+        logger.info(f"Added {len(game_config['prompt_additions'])} game-specific prompt additions")
+    
     agent = LLMAgent(
         model_config=model_config,
         valid_actions=game_config['actions'],

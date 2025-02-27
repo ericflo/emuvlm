@@ -1,0 +1,34 @@
+# Pokemon Blue Updated Configuration with Game-Specific Instructions
+# This is an improved version with better prompting and game-specific guidance
+
+# Game configuration
+rom: "/Users/ericflo/Development/emuvlm/roms/gb/Pokemon - Blue Version (UE) [S][T+Por1.2_CBT].gb"
+emulator: "pyboy"
+actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
+action_delay: 0.5               # Seconds to wait after each action
+
+# Game type identification for context-aware prompting
+game_type: "pokemon"            # Set game type to identify it as Pokemon
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3           # Faster delay for menu navigation
+  battle_anim_delay: 1.5        # Longer delay for battle animations
+  text_scroll_delay: 0.8        # Medium delay for text scrolling
+  overworld_movement_delay: 0.4  # Delay for moving in the overworld
+
+# Game-specific settings
+settings:
+  fast_text: true               # Set to true to speed up text display
+  battle_animations: true       # Set to false to disable battle animations
+  save_states_enabled: true     # Enable save states for quick save/load
+  detect_loading_screens: true  # Use automatic loading screen detection
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Pokemon Blue for Game Boy, a classic RPG where you catch and train Pokemon."
+  - "Your main goal is to defeat all 8 gym leaders and become the champion."
+  - "Use A to interact and confirm, B to cancel and run, and directional buttons to move."
+  - "During battle sequences, select 'FIGHT' to use moves against opponent Pokemon."
+  - "If text is still being typed on screen, do NOT press any buttons (use 'None' action)."
+  - "In dialog screens, press A to advance text once it's fully displayed."

@@ -177,8 +177,9 @@ class LLMAgent:
         Returns:
             str: The agent's decision as text, or None for no action
         """
-        # First check if this is a loading screen - if so, return None immediately
-        if self._is_loading_screen(frame):
+        # Check if loading screen detection is enabled and this is a loading screen
+        detect_loading = self.model_config.get('detect_loading_screens', False)
+        if detect_loading and self._is_loading_screen(frame):
             logger.info("Loading screen detected - choosing not to act")
             return None
             
@@ -212,11 +213,11 @@ class LLMAgent:
         # Prepare the image for the model
         image_data = self._prepare_image(frame)
         
-        # Detect if this is a Pokémon game from visual cues
-        is_pokemon = self._detect_pokemon_game(frame)
+        # Get the game type from config for game-specific prompts
+        game_type = self._get_game_type()
         
         # Construct the prompt with context-specific enhancements
-        prompt = self._construct_prompt(image_data, is_pokemon=is_pokemon)
+        prompt = self._construct_prompt(image_data, game_type=game_type)
         
         # Query the model
         response = self._query_model(prompt)
@@ -262,35 +263,16 @@ class LLMAgent:
             
         return valid_action
         
-    def _detect_pokemon_game(self, frame: Image.Image) -> bool:
+    def _get_game_type(self) -> str:
         """
-        Attempt to detect if this is a Pokémon game based on visual cues.
+        Get the current game type from the model config.
+        This is used to load appropriate game-specific prompts.
         
-        Args:
-            frame: The PIL Image to analyze
-            
         Returns:
-            bool: True if the frame appears to be from a Pokémon game
+            str: The game type ID (e.g., "pokemon", "zelda", etc.) or empty string if not set
         """
-        # Check if the ROM filename contains Pokemon (a more reliable method)
-        # We may not have access to the ROM filename here, so do basic visual analysis
-        
-        # Analyze the bottom portion of the screen for text box shape typical in Pokémon games
-        width, height = frame.size
-        bottom_section = frame.crop((0, int(height * 0.7), width, height))
-        
-        # Convert to grayscale and look for the horizontal divider line common in Pokémon dialog
-        gray = bottom_section.convert('L')
-        
-        # Simplified detection - look for horizontal lines in the bottom portion
-        # This is a very basic heuristic and would need to be improved for accuracy
-        
-        # For now, just return True if we've previously determined this is a Pokémon game
-        # In a real implementation, we'd analyze the frame more thoroughly
-        
-        # Look for the word "POKEMON" or "POKéMON" in the image (would require OCR)
-        # Since we don't have OCR, we'll use this as a placeholder
-        return True  # Simplified for this implementation
+        # Check if the model config contains a game_type field
+        return self.model_config.get('game_type', '')
     
     def parse_action(self, action_text: str) -> str:
         """
@@ -397,13 +379,13 @@ class LLMAgent:
         img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
         return img_str
     
-    def _construct_prompt(self, image_data: str, is_pokemon: bool = False) -> Dict[str, Any]:
+    def _construct_prompt(self, image_data: str, game_type: str = '') -> Dict[str, Any]:
         """
         Construct the prompt for the model, including the image and instructions.
         
         Args:
             image_data: Base64-encoded image string
-            is_pokemon: Flag indicating if this appears to be a Pokemon game
+            game_type: String identifier for the game type to use specific prompts
             
         Returns:
             Dict: Prompt in the format expected by the model API
@@ -432,11 +414,72 @@ class LLMAgent:
             "additionalProperties": False
         }
         
+        # Get additional prompt pieces from model config
+        prompt_additions = self.model_config.get('prompt_additions', [])
+        
+        # Base system message that's used for all games
+        base_system_message = f"""You are an AI playing a turn-based video game.
+Analyze the game screen and decide the best action to take next.
+You can choose from these actions: {action_list}, or choose "None" to do nothing.
+
+IMPORTANT INSTRUCTION ABOUT "NONE":
+- If you see a loading screen, choose "None"
+- If text tells you to wait or not press buttons, choose "None"
+- If the game is processing something and no input is needed, choose "None"
+- Only press buttons when it's clearly required by the game state
+
+EXAMPLES:
+1. If you see a battle menu with options, choose an appropriate button ("A" to select, etc.)
+2. If you see a character that needs to move, choose a direction ("Up", "Down", etc.)
+3. If you see text saying "Loading..." or "Please wait", choose "None"
+4. If you see a warning saying "Do not press buttons", choose "None"
+"""
+
+        # Game-specific instructions based on game_type
+        game_specific_instructions = ""
+        
+        # Add game-specific instructions based on the game type
+        if game_type == 'pokemon':
+            game_specific_instructions = """POKÉMON GAMEPLAY INSTRUCTIONS:
+- Press A to advance through dialog text and make selections in menus
+- Use Up/Down to navigate menus, and Left/Right to change pages sometimes
+- Press B to cancel or go back
+- Press Start to open the game menu
+- In battles, choose Attack, Pokémon, Item, or Run using directional keys and A to select
+
+POKÉMON-SPECIFIC EXAMPLES:
+1. If you see a battle menu with options like "FIGHT", "PKMN", "ITEM", "RUN", navigate with directional buttons and select with A
+2. If you see dialog text that has finished appearing, press A to continue
+3. If you see dialog text still being typed out, choose "None" and wait
+4. If you're in the overworld, use directional buttons to navigate
+5. If you see a menu, use Up/Down to navigate and A to select
+"""
+        elif game_type == 'zelda':
+            game_specific_instructions = """ZELDA GAMEPLAY INSTRUCTIONS:
+- Press A to use your sword or interact with objects and people
+- Press B to use your selected item
+- Use directional buttons to move Link around the world
+- Press Start to open the inventory to select different items
+- Pay attention to the environment for clues about where to go next
+
+ZELDA-SPECIFIC EXAMPLES:
+1. If you see enemies, press A to swing your sword to attack
+2. If you see NPCs, press A to talk to them
+3. If you see a chest, move Link toward it and press A to open
+4. If you're in a menu, use directional buttons to navigate and A to select
+5. If you see signs or text appearing, wait for it to finish then press A to continue
+"""
+        # Add more game types as needed
+        
+        # Add any custom prompt additions from the config
+        custom_instructions = "\n".join(prompt_additions) if prompt_additions else ""
+        
+        # Format based on the backend
         if self.backend == 'llama.cpp':
             # Check if we have a custom system message (for testing)
             if self.custom_system_message:
                 system_message = self.custom_system_message
-            elif is_pokemon:
+            else:
                 # Enhanced Pokémon-specific instructions
                 system_message = f"""You are an AI playing a Pokémon game (likely Pokémon Red, Blue, or Yellow).
 Analyze the game screen and decide the best action to take next.
