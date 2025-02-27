@@ -5,10 +5,10 @@
 - [x] Create formal package for EmuVLM (with pyproject.toml) for easier installation ✨
 - [ ] Test with real Pokémon Red and Emerald ROMs
 - [ ] Refine model prompts for more accurate action decisions in battle sequences
-- [ ] Add unit tests for core functionality
-- [ ] Create example configuration for common games
-- [ ] Add detailed installation instructions for all dependencies
-- [ ] Verify command-line tools work correctly when installed via pip
+- [x] Add unit tests for core functionality ✨
+- [x] Create example configuration for common games ✨
+- [x] Add detailed installation instructions for all dependencies ✨
+- [x] Verify command-line tools work correctly when installed via pip ✨
 
 ## Medium Priority
 

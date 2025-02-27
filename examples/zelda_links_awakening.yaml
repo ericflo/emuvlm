@@ -1,0 +1,26 @@
+# The Legend of Zelda: Link's Awakening (Game Boy) Configuration
+
+# Game configuration
+rom: "/path/to/ZeldaLinksAwakening.gb"  # Replace with actual path to your ROM
+emulator: "pyboy"
+actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
+action_delay: 0.4               # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3           # Delay for inventory navigation
+  dialog_delay: 1.0             # Delay for NPC dialog
+  screen_transition_delay: 0.7  # Delay for screen transitions
+  item_use_delay: 0.5           # Delay after using items
+
+# Game-specific settings
+settings:
+  save_states_enabled: true     # Enable save states for quick save/load
+  fast_text: true               # Speed up text where possible
+  
+# Model prompt additions
+prompt_additions:
+  - "This is The Legend of Zelda: Link's Awakening for Game Boy, an action-adventure game."
+  - "Your goal is to collect musical instruments to wake the Wind Fish and escape the island."
+  - "Press A to use your sword, B to use your equipped item, and Start to access your inventory."
+  - "Select button switches between equipped items without entering the menu."

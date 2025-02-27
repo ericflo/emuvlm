@@ -1,0 +1,26 @@
+# Pokemon Red (Game Boy) Configuration
+
+# Game configuration
+rom: "/path/to/PokemonRed.gb"   # Replace with actual path to your ROM
+emulator: "pyboy"
+actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
+action_delay: 0.5               # Seconds to wait after each action
+
+# Game-specific timing configurations
+timing:
+  menu_nav_delay: 0.3           # Faster delay for menu navigation
+  battle_anim_delay: 1.5        # Longer delay for battle animations
+  text_scroll_delay: 0.8        # Medium delay for text scrolling
+  overworld_movement_delay: 0.4  # Delay for moving in the overworld
+
+# Game-specific settings
+settings:
+  fast_text: true               # Set to true to speed up text display
+  battle_animations: true       # Set to false to disable battle animations
+  save_states_enabled: true     # Enable save states for quick save/load
+  
+# Model prompt additions
+prompt_additions:
+  - "This is Pokemon Red for Game Boy, a classic RPG where you catch and train Pokemon."
+  - "Your main goal is to defeat all 8 gym leaders and become the champion."
+  - "Use A to interact and confirm, B to cancel and run, and directional buttons to move."
