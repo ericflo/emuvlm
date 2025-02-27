@@ -4,7 +4,10 @@ PyBoy emulator implementation for Game Boy and Game Boy Color games.
 import logging
 from PIL import Image
 from pyboy import PyBoy
-from pyboy.botsupport.constants import WindowEvent
+try:
+    from pyboy.botsupport.constants import WindowEvent
+except ImportError:
+    from pyboy.utils import WindowEvent
 
 from emuvlm.emulators.base import EmulatorBase
 

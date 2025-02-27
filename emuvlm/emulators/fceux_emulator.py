@@ -73,9 +73,9 @@ class FCEUXEmulator(EmulatorBase):
         Returns:
             str: Path to the Lua script file
         """
-        lua_script = f"""
+        lua_script = """
         -- WebSocket server for FCEUX
-        server_port = {self.lua_port}
+        server_port = """ + str(self.lua_port) + """
         
         -- Initialize the server
         socket = require("socket")
