@@ -263,7 +263,7 @@ class LLMAgent:
         if self.enable_cache and self.last_frame_hash is not None:
             self.frame_cache[self.last_frame_hash] = valid_action
             # Save the frame to disk for future analysis if needed
-            self._save_frame_to_cache(frame, self.last_frame_hash, valid_action)
+            self._save_frame_to_cache(frame, self.last_frame_hash)
             
         return valid_action
         
@@ -1123,17 +1123,19 @@ Your response will be automatically validated against a JSON schema."""
         logger.debug(f"Not a loading screen: {unique_colors} unique colors, std dev: {std_dev:.2f}")
         return False
     
-    def _save_frame_to_cache(self, frame: Image.Image, frame_hash: str, action: str) -> None:
+    def _save_frame_to_cache(self, frame: Image.Image, frame_hash: str) -> None:
         """
         Save a frame to the cache directory for later analysis.
         
         Args:
             frame: The PIL Image to save
             frame_hash: The frame's hash
-            action: The action that was chosen for this frame
         """
         if not self.enable_cache:
             return
+            
+        # Get the action for this frame from the cache
+        action = self.frame_cache.get(frame_hash, "Unknown")
             
         # Only save a subset of frames to avoid filling up the disk
         # Save 1 in every 10 frames, or if it's an important action

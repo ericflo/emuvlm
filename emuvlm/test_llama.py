@@ -14,8 +14,7 @@ import re
 from pathlib import Path
 from PIL import Image
 
-# Add parent directory to path so we can import modules
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Import directly since this file is already in the emuvlm package
 
 from emuvlm.model.agent import LLMAgent
 from emuvlm.model.llama_cpp import server as llama_cpp_server

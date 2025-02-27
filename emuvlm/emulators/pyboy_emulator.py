@@ -78,7 +78,7 @@ class PyBoyEmulator(EmulatorBase):
             logger.info("Starting game initialization sequence...")
         
         # Game Boot Phase: Set up debugging directory for frames
-        boot_frames_dir = "output/boot_frames"
+        boot_frames_dir = os.path.join("output", "boot_frames")
         os.makedirs(boot_frames_dir, exist_ok=True)
         
         # Initial Advance - Wait for ROM to load and initialize
@@ -182,6 +182,7 @@ class PyBoyEmulator(EmulatorBase):
         
         # Save the final boot frame
         final_frame = self.emulator.screen_image()
+        os.makedirs(os.path.dirname(os.path.join(boot_frames_dir, "final_boot_frame.png")), exist_ok=True)
         final_frame.save(os.path.join(boot_frames_dir, "final_boot_frame.png"))
         logger.info("Game initialization sequence completed")
         

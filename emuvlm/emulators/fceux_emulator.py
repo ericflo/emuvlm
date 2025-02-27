@@ -9,6 +9,7 @@ import atexit
 from PIL import Image
 import tempfile
 import requests
+import shutil
 from typing import Dict, Any, Optional, Tuple
 
 from emuvlm.emulators.base import EmulatorBase
@@ -162,6 +163,11 @@ class FCEUXEmulator(EmulatorBase):
         """
         Start the FCEUX process with Lua script for API communication.
         """
+        # Check if fceux executable is available
+        if shutil.which("fceux") is None:
+            logger.error("FCEUX executable not found in PATH")
+            raise RuntimeError("FCEUX emulator not found. Please install FCEUX and ensure it's in your PATH.")
+            
         cmd = [
             "fceux",
             "--loadlua", self.lua_script_path,

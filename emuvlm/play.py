@@ -157,7 +157,17 @@ def main():
     args = parser.parse_args()
     
     # Load configuration
-    config = load_config(args.config)
+    if os.path.isabs(args.config):
+        config_path = args.config
+    else:
+        # If it's not an absolute path, try relative to current directory
+        # and then fall back to the default in the package
+        if os.path.exists(args.config):
+            config_path = args.config
+        else:
+            config_path = os.path.join(os.path.dirname(__file__), "config.yaml")
+    
+    config = load_config(config_path)
     
     # Setup logging
     setup_logging(config)
