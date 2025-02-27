@@ -5,4 +5,9 @@ pillow>=9.0.0
 pyyaml>=6.0
 transformers>=4.30.0
 qwen-vl-utils>=0.0.8
+
+# For Mac compatibility (optional dependencies)
+llama-cpp-python>=0.2.50 ; sys_platform == 'darwin'
+
+# Install the package in development mode
 -e .

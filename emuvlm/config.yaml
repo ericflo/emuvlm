@@ -2,7 +2,9 @@
 
 # Model configuration
 model:
-  api_url: "http://localhost:8000"  # vLLM server with Qwen2.5-VL model
+  # Common settings
+  api_url: "http://localhost:8000"  # API server URL for both backends
+  backend: "auto"                   # "auto", "vllm", or "llama.cpp"
   summary_interval: 10              # Generate summary every X turns when summary feature is enabled
   max_tokens: 100                   # Max tokens to generate for action decision
   temperature: 0.2                  # Lower temperature for more focused responses
@@ -11,6 +13,13 @@ model:
   enable_cache: true                # Enable frame caching to reduce API calls
   cache_dir: "output/cache"         # Directory to store cached frames
   similarity_threshold: 0.95        # Threshold for considering frames similar (0-1)
+  
+  # llama.cpp specific settings (for Mac compatibility)
+  autostart_server: false           # Whether to automatically start the model server
+  model_path: "models/llava-v1.5-7b-Q4_K_S.gguf"  # Path to GGUF model file from second-state
+  model_url: "https://huggingface.co/second-state/Llava-v1.5-7B-GGUF/resolve/main/llava-v1.5-7b-Q4_K_S.gguf"  # URL for auto-download
+  n_gpu_layers: -1                  # Number of layers to offload to GPU (-1 for all)
+  n_ctx: 2048                       # Context window size
 
 # Logging configuration
 logging:

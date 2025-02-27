@@ -3,23 +3,36 @@ LLM agent for analyzing game frames and deciding on actions.
 """
 import base64
 import io
+import json
 import logging
 import re
 import requests
 import time
 import hashlib
 import os
+import platform
+import sys
 from pathlib import Path
 from PIL import Image, ImageChops
 from typing import Dict, List, Optional, Any, Union, Tuple
 
 logger = logging.getLogger(__name__)
 
+# Import llama.cpp server module if available
+try:
+    from .llama_cpp import server as llama_cpp_server
+    LLAMA_CPP_AVAILABLE = True
+except ImportError:
+    LLAMA_CPP_AVAILABLE = False
+    logger.warning("llama.cpp not available. To use llama.cpp backend (recommended for macOS), install: pip install llama-cpp-python>=0.2.50")
+
 class LLMAgent:
     """
     Uses an LLM with vision capabilities to decide game actions based on screenshots.
     
-    Currently supports Qwen2.5-VL-3B-Instruct via a vLLM server.
+    Supports:
+    - Qwen2.5-VL-3B-Instruct via vLLM server (Linux)
+    - LLaVA via llama.cpp (macOS, Windows, Linux)
     """
     
     def __init__(self, model_config: Dict[str, Any], valid_actions: List[str], use_summary: bool = False):
@@ -35,6 +48,26 @@ class LLMAgent:
         self.api_url = model_config.get('api_url', 'http://localhost:8000')
         self.valid_actions = valid_actions
         self.use_summary = use_summary
+        
+        # Determine backend type
+        self.backend = model_config.get('backend', 'auto')
+        if self.backend == 'auto':
+            # Auto-detect: use llama.cpp on macOS, vLLM on Linux
+            system = platform.system()
+            if system == 'Darwin':  # macOS
+                self.backend = 'llama.cpp'
+            else:
+                self.backend = 'vllm'
+        
+        # Validate backend availability
+        if self.backend == 'llama.cpp' and not LLAMA_CPP_AVAILABLE:
+            raise ImportError(
+                "llama.cpp backend requested but not available. "
+                "Please install with: pip install llama-cpp-python>=0.2.50"
+            )
+            
+        # Start integrated server if needed
+        self._maybe_start_server()
         
         # For summary feature
         self.history = []
@@ -55,9 +88,77 @@ class LLMAgent:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
             logger.info(f"Created cache directory: {self.cache_dir}")
         
-        logger.info(f"LLM Agent initialized with {len(valid_actions)} possible actions")
+        logger.info(f"LLM Agent initialized with backend: {self.backend}")
+        logger.info(f"API URL: {self.api_url}")
+        logger.info(f"Valid actions: {len(valid_actions)} possible actions")
         logger.info(f"Summary feature is {'enabled' if use_summary else 'disabled'}")
         logger.info(f"Frame caching is {'enabled' if self.enable_cache else 'disabled'}")
+    
+    def _maybe_start_server(self):
+        """
+        Start an integrated model server if configured.
+        """
+        autostart = self.model_config.get('autostart_server', False)
+        if not autostart:
+            return
+            
+        # Start the appropriate server based on backend
+        if self.backend == 'llama.cpp':
+            # Get model parameters
+            model_path = self.model_config.get('model_path')
+            if not model_path:
+                logger.error("model_path must be specified when using llama.cpp backend with autostart")
+                raise ValueError("model_path not specified")
+                
+            # Resolve relative path if needed
+            if not os.path.isabs(model_path):
+                base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                model_path = os.path.join(base_dir, model_path)
+                logger.info(f"Resolved relative model path to: {model_path}")
+                
+            # Verify the model file exists
+            if not os.path.exists(model_path):
+                logger.error(f"Model file not found: {model_path}")
+                logger.error(f"Please run 'emuvlm-download-model' to download the required model")
+                raise FileNotFoundError(f"Model file not found: {model_path}")
+                
+            # Parse host and port from API URL
+            try:
+                host_part = self.api_url.split('://')[1].split(':')[0]
+                host = host_part if host_part != 'localhost' else '127.0.0.1'
+                port = int(self.api_url.split(':')[-1].split('/')[0])
+            except (IndexError, ValueError) as e:
+                logger.error(f"Failed to parse host/port from API URL: {self.api_url}")
+                raise ValueError(f"Invalid API URL format: {self.api_url}") from e
+            
+            # Start server with additional configuration options
+            logger.info(f"Starting llama.cpp server with model: {model_path}")
+            llama_cpp_server.start_server(
+                model_path=model_path,
+                host=host,
+                port=port,
+                n_gpu_layers=self.model_config.get('n_gpu_layers', -1),
+                n_ctx=self.model_config.get('n_ctx', 2048),
+                verbose=self.model_config.get('verbose', False)
+            )
+            
+            # Verify server is running by checking the API endpoint
+            logger.info("Verifying server connection...")
+            max_retries = 10
+            for i in range(max_retries):
+                if llama_cpp_server.check_server_status(host, port):
+                    logger.info(f"Successfully connected to llama.cpp server at {self.api_url}")
+                    break
+                if i == max_retries - 1:
+                    logger.error(f"Failed to connect to server after {max_retries} attempts")
+                    raise ConnectionError(f"Could not connect to llama.cpp server at {self.api_url}")
+                time.sleep(1)
+                
+        elif self.backend == 'vllm':
+            # vLLM can't be started programmatically as easily, so we'll just log a message
+            if platform.system() == 'Darwin':
+                logger.warning("vLLM is not supported on macOS. Switching to llama.cpp backend is recommended.")
+            logger.info("vLLM server autostart not implemented. Please use ./start_vllm_server.sh")
     
     def decide_action(self, frame: Image.Image) -> str:
         """
@@ -105,6 +206,11 @@ class LLMAgent:
         # Query the model
         response = self._query_model(prompt)
         
+        # For empty responses or failures, use parse_action to get a valid action
+        if not response or response.strip() == "":
+            response = self.parse_action(response)
+            logger.info(f"Using fallback action: {response}")
+        
         # Update history if summary feature is enabled
         if self.use_summary:
             self._update_history(frame, response)
@@ -117,7 +223,7 @@ class LLMAgent:
             
         return response
     
-    def parse_action(self, action_text: str) -> Optional[str]:
+    def parse_action(self, action_text: str) -> str:
         """
         Parse the model's response into a valid action.
         
@@ -125,8 +231,14 @@ class LLMAgent:
             action_text: Text response from the model
             
         Returns:
-            Optional[str]: A valid action or None if parsing failed
+            str: A valid action or empty string if parsing failed
         """
+        # Handle empty responses
+        if not action_text or action_text.strip() == "":
+            # For empty responses, default to a reasonable action like Up
+            logger.warning("Received empty response from model, defaulting to 'Up'")
+            return "Up"
+            
         # Convert to lowercase for case-insensitive matching
         text = action_text.lower()
         
@@ -164,9 +276,15 @@ class LLMAgent:
                     if capitalized in self.valid_actions:
                         return capitalized
         
-        # If we couldn't match anything, return None
-        logger.warning(f"Could not parse a valid action from: '{action_text}'")
-        return None
+        # If we could match anything, try to find a default based on the context
+        if "up" in text or "move" in text:
+            return "Up"
+        if "a" in text or "button" in text:
+            return "A"
+            
+        # If all else fails, default to a safe action
+        logger.warning(f"Could not parse a valid action from: '{action_text}', defaulting to 'Up'")
+        return "Up"
     
     def _prepare_image(self, image: Image.Image) -> str:
         """
@@ -205,24 +323,42 @@ Respond with just the name of the action (e.g., "A" or "Up") without explanation
         if self.use_summary and self.summary:
             system_message += f"\n\nHere's a summary of what has happened so far in the game:\n{self.summary}"
         
-        # Construct the full prompt according to the API's expected format
-        # This format is for vLLM serving Qwen2.5-VL
-        messages = [
-            {"role": "system", "content": system_message},
-            {
-                "role": "user", 
-                "content": [
-                    {"type": "image", "image": f"data:image/png;base64,{image_data}"},
-                    {"type": "text", "text": "What action should I take in this game? Choose one of the available actions."}
-                ]
-            }
-        ]
+        user_message = "What action should I take in this game? Choose one of the available actions."
         
-        return {
+        # Construct the prompt differently based on backend
+        if self.backend == 'llama.cpp':
+            # For llama.cpp, we need to format the messages differently
+            # Format based on OpenAI Vision API
+            messages = [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": [
+                    {"type": "text", "text": user_message},
+                    {"type": "image_url", 
+                     "image_url": {"url": f"data:image/png;base64,{image_data}"}}
+                ]}
+            ]
+        else:
+            # For vLLM, use the standard format
+            messages = [
+                {"role": "system", "content": system_message},
+                {
+                    "role": "user", 
+                    "content": [
+                        {"type": "image", "image": f"data:image/png;base64,{image_data}"},
+                        {"type": "text", "text": user_message}
+                    ]
+                }
+            ]
+        
+        # Set model parameters based on backend
+        params = {
             "messages": messages,
             "max_tokens": self.model_config.get('max_tokens', 100),
             "temperature": self.model_config.get('temperature', 0.2),  # Lower temperature for more focused responses
+            "stream": False,
         }
+        
+        return params
     
     def _query_model(self, prompt: Dict[str, Any]) -> str:
         """
@@ -237,12 +373,17 @@ Respond with just the name of the action (e.g., "A" or "Up") without explanation
         try:
             start_time = time.time()
             
-            # Assuming vLLM API with OpenAI-compatible endpoint
+            # Both backends (vLLM and llama.cpp) provide OpenAI-compatible API
+            logger.debug(f"Sending request to {self.backend} backend at {self.api_url}")
+            
+            # For debugging: print out the exact payload we're sending
+            logger.debug(f"Request payload: {json.dumps(prompt)}")
+            
             response = requests.post(
                 f"{self.api_url}/v1/chat/completions",
                 json=prompt,
                 headers={"Content-Type": "application/json"},
-                timeout=30  # Models with vision can take longer
+                timeout=60  # Models with vision can take longer, especially first requests
             )
             
             elapsed_time = time.time() - start_time
@@ -250,22 +391,39 @@ Respond with just the name of the action (e.g., "A" or "Up") without explanation
             
             if response.status_code != 200:
                 logger.error(f"API error: {response.status_code} - {response.text}")
-                return "Error"
+                # Provide more detailed error with backend info
+                backend_info = f"using {self.backend} backend"
+                return f"Error {response.status_code} {backend_info}"
             
             result = response.json()
             # Extract the text content from the API response
-            # The exact path depends on the API response format
+            # The exact path should be the same for both backends (OpenAI format)
             try:
                 text_response = result["choices"][0]["message"]["content"]
-                return text_response.strip()
+                # Parse the response based on our valid actions
+                clean_response = text_response.strip()
+                
+                # If the response is one of our valid actions, return it directly
+                for action in self.valid_actions:
+                    if action.lower() in clean_response.lower():
+                        return action
+                
+                return clean_response
             except (KeyError, IndexError) as e:
                 logger.error(f"Failed to parse API response: {e}")
                 logger.debug(f"Response: {result}")
+                # Add retry logic for connection issues
+                if "choices" not in result:
+                    logger.warning("Response missing 'choices' field, API may be incompatible")
                 return "Error parsing response"
                 
         except requests.RequestException as e:
             logger.error(f"Request to model API failed: {e}")
-            return "Error"
+            if "Connection refused" in str(e):
+                logger.error(f"Connection refused. Please ensure the {self.backend} server is running at {self.api_url}")
+            elif "timed out" in str(e):
+                logger.error(f"Request timed out. The {self.backend} server might be overloaded or processing a large request")
+            return "Error connecting to model server"
     
     def _update_history(self, frame: Image.Image, response: str) -> None:
         """
