@@ -189,6 +189,16 @@ def main():
             emulator_type = "pyboy"
         elif ext in ['.gba']:
             emulator_type = "mgba"
+        elif ext in ['.nes']:
+            emulator_type = "fceux"
+        elif ext in ['.sfc', '.smc']:
+            emulator_type = "snes9x"
+        elif ext in ['.md', '.gen', '.smd']:
+            emulator_type = "genesis_plus_gx"
+        elif ext in ['.n64', '.z64', '.v64']:
+            emulator_type = "mupen64plus"
+        elif ext in ['.iso', '.bin', '.cue', '.img']:
+            emulator_type = "duckstation"
         else:
             raise ValueError(f"Unsupported ROM type: {ext}")
         
@@ -202,10 +212,27 @@ def main():
         game_name = os.path.basename(rom_path)
     
     # Initialize emulator based on type
-    if game_config['emulator'].lower() == 'pyboy':
+    emulator_type = game_config['emulator'].lower()
+    
+    if emulator_type == 'pyboy':
         emulator = PyBoyEmulator(game_config['rom'])
-    elif game_config['emulator'].lower() == 'mgba':
+    elif emulator_type == 'mgba':
         emulator = MGBAEmulator(game_config['rom'])
+    elif emulator_type == 'fceux':
+        from emuvlm.emulators.fceux_emulator import FCEUXEmulator
+        emulator = FCEUXEmulator(game_config['rom'])
+    elif emulator_type == 'snes9x':
+        from emuvlm.emulators.snes9x_emulator import SNES9xEmulator
+        emulator = SNES9xEmulator(game_config['rom'])
+    elif emulator_type == 'genesis_plus_gx':
+        from emuvlm.emulators.genesis_plus_gx_emulator import GenesisPlusGXEmulator
+        emulator = GenesisPlusGXEmulator(game_config['rom'])
+    elif emulator_type == 'mupen64plus':
+        from emuvlm.emulators.mupen64plus_emulator import Mupen64PlusEmulator
+        emulator = Mupen64PlusEmulator(game_config['rom'])
+    elif emulator_type == 'duckstation':
+        from emuvlm.emulators.duckstation_emulator import DuckstationEmulator
+        emulator = DuckstationEmulator(game_config['rom'])
     else:
         raise ValueError(f"Unsupported emulator: {game_config['emulator']}")
     
