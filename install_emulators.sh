@@ -1,5 +1,6 @@
 #!/bin/bash
 # Script to help install all emulator dependencies for EmuVLM
+# Note: For complete dependencies, install the package with pip install -e .
 
 set -e # Exit on any error
 
@@ -146,9 +147,9 @@ install_emulator_deps() {
     return 0
 }
 
-# Python dependencies
-echo "Installing Python dependencies..."
-pip install pillow requests numpy psutil tqdm
+# Install package with all dependencies (use pyproject.toml)
+echo "Installing Python dependencies from package..."
+pip install -e .
 
 # Install emulator dependencies one by one
 emulators=("pyboy" "mgba" "fceux" "snes9x" "genesis" "mupen64plus" "duckstation")
@@ -167,7 +168,7 @@ done
 
 echo
 echo "===== Installation Summary ====="
-echo "Installed Python dependencies: pillow, requests, numpy, psutil, tqdm"
+echo "Installed Python dependencies from pyproject.toml"
 echo
 echo "Next steps:"
 echo "1. Some emulators may require additional configuration - check the EmuVLM documentation"

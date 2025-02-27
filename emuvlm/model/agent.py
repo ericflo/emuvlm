@@ -24,7 +24,7 @@ try:
     LLAMA_CPP_AVAILABLE = True
 except ImportError:
     LLAMA_CPP_AVAILABLE = False
-    logger.warning("llama.cpp not available. To use llama.cpp backend (recommended for macOS), install: pip install llama-cpp-python>=0.2.50")
+    logger.warning("llama.cpp not available. To use llama.cpp backend (recommended for macOS), install with: pip install -e \".[macos]\"")
 
 class LLMAgent:
     """

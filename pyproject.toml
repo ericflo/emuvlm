@@ -27,6 +27,7 @@ dependencies = [
     "pyyaml>=6.0",
     "transformers>=4.30.0",
     "qwen-vl-utils>=0.0.8",
+    "tqdm>=4.65.0",
 ]
 
 [project.optional-dependencies]
@@ -49,6 +50,7 @@ emuvlm-test-llama = "emuvlm.cli:test_llama"
 emuvlm-vllm-server = "emuvlm.cli:start_vllm_server"
 emuvlm-llama-server = "emuvlm.cli:start_llama_server"
 emuvlm-download-model = "emuvlm.cli:download_model"
+emuvlm-download-rom = "emuvlm.cli:download_rom"
 
 [tool.setuptools.packages.find]
 include = ["emuvlm*"]

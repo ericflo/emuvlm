@@ -257,7 +257,7 @@ After running the script, you can verify your emulator installations using the t
 
 ```bash
 # After editing ROM paths in the script
-./test_emulator_example.sh
+./scripts/test_emulator_example.sh
 ```
 
 ### Troubleshooting
@@ -336,7 +336,7 @@ The system will automatically select the appropriate backend based on your platf
 To play a game defined in your config:
 
 ```bash
-emuvlm --game pokemon_red --summary on
+emuvlm --game pokemon_blue --summary on
 ```
 
 Or directly using a ROM path:
@@ -387,7 +387,7 @@ emuvlm-test-emulators --all \
   --duckstation-rom /path/to/psx_rom.bin
 ```
 
-A sample script for testing all emulators is provided in `test_emulator_example.sh`.
+A sample script for testing all emulators is provided in `scripts/test_emulator_example.sh`.
 
 Test the VLM model with a specific image:
 
@@ -397,6 +397,18 @@ emuvlm-test-model --image /path/to/game_screenshot.png
 
 # Test specifically with llama.cpp backend
 emuvlm-test-llama --model /path/to/llava-v1.5-7b-q4_k_s.gguf --image /path/to/game_screenshot.png
+```
+
+### Using the ROM Helper Utility
+
+To create placeholder ROMs for testing or download ROMs for legally owned cartridges:
+
+```bash
+# Create a placeholder Pokemon ROM for testing
+emuvlm-download-rom --game pokemon
+
+# Create a placeholder Zelda ROM for testing
+emuvlm-download-rom --game zelda
 ```
 
 ## Configuration
@@ -471,6 +483,9 @@ emuvlm/
 ├── test_emulators.py    - Emulator testing utilities
 ├── test_model.py        - VLM testing utilities
 ├── config.yaml          - Default configuration
+├── utils/               - Utility modules
+│   ├── __init__.py
+│   └── download_rom.py  - ROM download/creation utility
 ├── start_vllm_server.sh  - Script to start vLLM server
 ├── start_llama_server.sh - Script to start llama.cpp server
 ├── emulators/           - Emulator implementations
@@ -502,71 +517,7 @@ output/                  - All generated files (gitignored)
 
 Additional scripts:
 - `install_emulators.sh` - Helper script to install all emulator dependencies
-- `test_emulator_example.sh` - Example script to test all emulator implementations
-
-## Advanced Features
-
-### JSON Schema Response Validation
-
-EmuVLM uses JSON schema validation to ensure structured, validated responses from VLMs:
-
-```json
-{
-  "action": "Up",
-  "reasoning": "I need to navigate to the top menu option"
-}
-```
-
-Benefits:
-- **Improved Reliability**: Models must return a valid action from the predefined list
-- **Reasoning Included**: Each action comes with reasoning for better debugging
-- **Do Nothing Option**: Models can explicitly choose to do nothing when appropriate
-- **Fallback Mechanism**: If JSON parsing fails, the system falls back to text-based parsing
-
-You can configure this feature in `config.yaml`:
-```yaml
-model:
-  json_schema_support: true  # Enable/disable JSON schema validation
-```
-
-### Frame Caching
-
-The system uses image hashing and similarity detection to avoid repeated VLM calls for similar frames, significantly improving performance.
-
-### Session Management
-
-Save gameplay progress and resume later:
-
-```bash
-# Save happens automatically at intervals, or press Ctrl+C
-# Resume a session
-emuvlm --session output/sessions/pokemon_red_20240227_123456.session
-```
-
-### Dynamic Timing
-
-The system adjusts delay times between actions based on context:
-- Shorter delays for menu navigation
-- Longer delays for battle animations
-- Medium delays for text scrolling
-
-## License
-
-MIT License
-
-## Acknowledgments
-
-- [PyBoy](https://github.com/Baekalfen/PyBoy) - Game Boy/Game Boy Color emulator
-- [mGBA](https://mgba.io/) - Game Boy Advance emulator
-- [FCEUX](https://fceux.com/) - Nintendo Entertainment System emulator
-- [Snes9x](https://github.com/snes9xgit/snes9x) - Super Nintendo emulator
-- [Genesis Plus GX](https://github.com/ekeeke/Genesis-Plus-GX) - Sega Genesis/Mega Drive emulator
-- [Mupen64Plus](https://mupen64plus.org/) - Nintendo 64 emulator
-- [DuckStation](https://github.com/stenzek/duckstation) - PlayStation emulator
-- [Qwen2.5-VL](https://github.com/QwenLM/Qwen2-VL) - Vision-language model
-- [vLLM](https://github.com/vllm-project/vllm) - LLM inference engine
-- [llama.cpp](https://github.com/ggerganov/llama.cpp) - Efficient LLM inference
-- [LLaVA](https://github.com/haotian-liu/LLaVA) - Large language and vision assistant
+- `scripts/test_emulator_example.sh` - Example script to test all emulator implementations
 
 ## Game-Specific Enhancements
 
@@ -660,6 +611,24 @@ The system automatically selects the appropriate backend based on your platform.
    ```bash
    emuvlm --game pokemon_blue
    ```
+
+## License
+
+MIT License
+
+## Acknowledgments
+
+- [PyBoy](https://github.com/Baekalfen/PyBoy) - Game Boy/Game Boy Color emulator
+- [mGBA](https://mgba.io/) - Game Boy Advance emulator
+- [FCEUX](https://fceux.com/) - Nintendo Entertainment System emulator
+- [Snes9x](https://github.com/snes9xgit/snes9x) - Super Nintendo emulator
+- [Genesis Plus GX](https://github.com/ekeeke/Genesis-Plus-GX) - Sega Genesis/Mega Drive emulator
+- [Mupen64Plus](https://mupen64plus.org/) - Nintendo 64 emulator
+- [DuckStation](https://github.com/stenzek/duckstation) - PlayStation emulator
+- [Qwen2.5-VL](https://github.com/QwenLM/Qwen2-VL) - Vision-language model
+- [vLLM](https://github.com/vllm-project/vllm) - LLM inference engine
+- [llama.cpp](https://github.com/ggerganov/llama.cpp) - Efficient LLM inference
+- [LLaVA](https://github.com/haotian-liu/LLaVA) - Large language and vision assistant
 
 For more details on implementation and design decisions, see `PLAN.md`.
 For current development status and upcoming features, see `TODO.md`.

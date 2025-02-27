@@ -8,6 +8,7 @@ import importlib
 import sys
 import subprocess
 import platform
+from emuvlm.utils.download_rom import main as download_rom_main
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +128,7 @@ def start_llama_server():
             import uvicorn
         except ImportError:
             print("Error: Required packages not found. Please install them with:")
-            print("pip install llama-cpp-python uvicorn fastapi")
+            print("pip install -e \".[macos]\"")
             sys.exit(1)
             
         # Create settings
@@ -199,6 +200,10 @@ def test_llama():
     from emuvlm.test_llama import main as test_llama_main
     test_llama_main()
     
+def download_rom():
+    """Entry point for download_rom utility."""
+    download_rom_main()
+
 def download_model():
     """Entry point for downloading the GGUF model."""
     import os
