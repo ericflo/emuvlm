@@ -4,7 +4,14 @@ EmuVLM (Emulator Vision-Language Model) is a Python framework that combines emul
 
 ## Features
 
-- Support for Game Boy, Game Boy Color (via PyBoy) and Game Boy Advance (via mGBA) emulators
+- Support for multiple gaming platforms with dedicated emulators:
+  - Game Boy / Game Boy Color (PyBoy)
+  - Game Boy Advance (mGBA)
+  - Nintendo Entertainment System (FCEUX)
+  - Super Nintendo / SNES (Snes9x)
+  - Sega Genesis / Mega Drive (Genesis Plus GX)
+  - Nintendo 64 (Mupen64Plus)
+  - PlayStation (DuckStation)
 - Integration with Qwen2.5-VL vision-language model
 - Frame caching to reduce redundant model calls and improve performance
 - Session management for saving and resuming gameplay
@@ -80,7 +87,7 @@ EmuVLM (Emulator Vision-Language Model) is a Python framework that combines emul
 
 3. **Install PyBoy**
    ```bash
-   pip install pyboy==1.6.1
+   pip install pyboy==1.6.0
    ```
 
 4. **Install mGBA Python bindings**
@@ -92,6 +99,28 @@ EmuVLM (Emulator Vision-Language Model) is a Python framework that combines emul
    make -j$(nproc)
    sudo make install
    cd ../..
+   ```
+
+5. **Install other emulator dependencies**
+   ```bash
+   # The easiest way is to use our helper script
+   ./install_emulators.sh
+   
+   # Or install manually:
+   # For NES (FCEUX)
+   sudo apt install fceux lua5.1 liblua5.1-dev  # Linux
+   brew install fceux lua                       # macOS
+   
+   # For SNES (Snes9x)
+   sudo apt install snes9x-gtk                  # Linux
+   brew install snes9x                          # macOS
+   
+   # For Nintendo 64 (Mupen64Plus)
+   sudo apt install mupen64plus-ui-console      # Linux
+   brew install mupen64plus                     # macOS
+   
+   # For PlayStation (DuckStation)
+   # Download from: https://github.com/stenzek/duckstation/releases
    ```
 
 5. **Install CUDA and PyTorch** (for GPU support)
@@ -189,6 +218,27 @@ To verify that your installation is working correctly:
    ```
    If you don't have a test image, you can use the demo to generate one first.
 
+### Automated Emulator Installation
+
+For convenience, you can use the provided installation script to help install all emulator dependencies:
+
+```bash
+./install_emulators.sh
+```
+
+This interactive script will:
+1. Detect your operating system (Linux or macOS)
+2. Install system dependencies for each emulator
+3. Guide you through the installation of each emulator (PyBoy, mGBA, FCEUX, Snes9x, Genesis Plus GX, Mupen64Plus, DuckStation)
+4. Install required Python packages
+
+After running the script, you can verify your emulator installations using the test script:
+
+```bash
+# After editing ROM paths in the script
+./test_emulator_example.sh
+```
+
 ### Troubleshooting
 
 #### Common Issues
@@ -198,7 +248,7 @@ To verify that your installation is working correctly:
    - **Solution**: Ensure SDL2 libraries are properly installed with `sudo apt install libsdl2-dev libsdl2-ttf-dev` (Linux) or `brew install sdl2 sdl2_ttf` (macOS)
    
    - **Problem**: "No module named 'pyboy'"
-   - **Solution**: Verify installation with `pip show pyboy`, reinstall if needed with `pip install pyboy==1.6.1`
+   - **Solution**: Verify installation with `pip show pyboy`, reinstall if needed with `pip install pyboy==1.6.0`
 
 2. **mGBA Compilation Issues**
    - **Problem**: Qt5 not found during cmake
@@ -282,8 +332,21 @@ emuvlm-monitor --game pokemon_red
 Test emulator implementations:
 
 ```bash
+# Test a single emulator
 emuvlm-test-emulators --rom /path/to/rom.gb --emulator pyboy
+
+# Test all emulators with different ROMs
+emuvlm-test-emulators --all \
+  --pyboy-rom /path/to/gb_rom.gb \
+  --mgba-rom /path/to/gba_rom.gba \
+  --fceux-rom /path/to/nes_rom.nes \
+  --snes9x-rom /path/to/snes_rom.sfc \
+  --genesis-rom /path/to/genesis_rom.md \
+  --mupen64plus-rom /path/to/n64_rom.z64 \
+  --duckstation-rom /path/to/psx_rom.bin
 ```
+
+A sample script for testing all emulators is provided in `test_emulator_example.sh`.
 
 Test the VLM model with a specific image:
 
@@ -321,24 +384,33 @@ games:
 
 ```
 emuvlm/
-├── __init__.py         - Package initialization
-├── cli.py              - Command-line interface
-├── play.py             - Main game playing logic
-├── monitor.py          - GUI monitor for games
-├── demo_game.py        - Simple built-in demo game
-├── test_emulators.py   - Emulator testing utilities
-├── test_model.py       - VLM testing utilities
-├── config.yaml         - Default configuration
+├── __init__.py          - Package initialization
+├── cli.py               - Command-line interface
+├── play.py              - Main game playing logic
+├── monitor.py           - GUI monitor for games
+├── demo_game.py         - Simple built-in demo game
+├── test_emulators.py    - Emulator testing utilities
+├── test_model.py        - VLM testing utilities
+├── config.yaml          - Default configuration
 ├── start_vllm_server.sh - Script to start VLM server
-├── emulators/          - Emulator implementations
+├── emulators/           - Emulator implementations
 │   ├── __init__.py
-│   ├── base.py         - Base emulator interface
-│   ├── pyboy_emulator.py - Game Boy emulator implementation
-│   └── mgba_emulator.py - Game Boy Advance emulator implementation
-└── model/              - AI model components
+│   ├── base.py                    - Base emulator interface
+│   ├── pyboy_emulator.py          - Game Boy/GBC emulator implementation
+│   ├── mgba_emulator.py           - Game Boy Advance emulator implementation
+│   ├── fceux_emulator.py          - NES emulator implementation 
+│   ├── snes9x_emulator.py         - SNES emulator implementation
+│   ├── genesis_plus_gx_emulator.py - Sega Genesis emulator implementation
+│   ├── mupen64plus_emulator.py    - Nintendo 64 emulator implementation
+│   └── duckstation_emulator.py    - PlayStation emulator implementation
+└── model/               - AI model components
     ├── __init__.py
-    └── agent.py        - VLM agent implementation
+    └── agent.py         - VLM agent implementation
 ```
+
+Additional scripts:
+- `install_emulators.sh` - Helper script to install all emulator dependencies
+- `test_emulator_example.sh` - Example script to test all emulator implementations
 
 ## Advanced Features
 
@@ -369,8 +441,13 @@ MIT License
 
 ## Acknowledgments
 
-- [PyBoy](https://github.com/Baekalfen/PyBoy) - Game Boy emulator
+- [PyBoy](https://github.com/Baekalfen/PyBoy) - Game Boy/Game Boy Color emulator
 - [mGBA](https://mgba.io/) - Game Boy Advance emulator
+- [FCEUX](https://fceux.com/) - Nintendo Entertainment System emulator
+- [Snes9x](https://github.com/snes9xgit/snes9x) - Super Nintendo emulator
+- [Genesis Plus GX](https://github.com/ekeeke/Genesis-Plus-GX) - Sega Genesis/Mega Drive emulator
+- [Mupen64Plus](https://mupen64plus.org/) - Nintendo 64 emulator
+- [DuckStation](https://github.com/stenzek/duckstation) - PlayStation emulator
 - [Qwen2.5-VL](https://github.com/QwenLM/Qwen2-VL) - Vision-language model
 - [vLLM](https://github.com/vllm-project/vllm) - LLM inference engine
 
