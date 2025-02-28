@@ -10,9 +10,9 @@ model:
   summary_interval: 10 # Generate summary every X turns when summary feature is enabled
   max_tokens: 200 # Max tokens to generate for action decision (increased for JSON responses)
   temperature: 0.2 # Lower temperature for more focused responses
-  
+
   # Message history settings
-  max_message_history: 5  # Number of past interactions to include in context
+  max_message_history: 3 # Number of past interactions to include in context
 
   # API authentication (for external providers)
   api_key: null # API key for OpenAI, Claude, Mistral (set via environment variable or directly)
@@ -20,7 +20,7 @@ model:
 
   # Response format configuration
   json_schema_support: true # Whether the model supports JSON schema responses
-  try_json_schema: true     # Try using JSON schema with llama.cpp and local providers
+  try_json_schema: true # Try using JSON schema with llama.cpp and local providers
 
   # Frame caching configuration
   enable_cache: true # Enable frame caching to reduce API calls
@@ -354,16 +354,16 @@ games:
       - "HIDDEN SECRETS: Look for blocks that contain power-ups or coins. Some invisible blocks contain extra lives."
       - "BOSS STRATEGY: Jump three times on each world boss. For final boss (Tatanga), shoot his spaceship with Superballs or jump into him 3 times."
 
-  tetris:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Tetris (World).zip"
+  tetris2:
+    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Tetris 2 (USA).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.2 # Default seconds to wait after each action
     example_json: |
       {
         "action": "Left",
-        "reasoning": "I'm pressing Left to position the current falling piece (which appears to be an L-piece/orange piece) closer to the left wall. The game screen shows the Tetris playing field with the L-piece currently falling near the center of the screen. Moving it left will allow me to place it flush against the left wall and complete a row. Looking at the playing field, there's a gap at the bottom left that perfectly fits this L-piece. The next piece shown in the preview window in the top-right corner is an I-piece (cyan long piece), which I'll want to save for a potential Tetris (4-line clear) if I can create a column for it. There are currently about 10-12 rows of blocks at the bottom of the screen, with most gaps on the left side, making left placement of this L-piece optimal for maintaining a balanced stack.",
-        "game_summary": "I'm playing Tetris A-Type mode at level 4 with a current score of 24,680 points. I've cleared 32 lines so far and am working on building a well on the right side to set up for a Tetris (4-line clear) with the upcoming I-piece. The game speed is moderate at this level, giving me sufficient time to position pieces precisely."
+        "reasoning": "I'm pressing Left to position the current falling block closer to the left side of the screen. The game shows a falling block that appears to be a colored square, and there's a matching block at the bottom left of the playing field. In Tetris 2, the goal is to match blocks of the same color to make them disappear, rather than completing horizontal lines as in traditional Tetris. Moving this block to the left will allow me to place it adjacent to the matching colored block, which will set up a potential match if I can get a third block of the same color. The next piece is shown in the preview window, and I need to plan ahead to create color matches efficiently. There are already several rows of mixed blocks at the bottom of the screen, and managing these well is crucial to avoid the stack reaching the top.",
+        "game_summary": "I'm playing Tetris 2 for Game Boy at level 3 with a current score of 15,420 points. Unlike traditional Tetris, this game focuses on matching blocks of the same color rather than completing lines. I need to create groups of three or more identical blocks to make them disappear. The game speed is moderate at this level, and I'm working to clear the existing stack of blocks by creating strategic color matches."
       }
     # Game-specific timing configurations
     timing:
@@ -375,40 +375,37 @@ games:
         menu: 0.3 # For Start button (pause/menu)
         special: 0.2 # For Select button (rarely used)
         wait: 0.1 # For "None" action (waiting)
-      # Specific action overrides for Tetris
+      # Specific action overrides for Tetris 2
       actions:
         Down: 0.08 # Down is used for soft drop, needs faster response
     prompt_additions:
-      - "This is Tetris for Game Boy (1989), the definitive version of the classic Soviet puzzle game that helped popularize the Game Boy."
-      - "MAIN OBJECTIVE: Arrange falling tetrominoes (shapes made of 4 blocks) to form complete horizontal lines that will disappear."
-      - "GAME MODES: A-Type (play until you top out), B-Type (clear a specific number of lines with optional handicap)."
+      - "This is Tetris 2 for Game Boy (1993), a puzzle game that evolves the classic Tetris formula with color matching mechanics."
+      - "MAIN OBJECTIVE: Match blocks of the same color to clear them from the playing field, rather than completing horizontal lines."
+      - "GAME MODES: End Round (arcade-style levels), VS. Round (2-player mode), and Marathon (endless play)."
       - "CONTROLS:"
       - "- Left/Right: Move the current piece horizontally."
-      - "- Down: Soft drop (accelerate the piece's descent for more points)."
-      - "- A or B: Rotate the piece clockwise (this version has no counter-clockwise rotation)."
+      - "- Down: Soft drop (accelerate the piece's descent)."
+      - "- A or B: Rotate the piece (clockwise with A, counter-clockwise with B in this version)."
       - "PIECE PREVIEW: The next piece appears in the top-right corner. Plan ahead using this information."
-      - "SCORING SYSTEM:"
-      - "- Single line clear: 40 × level"
-      - "- Double line clear: 100 × level"
-      - "- Triple line clear: 300 × level"
-      - "- Tetris (four lines): 1200 × level"
-      - "- Soft drop: 1 point per cell dropped"
-      - "LEVEL PROGRESSION: Every 10 lines cleared increases the level, making pieces fall faster."
-      - "TETROMINO PIECES (7 types):"
-      - "- I-piece (cyan): Long straight piece, essential for Tetris clears."
-      - "- O-piece (yellow): 2×2 square, easiest to place."
-      - "- T-piece (purple): T-shaped, versatile for filling gaps."
-      - "- S-piece (green): S-shaped, can be tricky to place."
-      - "- Z-piece (red): Z-shaped, mirror of S-piece."
-      - "- J-piece (blue): J-shaped, good for clearing the left side."
-      - "- L-piece (orange): L-shaped, good for clearing the right side."
+      - "GAMEPLAY MECHANICS:"
+      - "- Blocks come in various colors (red, blue, yellow, etc.)"
+      - "- Match 3 or more blocks of the same color to make them disappear"
+      - "- Blocks float upward if there's nothing beneath them, allowing for chain reactions"
+      - "- Special 'bomb' blocks can clear larger areas when matched"
+      - "LEVEL PROGRESSION: Progress through levels by clearing a certain number of blocks, with speed increasing each level."
+      - "BLOCK TYPES:"
+      - "- Single blocks: Simple colored squares, easiest to place"
+      - "- Double blocks: Two connected squares of different colors"
+      - "- Triple blocks: Three connected squares in various configurations"
+      - "- Special blocks: Appear in later levels with unique behaviors"
       - "CRITICAL STRATEGIES:"
-      - "- Leave a column empty on the far right or left for I-pieces to set up Tetris clears."
-      - "- Avoid creating 'holes' (empty spaces covered by blocks) which are difficult to clear."
-      - "- Stack pieces flat when possible to maximize flexibility."
-      - "- At higher levels, prioritize survival over complex setups."
-      - "HIGH SCORE: The game saves the top 3 scores until the Game Boy is turned off."
-      - "UNIQUE FEATURE: Completing the B-Type mode with the highest handicap triggers a special animation of the Buran spacecraft launch."
+      - "- Focus on creating matches of the same color rather than completing lines"
+      - "- Set up 'chain reactions' where clearing one set of blocks causes others to fall and match"
+      - "- Try to clear blocks from the bottom up to avoid the stack reaching the top"
+      - "- Place unmatched blocks strategically so they can be used in future matches"
+      - "- Watch for opportunities to use floating blocks for unexpected matches"
+      - "SCORING: Points are awarded based on the number of blocks cleared simultaneously and chain reactions."
+      - "GAME OVER: Occurs when the stack of blocks reaches the top of the playing field."
 
   castlevania_ii:
     rom: "/Users/ericflo/Development/emuvlm/roms/gb/Castlevania II - Belmont's Revenge (USA, Europe).zip"
