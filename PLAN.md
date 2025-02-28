@@ -151,21 +151,23 @@ Each game can specify:
 
 Example configuration:
 ```yaml
-zelda_links_awakening:
-  rom: "/path/to/zelda_links_awakening.gb"
-  emulator: "pyboy"
-  actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-  action_delay: 0.4
-  game_type: "zelda"                # Game type identifier
-  timing:
-    menu_nav_delay: 0.3             # Zelda-specific menu timing
-    dialog_delay: 1.0
-    screen_transition_delay: 0.7
-    item_use_delay: 0.5
-  settings:
-    detect_loading_screens: true    # Enable loading screen detection
-    frame_analysis: true            # More detailed frame analysis
-    max_blank_frames: 5             # Anti-stalling setting
+# In config.yaml:
+games:
+  zelda_links_awakening:
+    rom: "/path/to/zelda_links_awakening.gb"
+    emulator: "pyboy"
+    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
+    action_delay: 0.4
+    game_type: "zelda"                # Game type identifier
+    timing:
+      menu_nav_delay: 0.3             # Zelda-specific menu timing
+      dialog_delay: 1.0
+      screen_transition_delay: 0.7
+      item_use_delay: 0.5
+    settings:
+      detect_loading_screens: true    # Enable loading screen detection
+      frame_analysis: true            # More detailed frame analysis
+      max_blank_frames: 5             # Anti-stalling setting
 ```
 
 ### Enhanced Game-Type Specific Features

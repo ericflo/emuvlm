@@ -526,17 +526,21 @@ EmuVLM now uses a configuration-driven approach to provide specialized AI behavi
 
 ### Configuration-Driven Game Agents
 
-Instead of hardcoding game-specific logic, we use configuration files to define game behaviors:
+Instead of hardcoding game-specific logic, we use the configuration file to define game behaviors:
 
 ```yaml
-# In your game config file:
-game_type: "pokemon"  # Specifies the game type
-prompt_additions:
-  - "This is Pokemon Blue for Game Boy, a classic RPG."
-  - "Use A to interact and confirm, B to cancel."
-  - "During battles, select FIGHT to use moves against opponents."
-settings:
-  detect_loading_screens: true  # Enable loading screen detection
+# In config.yaml:
+games:
+  pokemon_blue:
+    rom: "/path/to/PokemonBlue.gb"
+    emulator: "pyboy"
+    game_type: "pokemon"  # Specifies the game type
+    prompt_additions:
+      - "This is Pokemon Blue for Game Boy, a classic RPG."
+      - "Use A to interact and confirm, B to cancel."
+      - "During battles, select FIGHT to use moves against opponents."
+    settings:
+      detect_loading_screens: true  # Enable loading screen detection
 ```
 
 Supported game types include:

@@ -19,7 +19,7 @@ Place your ROM files in the appropriate subdirectories:
 2. All ROM files are gitignored to prevent copyright issues.
 3. Please ensure you have the legal right to use any ROMs you place in these directories.
 4. For PS1 games, use the `.cue` file as the ROM path in configuration files.
-5. Configure your ROMs in the YAML files inside the `examples/` directory or create your own configuration files.
+5. Configure your ROMs in the main `config.yaml` file.
 
 ## Example Configuration:
 
