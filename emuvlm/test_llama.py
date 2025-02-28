@@ -41,7 +41,7 @@ def load_config(config_path: str) -> dict:
 _agent = None
 
 def test_llama(config_path: str, model_path: str, test_image: str, actions: list = None, port: int = 8000, 
-             start_server: bool = True, test_loading_detection: bool = False):
+             start_server: bool = True):
     """
     Test the llama.cpp integration with a single image.
     
@@ -52,7 +52,6 @@ def test_llama(config_path: str, model_path: str, test_image: str, actions: list
         actions: Optional list of valid actions
         port: Port to use for the API server
         start_server: Whether to start the server before testing
-        test_loading_detection: Whether to test the loading screen detection
     """
     global _agent
     
@@ -190,23 +189,6 @@ Where "action" is EXACTLY one of: {', '.join(actions)}"""
     # Load test image
     image = Image.open(test_image)
     
-    # Test loading screen detection if requested
-    if test_loading_detection:
-        logger.info("Testing loading screen detection...")
-        is_loading = _agent._is_loading_screen(image)
-        logger.info(f"Loading screen detection result: {is_loading}")
-        
-        # Get more detailed image statistics
-        gray = image.convert('L')
-        pixels = list(gray.getdata())
-        unique_colors = len(set(pixels))
-        logger.info(f"Image statistics: {unique_colors} unique colors in grayscale")
-        
-        # If detected as loading screen, return None without asking the model
-        if is_loading:
-            logger.info("Loading screen detected automatically, returning None action")
-            return None
-    
     # Get action recommendation
     logger.info(f"Sending test image to model: {test_image}")
     start_time = time.time()
@@ -230,7 +212,6 @@ def main():
     parser.add_argument("--port", type=int, default=8000, help="Port for the server (default: 8000)")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind the server to")
     parser.add_argument("--no-autostart", action="store_true", help="Don't automatically start the server")
-    parser.add_argument("--test-loading", action="store_true", help="Test the loading screen detection logic")
     
     args = parser.parse_args()
     
@@ -305,46 +286,45 @@ def main():
                 args.image, 
                 action_list, 
                 port=args.port,
-                start_server=not args.no_autostart,
-                test_loading_detection=args.test_loading
+                start_server=not args.no_autostart
             )
             # Try to get the original JSON response before parsing
             raw_response = None
             if hasattr(_agent, '_last_raw_response'):
                 raw_response = _agent._last_raw_response
             
-            # If action is empty, let's indicate that the default fallback worked
-            if not action or action.strip() == "":
-                print(f"\nModel returned empty response, defaulting to 'Up'")
+            # Print the result, including None decisions
+            if action is None:
+                print(f"\nFinal result: Model recommends no action (None)")
             else:
                 print(f"\nFinal result: Model recommends action '{action}'")
                 
-                # Always print the raw response for debugging
-                print("\nRaw response:")
-                
-                # Clean up the raw response to make it more readable
-                clean_response = raw_response
-                if raw_response:
-                    # Remove the control sequences that might be present
-                    clean_response = re.sub(r'<\|.*?\|>', '', raw_response)
-                    # Truncate if too long
-                    if len(clean_response) > 500:
-                        clean_response = clean_response[:500] + "... [truncated]"
-                
-                print(clean_response)
-                
-                # If we have a JSON response, print it nicely
-                if raw_response and raw_response.strip().startswith('{') and raw_response.strip().endswith('}'):
-                    try:
-                        json_response = json.loads(raw_response)
-                        print("\nJSON Response:")
-                        print(json.dumps(json_response, indent=2))
-                        
-                        # Show reasoning if available
-                        if 'reasoning' in json_response:
-                            print(f"\nModel reasoning: {json_response['reasoning']}")
-                    except json.JSONDecodeError:
-                        print("Failed to parse as JSON")
+            # Always print the raw response for debugging
+            print("\nRaw response:")
+            
+            # Clean up the raw response to make it more readable
+            clean_response = raw_response
+            if raw_response:
+                # Remove the control sequences that might be present
+                clean_response = re.sub(r'<\|.*?\|>', '', raw_response)
+                # Truncate if too long
+                if len(clean_response) > 500:
+                    clean_response = clean_response[:500] + "... [truncated]"
+            
+            print(clean_response)
+            
+            # If we have a JSON response, print it nicely
+            if raw_response and raw_response.strip().startswith('{') and raw_response.strip().endswith('}'):
+                try:
+                    json_response = json.loads(raw_response)
+                    print("\nJSON Response:")
+                    print(json.dumps(json_response, indent=2))
+                    
+                    # Show reasoning if available
+                    if 'reasoning' in json_response:
+                        print(f"\nModel reasoning: {json_response['reasoning']}")
+                except json.JSONDecodeError:
+                    print("Failed to parse as JSON")
         except Exception as e:
             print(f"Error during testing: {e}")
             raise

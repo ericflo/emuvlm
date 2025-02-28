@@ -18,7 +18,6 @@ from emuvlm.emulators.fceux_emulator import FCEUXEmulator
 from emuvlm.emulators.genesis_plus_gx_emulator import GenesisPlusGXEmulator
 from emuvlm.emulators.duckstation_emulator import DuckstationEmulator
 from emuvlm.emulators.mupen64plus_emulator import Mupen64PlusEmulator
-from emuvlm.emulators.gamegear_emulator import GameGearEmulator
 
 # Initialize logging
 logging.basicConfig(
@@ -115,8 +114,6 @@ def test_all_emulators(rom_paths, iterations=5, delay=0.5):
                 emulator = DuckstationEmulator(rom_path)
             elif emulator_type == 'mupen64plus':
                 emulator = Mupen64PlusEmulator(rom_path)
-            elif emulator_type == 'gamegear':
-                emulator = GameGearEmulator(rom_path)
             else:
                 logger.error(f"Unknown emulator type: {emulator_type}")
                 results[emulator_type] = False
@@ -184,7 +181,7 @@ def main():
     parser = argparse.ArgumentParser(description='Test emulator implementations')
     parser.add_argument('--rom', type=str, help='Path to a ROM file')
     parser.add_argument('--emulator', type=str, 
-                       choices=['pyboy', 'mgba', 'snes9x', 'fceux', 'genesis', 'duckstation', 'mupen64plus', 'gamegear'],
+                       choices=['pyboy', 'mgba', 'snes9x', 'fceux', 'genesis', 'duckstation', 'mupen64plus'],
                        help='Single emulator type to test')
     parser.add_argument('--all', action='store_true', help='Test all emulators with provided ROM paths')
     parser.add_argument('--iterations', type=int, default=5, help='Number of test iterations')
@@ -198,7 +195,6 @@ def main():
     parser.add_argument('--genesis-rom', type=str, help='Path to a Genesis/Mega Drive ROM')
     parser.add_argument('--duckstation-rom', type=str, help='Path to a PlayStation ISO/BIN')
     parser.add_argument('--mupen64plus-rom', type=str, help='Path to a Nintendo 64 ROM')
-    parser.add_argument('--gamegear-rom', type=str, help='Path to a Game Gear ROM')
     
     args = parser.parse_args()
     
@@ -214,8 +210,7 @@ def main():
             'fceux': args.fceux_rom,
             'genesis': args.genesis_rom,
             'duckstation': args.duckstation_rom,
-            'mupen64plus': args.mupen64plus_rom,
-            'gamegear': args.gamegear_rom
+            'mupen64plus': args.mupen64plus_rom
         }
         
         success = test_all_emulators(
@@ -251,8 +246,6 @@ def main():
                 emulator = DuckstationEmulator(args.rom)
             elif emulator_type == 'mupen64plus':
                 emulator = Mupen64PlusEmulator(args.rom)
-            elif emulator_type == 'gamegear':
-                emulator = GameGearEmulator(args.rom)
             else:
                 logger.error(f"Unsupported emulator type: {args.emulator}")
                 return 1

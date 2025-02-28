@@ -141,11 +141,11 @@ class TestLLMAgentAdditional:
         json_response = json.dumps({"action": "Start", "reasoning": "Open the menu"})
         assert agent.parse_action(json_response) == "Start"
         
-        # Test empty response
-        assert agent.parse_action("") == "Up"
+        # Test empty response - should return None now
+        assert agent.parse_action("") is None
         
-        # Test invalid action
-        assert agent.parse_action("Invalid action") == "Up"
+        # Test invalid action - should return None now
+        assert agent.parse_action("Invalid action") is None
     
     @patch('requests.post')
     def test_query_model(self, mock_post, agent, mock_image):

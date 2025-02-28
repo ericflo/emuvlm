@@ -177,16 +177,6 @@ class LLMAgent:
         Returns:
             str: The agent's decision as text, or None for no action
         """
-        # Check if loading screen detection is enabled and this is a loading screen
-        detect_loading = self.model_config.get('detect_loading_screens', False)
-        # Also check game settings if available
-        if 'settings' in self.model_config and 'detect_loading_screens' in self.model_config['settings']:
-            detect_loading = self.model_config['settings']['detect_loading_screens']
-            
-        if detect_loading and self._is_loading_screen(frame):
-            logger.info("Loading screen detected - choosing not to act")
-            return None
-            
         # Check cache first if enabled
         if self.enable_cache:
             # Check if this frame is very similar to the last one
@@ -286,7 +276,7 @@ class LLMAgent:
             action_text: Text response from the model
             
         Returns:
-            str: A valid action or empty string if parsing failed
+            str: A valid action, None for no action, or empty string if parsing failed
         """
         # First, try to parse the response as JSON
         try:
@@ -315,11 +305,10 @@ class LLMAgent:
             logger.warning(f"Failed to parse JSON response: {e}")
             # Continue with text-based parsing if JSON parsing fails
         
-        # Handle empty responses
+        # Handle empty responses - no fallback
         if not action_text or action_text.strip() == "":
-            # For empty responses, default to a reasonable action like Up
-            logger.warning("Received empty response from model, defaulting to 'Up'")
-            return "Up"
+            logger.warning("Received empty response from model, taking no action")
+            return None
             
         # Convert to lowercase for case-insensitive matching
         text = action_text.lower()
@@ -358,18 +347,9 @@ class LLMAgent:
                     if capitalized in self.valid_actions:
                         return capitalized
         
-        # If we could match anything, try to find a default based on the context
-        if "up" in text or "move" in text:
-            return "Up"
-        # For the test_parse_action that specifically checks "Invalid action" returns "Up"
-        if "invalid" in text:
-            return "Up"
-        if "a" in text or "button" in text:
-            return "A"
-            
-        # If all else fails, default to a safe action
-        logger.warning(f"Could not parse a valid action from: '{action_text}', defaulting to 'Up'")
-        return "Up"
+        # No default action - return None if we can't determine an action
+        logger.warning(f"Could not parse a valid action from: '{action_text}', taking no action")
+        return None
     
     def _prepare_image(self, image: Image.Image) -> str:
         """
@@ -986,145 +966,6 @@ Your response will be automatically validated against a JSON schema."""
             return 1.0
         return 1.0 - (diff_sum / max_diff)
         
-    def _is_loading_screen(self, frame: Image.Image) -> bool:
-        """
-        Detect if a frame is likely a loading screen.
-        
-        Args:
-            frame: The PIL Image to analyze
-            
-        Returns:
-            bool: True if the frame appears to be a loading screen
-        """
-        # Convert to grayscale for analysis
-        gray = frame.convert('L')
-        
-        # Get pixel data
-        pixels = list(gray.getdata())
-        
-        # Calculate basic statistics
-        unique_colors = len(set(pixels))
-        
-        # Calculate standard deviation of pixel values (low std dev indicates uniform screen)
-        import numpy as np
-        pixel_array = np.array(pixels)
-        std_dev = np.std(pixel_array)
-        
-        # Get the game type to customize detection
-        game_type = self._get_game_type()
-        
-        # Get additional settings if available
-        frame_analysis = False
-        if 'settings' in self.model_config and 'frame_analysis' in self.model_config['settings']:
-            frame_analysis = self.model_config['settings']['frame_analysis']
-            
-        # Track blank frame count to help with sequential blank frames
-        if not hasattr(self, '_blank_frame_count'):
-            self._blank_frame_count = 0
-            
-        # Check for max blank frames setting
-        max_blank_frames = 3  # Default
-        if 'settings' in self.model_config and 'max_blank_frames' in self.model_config['settings']:
-            max_blank_frames = self.model_config['settings']['max_blank_frames']
-            
-        # Customize detection based on game type
-        if game_type == 'zelda':
-            # Zelda-specific loading screen detection
-            # Zelda tends to have screen transitions that are more complex
-            # Lower the unique color threshold for more accurate detection
-            
-            # Very uniform screens may be loading screens, title screens, or transitions
-            if unique_colors <= 5:
-                logger.info(f"Detected Zelda loading/transition screen: only {unique_colors} unique colors")
-                self._blank_frame_count += 1
-                if self._blank_frame_count > max_blank_frames:
-                    logger.info(f"Skipping after {self._blank_frame_count} consecutive blank frames")
-                return True
-                
-            # Also check for solid color sections that might indicate screen wipes
-            # This divides the screen into quadrants and checks if any quadrant is uniform
-            width, height = frame.size
-            quadrants = [
-                (0, 0, width//2, height//2),            # Top-left
-                (width//2, 0, width, height//2),        # Top-right
-                (0, height//2, width//2, height),       # Bottom-left
-                (width//2, height//2, width, height)    # Bottom-right
-            ]
-            
-            if frame_analysis:
-                # More detailed analysis for Zelda
-                # Check for scrolling transitions
-                h_sections = 4  # Divide screen horizontally into sections
-                v_sections = 4  # Divide screen vertically into sections
-                
-                # Create grid of sections
-                grid_sections = []
-                section_width = width // h_sections
-                section_height = height // v_sections
-                
-                for y in range(v_sections):
-                    for x in range(h_sections):
-                        grid_sections.append((
-                            x * section_width, 
-                            y * section_height,
-                            (x + 1) * section_width,
-                            (y + 1) * section_height
-                        ))
-                
-                # Check if we have a pattern of uniform sections (like screen wipes)
-                uniform_sections = 0
-                for i, section in enumerate(grid_sections):
-                    section_img = frame.crop(section)
-                    section_pixels = list(section_img.convert('L').getdata())
-                    section_unique = len(set(section_pixels))
-                    
-                    if section_unique <= 2:
-                        uniform_sections += 1
-                
-                # If more than half the sections are uniform, likely a transition
-                if uniform_sections > (h_sections * v_sections) // 2:
-                    logger.info(f"Detected Zelda scrolling transition: {uniform_sections} uniform sections")
-                    self._blank_frame_count += 1
-                    return True
-            
-            # Basic quadrant check
-            for i, quad in enumerate(quadrants):
-                quad_img = frame.crop(quad)
-                quad_pixels = list(quad_img.convert('L').getdata())
-                quad_unique = len(set(quad_pixels))
-                
-                if quad_unique <= 3:
-                    logger.info(f"Detected potential Zelda screen transition: quadrant {i} has only {quad_unique} colors")
-                    self._blank_frame_count += 1
-                    return True
-                    
-            # Check for specific color patterns in Zelda (black screens with minimal elements)
-            black_pixels = sum(1 for p in pixels if p < 40)  # Count dark pixels
-            black_ratio = black_pixels / len(pixels)
-            
-            if black_ratio > 0.9 and unique_colors < 10:
-                logger.info(f"Detected Zelda dark transition: {black_ratio:.2f} black ratio with {unique_colors} colors")
-                self._blank_frame_count += 1
-                return True
-                
-        else:
-            # Generic loading screen detection for other games
-            # Very low color count is almost always a loading screen
-            if unique_colors <= 2:
-                logger.info(f"Detected loading screen: only {unique_colors} unique colors")
-                self._blank_frame_count += 1
-                return True
-                
-            # Low std dev combined with few colors often indicates loading screens
-            if unique_colors < 5 and std_dev < 30:
-                logger.info(f"Detected potential loading screen: {unique_colors} unique colors, std dev: {std_dev:.2f}")
-                self._blank_frame_count += 1
-                return True
-        
-        # Not a loading screen, reset blank frame counter
-        self._blank_frame_count = 0
-        logger.debug(f"Not a loading screen: {unique_colors} unique colors, std dev: {std_dev:.2f}")
-        return False
     
     def _save_frame_to_cache(self, frame: Image.Image, frame_hash: str) -> None:
         """

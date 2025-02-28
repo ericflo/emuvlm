@@ -58,9 +58,9 @@ class TestLLMAgent:
         assert agent.parse_action("Move down to the next option") == "Down"
         assert agent.parse_action("Push B to cancel") == "B"
         
-        # Invalid actions - should use default action "Up" when input is unrecognized
-        assert agent.parse_action("Invalid action") == "Up"
-        assert agent.parse_action("Jump") == "Up"  # Not in valid_actions
+        # Invalid actions - should now return None instead of "Up"
+        assert agent.parse_action("Invalid action") is None
+        assert agent.parse_action("Jump") is None  # Not in valid_actions
     
     @patch('requests.post')
     def test_decide_action(self, mock_post, sample_frame):

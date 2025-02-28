@@ -27,6 +27,7 @@ build/
 # Logs and output
 logs/
 output/
+cache/
 *.log
 
 # Model files
