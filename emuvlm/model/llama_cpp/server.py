@@ -119,7 +119,9 @@ def start_server(
         "--n_gpu_layers", str(n_gpu_layers),
         "--n_ctx", str(n_ctx),
         "--n_batch", str(n_batch),
-        "--chat_format", "chatml"
+        "--chat_format", "chatml",
+        "--cache_type", "prefix",  # Enable prefix caching for better performance
+        "--cache_size", "2048"     # Cache size in number of tokens
     ]
     
     # Add multimodal support for LLaVA models

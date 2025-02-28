@@ -150,7 +150,9 @@ if [[ "$MODEL_PATH" == *"llava"* ]] || [[ "$MODEL_PATH" == *"LLaVA"* ]]; then
             --chat_format chatml \
             --temperature 0.2 \
             --top_p 0.9 \
-            --mmproj "$MMPROJ_PATH"
+            --mmproj "$MMPROJ_PATH" \
+            --cache-type "prefix" \
+            --cache-size 2048
     else
         echo "Warning: Multimodal projector file not found at $MMPROJ_PATH"
         echo "Will try to download it automatically, but if this fails,"
@@ -167,7 +169,9 @@ if [[ "$MODEL_PATH" == *"llava"* ]] || [[ "$MODEL_PATH" == *"LLaVA"* ]]; then
             --n_batch 512 \
             --chat_format chatml \
             --temperature 0.2 \
-            --top_p 0.9
+            --top_p 0.9 \
+            --cache-type "prefix" \
+            --cache-size 2048
     fi
 else
     # Standard model without multimodal
@@ -180,5 +184,7 @@ else
         --n_batch 512 \
         --chat_format chatml \
         --temperature 0.2 \
-        --top_p 0.9
+        --top_p 0.9 \
+        --cache-type "prefix" \
+        --cache-size 2048
 fi
