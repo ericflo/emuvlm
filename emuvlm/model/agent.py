@@ -643,16 +643,24 @@ class LLMAgent:
                 params["response_format"] = {"type": "json_object"}
             elif self.provider == 'local':
                 if self.backend == 'llama.cpp':
-                    # Some llama.cpp versions support schema, some don't - try schema first
-                    try_schema = self.model_config.get('try_json_schema', True)
-                    if try_schema:
-                        params["response_format"] = {
-                            "type": "json_schema",
-                            "schema": json_schema
-                        }
-                        logger.debug("Trying JSON schema response format with llama.cpp")
-                    else:
+                    # Check if we're using the built-in llama.cpp server module
+                    is_builtin_server = bool(self.model_config.get('autostart_server', False))
+                    
+                    # For built-in server (llama-cpp-python), always use json_object
+                    if is_builtin_server:
                         params["response_format"] = {"type": "json_object"}
+                        logger.debug("Using json_object response format with built-in llama.cpp server")
+                    else:
+                        # For external llama.cpp binary, use schema format if enabled
+                        try_schema = self.model_config.get('try_json_schema', True)
+                        if try_schema:
+                            params["response_format"] = {
+                                "type": "json_schema",
+                                "schema": json_schema
+                            }
+                            logger.debug("Trying JSON schema response format with external llama.cpp")
+                        else:
+                            params["response_format"] = {"type": "json_object"}
                 else:
                     # vLLM and other local backends use json_schema format
                     params["response_format"] = {
