@@ -262,30 +262,6 @@ class PyBoyEmulator(EmulatorBase):
         # Get the screen image from PyBoy
         screen = self.emulator.screen_image()
         
-        # Check if the image has some visible content beyond just background
-        # We'll look for variation in pixel values rather than just counting non-white pixels
-        import numpy as np
-        img_array = np.array(screen)
-        
-        # Count how many unique colors are in the image
-        # For a blank or nearly blank image, there will be very few unique colors
-        # Flatten the array to 1D and then find unique values
-        unique_colors = np.unique(img_array.reshape(-1, 3), axis=0)
-        num_unique_colors = len(unique_colors)
-        
-        # Calculate color variation - standard deviation across the image
-        # Low variation indicates a mostly uniform image (likely blank)
-        color_std = np.std(img_array)
-        
-        # If there are few unique colors and low variation, mark the frame as potentially blank
-        if num_unique_colors < 10 or color_std < 10:
-            # Create a new image with a red border to indicate potentially blank frame
-            from PIL import ImageDraw
-            draw = ImageDraw.Draw(screen)
-            draw.rectangle([(0, 0), (screen.width-1, screen.height-1)], outline="red", width=3)
-            # Add debug info to the log
-            logger.warning(f"Potentially blank frame detected: {num_unique_colors} unique colors, std: {color_std:.2f}")
-        
         # PyBoy returns a PIL Image already
         return screen
     
