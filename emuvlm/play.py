@@ -175,6 +175,19 @@ def main():
                       help='Path to session file to resume a game')
     parser.add_argument('--session-save-interval', type=int, default=None,
                       help='Override auto-save interval from config')
+    
+    # Add model provider and configuration arguments
+    parser.add_argument('--provider', type=str, default=None,
+                      help='Model provider (local, openai, anthropic, mistral, custom)')
+    parser.add_argument('--model-name', type=str, default=None,
+                      help='Model name for the selected provider (e.g., gpt-4o, claude-3-haiku-20240307)')
+    parser.add_argument('--api-url', type=str, default=None,
+                      help='API URL for the model provider')
+    parser.add_argument('--temperature', type=float, default=None,
+                      help='Model temperature (0.0 to 1.0)')
+    parser.add_argument('--max-tokens', type=int, default=None,
+                      help='Maximum tokens for model response')
+    
     args = parser.parse_args()
     
     # Load configuration with better path handling
@@ -286,6 +299,37 @@ def main():
     model_config = config.get('model', {}).copy()
     model_config['enable_cache'] = args.cache.lower() == 'on'
     model_config['autostart_server'] = True
+    
+    # Apply command-line model configuration overrides
+    if args.provider:
+        model_config['provider'] = args.provider
+        logger.info(f"Using provider from command line: {args.provider}")
+        
+        # For OpenAI, Anthropic, and Mistral, read API key from environment variable if not in config
+        if args.provider in ['openai', 'anthropic', 'mistral'] and not model_config.get('api_key'):
+            env_var_name = f"{args.provider.upper()}_API_KEY"
+            api_key = os.environ.get(env_var_name)
+            if api_key:
+                model_config['api_key'] = api_key
+                logger.info(f"Using API key from environment variable {env_var_name}")
+            else:
+                logger.warning(f"No API key provided in config or environment variable {env_var_name}")
+    
+    if args.model_name:
+        model_config['model_name'] = args.model_name
+        logger.info(f"Using model name from command line: {args.model_name}")
+    
+    if args.api_url:
+        model_config['api_url'] = args.api_url
+        logger.info(f"Using API URL from command line: {args.api_url}")
+    
+    if args.temperature is not None:
+        model_config['temperature'] = args.temperature
+        logger.info(f"Using temperature from command line: {args.temperature}")
+    
+    if args.max_tokens is not None:
+        model_config['max_tokens'] = args.max_tokens
+        logger.info(f"Using max tokens from command line: {args.max_tokens}")
     
     # Pass game-specific properties to model config
     if 'game_type' in game_config:
