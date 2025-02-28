@@ -28,6 +28,7 @@ dependencies = [
     "transformers>=4.30.0",
     "qwen-vl-utils>=0.0.8",
     "tqdm>=4.65.0",
+    "jinja2>=3.1.0",
 ]
 
 [project.optional-dependencies]
@@ -49,6 +50,8 @@ emuvlm-monitor = "emuvlm.cli:monitor"
 emuvlm-test-emulators = "emuvlm.cli:test_emulators"
 emuvlm-test-model = "emuvlm.cli:test_model"
 emuvlm-test-llama = "emuvlm.cli:test_llama"
+emuvlm-test-templates = "emuvlm.model.test_templates:main"
+emuvlm-test-agent-template = "emuvlm.model.test_agent_template:main"
 emuvlm-vllm-server = "emuvlm.cli:start_vllm_server"
 emuvlm-llama-server = "emuvlm.cli:start_llama_server"
 emuvlm-download-model = "emuvlm.cli:download_model"

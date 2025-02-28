@@ -1,0 +1,136 @@
+{# Template for generating highly detailed reasoning guidelines based on game type #}
+
+{% if game_type == 'pokemon' %}
+Your reasoning should thoroughly analyze the following aspects:
+
+BATTLE ANALYSIS (if in battle):
+• Identify all Pokémon present (yours and opponent's)
+• Note HP levels (high, medium, low) and any status conditions (poison, sleep, etc.)
+• Consider type advantages/disadvantages if evident
+• Analyze visible move options and their strategic value
+• Evaluate whether to attack, use items, switch Pokémon, or run
+
+MENU NAVIGATION:
+• Identify which menu screen is currently displayed (main menu, battle menu, item menu, etc.)
+• Note which option is currently highlighted or selected
+• Determine the logical next step in menu navigation
+• Consider hierarchical menu structure (if going deeper or returning)
+
+DIALOGUE INTERPRETATION:
+• Identify who is speaking (if applicable)
+• Determine if the dialogue requires a response or is informational
+• Note if text is complete or still appearing
+• Look for visual cues indicating required input (arrow, flashing indicator)
+
+OVERWORLD MOVEMENT:
+• Identify the current location (town, route, building interior)
+• Note visible NPCs, objects, or points of interest
+• Consider directional indicators or objectives visible on screen
+• Evaluate the most logical path forward based on context
+
+PROGRESSION INDICATORS:
+• Note any quest markers, objective text, or directional indicators
+• Check for badges, items, or other progress indicators in UI elements
+• Consider how your action contributes to game progression
+• Evaluate whether exploration or advancing the story is more appropriate
+
+{% elif game_type == 'rpg' or game_type == 'final_fantasy' %}
+Your reasoning should thoroughly analyze the following aspects:
+
+CHARACTER ASSESSMENT:
+• Identify all party members visible on screen
+• Note HP/MP bars and current status conditions
+• Check for any character-specific indicators or states
+• Evaluate which character is active or whose turn it is (if in battle)
+
+BATTLE TACTICS (if in battle):
+• Analyze enemy types and their potential weaknesses
+• Note the battle menu options available (Attack, Magic, Items, etc.)
+• Consider turn order and timing (ATB gauges if visible)
+• Evaluate strategic priorities (healing vs. attacking vs. buffing)
+• Consider resource management (MP, items, limit breaks)
+
+MENU NAVIGATION:
+• Identify the current menu context (battle menu, equipment, magic, etc.)
+• Note highlighted options and cursor position
+• Determine logical progression through menu hierarchy
+• Consider information presented in status screens
+
+NARRATIVE CONTEXT:
+• Note any dialogue text and who is speaking
+• Identify story cues or character reactions
+• Consider dialogue choices and their potential impacts
+• Evaluate whether the scene requires input or is an automated sequence
+
+EXPLORATION OBJECTIVES:
+• Identify current location and visible landmarks
+• Note environmental cues about where to go next
+• Consider map indicators or quest markers if visible
+• Evaluate whether to explore or advance the main objective
+
+{% elif game_type == 'action' or game_type == 'zelda' %}
+Your reasoning should thoroughly analyze the following aspects:
+
+SPATIAL AWARENESS:
+• Precisely identify Link's position on screen
+• Note room layout, exits, and key environmental features
+• Identify any moving elements (enemies, hazards, NPCs)
+• Consider camera angle and visible game area limitations
+
+COMBAT ASSESSMENT:
+• Identify all enemies present, their positions and behaviors
+• Note Link's health (hearts) and any defensive stance
+• Consider equipped weapon and its appropriateness
+• Evaluate strategic options (attack, defend, evade, use items)
+
+PUZZLE ELEMENTS:
+• Identify interactive objects (switches, blocks, torches)
+• Note environmental patterns or visual cues
+• Consider sequential steps needed to solve visible puzzles
+• Look for color-coding, symbols, or matching elements
+
+INVENTORY MANAGEMENT:
+• Note equipped items shown in the UI
+• Consider appropriate item usage for current situation
+• Look for inventory-related prompts or indicators
+• Evaluate whether item switching is needed
+
+PROGRESSION INDICATORS:
+• Check for map markers, quest objectives, or directional cues
+• Note any NPC dialogue that provides guidance
+• Consider dungeon-specific goals (finding keys, defeating bosses)
+• Evaluate whether current location has been fully explored
+
+{% else %}
+Your reasoning should thoroughly analyze the following aspects:
+
+VISUAL SCENE ASSESSMENT:
+• Precisely describe what's visible on screen (characters, UI elements, environment)
+• Note any text, numbers, or indicators displayed
+• Identify the current game context (menu, gameplay, cutscene, etc.)
+• Consider the focal point that demands attention
+
+INTERACTIVE ELEMENTS:
+• Identify selectable options, buttons, or interactive objects
+• Note highlighted or animated elements suggesting interaction
+• Consider cursor position or currently selected item
+• Evaluate which elements require immediate attention
+
+GAME STATE ANALYSIS:
+• Determine the phase of gameplay (exploration, combat, puzzle-solving, etc.)
+• Note any timers, progress bars, or resource indicators
+• Consider score, level, or progression metrics if visible
+• Evaluate whether the game is waiting for input or processing
+
+STRATEGIC EVALUATION:
+• Consider immediate objectives visible or implied on screen
+• Evaluate risks and rewards of possible actions
+• Note patterns in gameplay that suggest optimal strategies
+• Consider resource management implications of actions
+
+PROGRESSION LOGIC:
+• Determine the most likely path for game progression
+• Consider whether exploration or advancing is more appropriate
+• Note any obstacles that must be overcome
+• Evaluate whether current action supports long-term objectives
+{% endif %}

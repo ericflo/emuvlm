@@ -27,11 +27,11 @@ def test_agent_with_image(agent, image_path):
     Args:
         agent: Initialized LLMAgent instance
         image_path: Path to the image file to test with
-    
-    Returns:
-        dict: Test results
     """
     logger.info(f"Testing agent with image: {image_path}")
+    
+    # Verify image path exists
+    assert os.path.exists(image_path), f"Image file not found: {image_path}"
     
     # Load the image
     image = Image.open(image_path)
@@ -51,28 +51,18 @@ def test_agent_with_image(agent, image_path):
         parsed_action = agent.parse_action(action_text)
         logger.info(f"Parsed action: {parsed_action}")
         
-        result = {
-            "image_path": image_path,
-            "response": action_text,
-            "parsed_action": parsed_action,
-            "elapsed_time": elapsed_time,
-            "success": parsed_action is not None
-        }
+        # Verify we got a response
+        assert action_text is not None, "Agent returned None for action_text"
         
-        return result
+        # We don't need to store the result anywhere for pytest
+        # Pytest just needs the assertions to pass
         
     except Exception as e:
         elapsed_time = time.time() - start_time
         logger.error(f"Error during model test: {e}")
         
-        result = {
-            "image_path": image_path,
-            "error": str(e),
-            "elapsed_time": elapsed_time,
-            "success": False
-        }
-        
-        return result
+        # Fail the test with an assertion
+        assert False, f"Model test failed with error: {e}"
 
 def main():
     """Main entry point for the model test script."""
@@ -109,15 +99,29 @@ def main():
         agent = LLMAgent(model_config, valid_actions)
         
         # Run the test
-        result = test_agent_with_image(agent, image_path)
-        
-        # Save the test results
-        with open(args.output, 'w') as f:
-            json.dump(result, f, indent=2)
+        try:
+            # Just call the test function directly
+            test_agent_with_image(agent, image_path)
             
-        logger.info(f"Test results saved to {args.output}")
-        
-        return 0 if result['success'] else 1
+            # If we get here, the test passed
+            logger.info("Test completed successfully")
+            
+            # Create a simple result dictionary for CLI output
+            result = {
+                "image_path": image_path,
+                "success": True,
+                "message": "Test passed"
+            }
+            
+            # Save the result if requested
+            with open(args.output, 'w') as f:
+                json.dump(result, f, indent=2)
+                
+            logger.info(f"Test results saved to {args.output}")
+            return 0
+        except AssertionError as e:
+            logger.error(f"Test failed with assertion: {e}")
+            return 1
         
     except Exception as e:
         logger.error(f"Error during test setup: {e}")

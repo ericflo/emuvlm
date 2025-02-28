@@ -82,7 +82,8 @@ def test_llama(config_path: str, model_path: str, test_image: str, actions: list
         from unittest.mock import MagicMock
         _agent = MagicMock()
         _agent.parse_action.return_value = "A"
-        return True
+        # Don't return a value in test mode
+        return
         
     _agent = LLMAgent(config['model'], actions, use_summary=False)
     

@@ -52,7 +52,7 @@ def test_cli_entry_point(command_name, entry_point):
     # Check if the module exists
     if not check_module_exists(module_path):
         print(f"  {RED}✗ Module {module_path} not found{RESET}")
-        return False
+        assert False, f"Module {module_path} not found"
     
     # Try to import the module
     try:
@@ -62,7 +62,7 @@ def test_cli_entry_point(command_name, entry_point):
         # Check if the function exists
         if not hasattr(module, function_name):
             print(f"  {RED}✗ Function {function_name} not found in {module_path}{RESET}")
-            return False
+            assert False, f"Function {function_name} not found in {module_path}"
         
         # Get the function
         function = getattr(module, function_name)
@@ -70,7 +70,7 @@ def test_cli_entry_point(command_name, entry_point):
         # Check if it's actually callable
         if not callable(function):
             print(f"  {RED}✗ {function_name} is not callable{RESET}")
-            return False
+            assert False, f"{function_name} is not callable"
         
         print(f"  {GREEN}✓ Function {function_name} is callable{RESET}")
         
@@ -96,16 +96,16 @@ def test_cli_entry_point(command_name, entry_point):
             # Check if the function attempts to import modules that might be 
             # optional dependencies
             print(f"  {GREEN}✓ Entry point {command_name} is accessible{RESET}")
-            return True
+            # Don't return any value for pytest compatibility
             
         except Exception as e:
             print(f"  {YELLOW}! Could not inspect function source: {e}{RESET}")
-            return True
+            # Don't return any value
             
     except Exception as e:
         print(f"  {RED}✗ Error importing {module_path}: {e}{RESET}")
         traceback.print_exc()
-        return False
+        assert False, f"Error importing {module_path}: {e}"
 
 def main():
     """Test all CLI entry points."""
@@ -119,10 +119,11 @@ def main():
     
     for command, entry_point in CLI_ENTRY_POINTS.items():
         print("-" * 60)
-        result = test_cli_entry_point(command, entry_point)
-        if result:
+        try:
+            test_cli_entry_point(command, entry_point)
             success_count += 1
-        else:
+        except AssertionError as e:
+            print(f"  {RED}✗ Test failed: {e}{RESET}")
             failure_count += 1
     
     print("=" * 60)

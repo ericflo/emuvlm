@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 from PIL import Image, ImageChops
 from typing import Dict, List, Optional, Any, Union, Tuple
+from jinja2 import Environment, FileSystemLoader
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,10 @@ class LLMAgent:
         
         # For custom system message in testing
         self.custom_system_message = None
+        
+        # Setup Jinja2 environment for template rendering
+        templates_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
+        self.jinja_env = Environment(loader=FileSystemLoader(templates_dir))
         
         # Determine backend type
         self.backend = model_config.get('backend', 'auto')
@@ -227,15 +232,19 @@ class LLMAgent:
         if self.use_summary:
             self._update_history(frame, valid_action)
             
-            # Also store the reasoning if available and the response is JSON
+            # Also store the reasoning and game summary if available and the response is JSON
             try:
                 if response and response.strip().startswith('{'):
                     json_data = json.loads(response)
+                    
+                    # Extract reasoning
                     if 'reasoning' in json_data:
                         reason = json_data['reasoning']
                         # Append reasoning to the latest history entry
                         if self.history:
                             self.history[-1] += f" - Reasoning: {reason}"
+                    
+                    # We've already stored the game_summary in parse_action if it was available
             except (json.JSONDecodeError, KeyError):
                 # Ignore any JSON parsing errors here
                 pass
@@ -280,10 +289,26 @@ class LLMAgent:
                     # If the action is in our valid actions list, return it
                     if chosen_action in self.valid_actions:
                         logger.info(f"Parsed valid action from JSON: {chosen_action}")
+                        
+                        # Store the game summary if available
+                        if 'game_summary' in response_json and self.use_summary:
+                            game_summary = response_json['game_summary']
+                            logger.info(f"Game summary from agent: {game_summary}")
+                            # Update our summary with the agent's summary
+                            self.summary = game_summary
+                            
                         return chosen_action
                     # Handle "None" action specifically
                     elif chosen_action == "None":
                         logger.info("Agent chose to do nothing (None action)")
+                        
+                        # Store the game summary if available
+                        if 'game_summary' in response_json and self.use_summary:
+                            game_summary = response_json['game_summary']
+                            logger.info(f"Game summary from agent: {game_summary}")
+                            # Update our summary with the agent's summary
+                            self.summary = game_summary
+                            
                         # Return None to indicate no action should be taken
                         return None
                     
@@ -368,6 +393,7 @@ class LLMAgent:
         """
         # List available actions for the model
         action_list = ", ".join(self.valid_actions)
+        valid_actions_with_none = ', '.join(self.valid_actions + ['None'])
         
         # Create JSON schema for response validation
         action_enum = self.valid_actions.copy()
@@ -378,90 +404,62 @@ class LLMAgent:
             "properties": {
                 "reasoning": {
                     "type": "string",
-                    "description": "Brief explanation of why this action was chosen based on the game state"
+                    "description": "Detailed explanation of why this action was chosen based on the game state with visual evidence"
                 },
                 "action": {
                     "type": "string",
                     "enum": action_enum,
                     "description": f"The selected action from the list: {action_list} or None to do nothing"
+                },
+                "game_summary": {
+                    "type": "string",
+                    "description": "A concise summary of the current game state and progress"
                 }
             },
-            "required": ["action", "reasoning"],
+            "required": ["action", "reasoning", "game_summary"],
             "additionalProperties": False
         }
         
         # Get additional prompt pieces from model config
         prompt_additions = self.model_config.get('prompt_additions', [])
 
-        # Game-specific instructions based on game_type
+        # Get game-specific instructions from the config if available
         game_specific_instructions = ""
-        
-        # Get game-specific instructions from the model config
         if game_type:
             game_specific_instructions = self.model_config.get('game_specific_instructions', '')
         
         # Add any custom prompt additions from the config
         custom_instructions = "\n".join(prompt_additions) if prompt_additions else ""
         
-        # Format based on the backend
-        if self.backend == 'llama.cpp':
-            # Check if we have a custom system message (for testing)
-            if self.custom_system_message:
-                system_message = self.custom_system_message
-            else:
-                system_message = f"""You are an AI playing a turn-based video game.
-Analyze the game screen and decide the best action to take next.
-You can choose from these actions: {action_list}, or choose "None" to do nothing.
-
-{game_specific_instructions}
-
-IMPORTANT INSTRUCTION ABOUT "NONE":
-- If you see a loading screen, choose "None"
-- If text is still appearing (being typed out), choose "None"
-- If an animation is playing, choose "None"
-- Only press buttons when it's clearly required by the game state
-
-{custom_instructions}
-
-You MUST respond ONLY with a JSON object in this EXACT format, with no other text:
-{{
-  "action": "A",
-  "reasoning": "I'm pressing A to select this option because..."
-}}
-
-or
-
-{{
-  "action": "None",
-  "reasoning": "I'm choosing to do nothing because..."
-}}
-
-Where "action" is EXACTLY one of: {', '.join(self.valid_actions + ['None'])}"""
-        else:
-            # For vLLM, the json_schema enforces the format
-            system_message = f"""You are an AI playing a turn-based video game.
-Analyze the game screen and decide the best action to take next.
-You can choose from these actions: {action_list}, or choose "None" to do nothing.
-
-{game_specific_instructions}
-
-IMPORTANT INSTRUCTION ABOUT "NONE":
-- If you see a loading screen, choose "None"
-- If text is still appearing (being typed out), choose "None"
-- If an animation is playing, choose "None"
-- Only press buttons when it's clearly required by the game state
-
-{custom_instructions}
-
-You MUST respond with a JSON object containing exactly two fields:
-- 'action': EXACTLY one of: {', '.join(self.valid_actions + ['None'])}
-- 'reasoning': A brief explanation of your choice
-
-Your response will be automatically validated against a JSON schema."""
+        # Get summary for template if needed
+        summary = self.summary if self.use_summary else ""
         
-        # Include summary if enabled and available
-        if self.use_summary and self.summary:
-            system_message += f"\n\nHere's a summary of what has happened so far in the game:\n{self.summary}"
+        # Load reasoning prompt based on game type
+        reasoning_prompt = ""
+        if game_type:
+            try:
+                reasoning_template = self.jinja_env.get_template("reasoning_prompt.j2")
+                reasoning_prompt = reasoning_template.render(game_type=game_type)
+            except Exception as e:
+                logger.warning(f"Failed to load reasoning prompt template: {e}")
+        
+        # Check if we have a custom system message (for testing)
+        if self.custom_system_message:
+            system_message = self.custom_system_message
+        else:
+            # Render the system message from the template
+            template = self.jinja_env.get_template("system_prompt.j2")
+            system_message = template.render(
+                action_list=action_list,
+                valid_actions_with_none=valid_actions_with_none,
+                game_specific_instructions=game_specific_instructions,
+                custom_instructions=custom_instructions,
+                reasoning_prompt=reasoning_prompt,
+                backend=self.backend,
+                summary=summary
+            )
+        
+        # The summary is already included in the template if needed
         
         user_message = "What action should I take in this game? Choose one of the available actions or 'None' to do nothing."
         
@@ -717,6 +715,9 @@ Your response will be automatically validated against a JSON schema."""
         """
         Generate a summary of the game history so far using the model.
         This is an additional call to the model.
+        
+        Note: This method is now only used as a fallback if we don't receive
+        a game_summary from the agent's responses.
         """
         if not self.history:
             return
@@ -725,7 +726,7 @@ Your response will be automatically validated against a JSON schema."""
         history_text = "\n".join(self.history)
         summary_prompt = {
             "messages": [
-                {"role": "system", "content": "Summarize the following game history in a concise paragraph."},
+                {"role": "system", "content": "Summarize the following game history in a concise paragraph. Focus on key events, current game state, and player progress."},
                 {"role": "user", "content": history_text}
             ],
             "max_tokens": 250,
