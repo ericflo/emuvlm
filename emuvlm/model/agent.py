@@ -32,8 +32,12 @@ class LLMAgent:
     Uses an LLM with vision capabilities to decide game actions based on screenshots.
     
     Supports:
+    - OpenAI GPT-4o models with vision
+    - Claude with vision (Haiku, Sonnet, Opus)
+    - Mistral Pixtral series of models 
     - Qwen2.5-VL-3B-Instruct via vLLM server (Linux)
     - LLaVA via llama.cpp (macOS, Windows, Linux)
+    - Custom OpenAI API-compatible servers
     """
     
     def __init__(self, model_config: Dict[str, Any], valid_actions: List[str], use_summary: bool = False):
@@ -59,23 +63,42 @@ class LLMAgent:
         
         # Determine backend type
         self.backend = model_config.get('backend', 'auto')
-        if self.backend == 'auto':
+        
+        # Handle the new provider option for external APIs
+        self.provider = model_config.get('provider', 'local')
+        self.model_name = model_config.get('model_name', None)
+        
+        # Set API keys if provided
+        self.api_key = model_config.get('api_key', None)
+        self.organization_id = model_config.get('organization_id', None)
+        
+        # Auto-detect local backend if needed
+        if self.backend == 'auto' and self.provider == 'local':
             # Auto-detect: use llama.cpp on macOS, vLLM on Linux
             system = platform.system()
             if system == 'Darwin':  # macOS
                 self.backend = 'llama.cpp'
             else:
                 self.backend = 'vllm'
+            
+            logger.info(f"Auto-detected local backend: {self.backend}")
         
-        # Validate backend availability
-        if self.backend == 'llama.cpp' and not LLAMA_CPP_AVAILABLE:
+        # Validate backend availability for local providers
+        if self.provider == 'local' and self.backend == 'llama.cpp' and not LLAMA_CPP_AVAILABLE:
             raise ImportError(
                 "llama.cpp backend requested but not available. "
                 "Please install with: pip install llama-cpp-python>=0.2.50"
             )
-            
-        # Start integrated server if needed
-        self._maybe_start_server()
+        
+        # For external API providers, we don't need to start a server
+        if self.provider == 'local':
+            # Start integrated server if needed (only for local backends)
+            self._maybe_start_server()
+        else:
+            logger.info(f"Using external API provider: {self.provider}")
+            logger.info(f"API URL: {self.api_url}")
+            if self.model_name:
+                logger.info(f"Model: {self.model_name}")
         
         # For summary feature
         self.history = []
@@ -98,7 +121,9 @@ class LLMAgent:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
             logger.info(f"Created cache directory: {self.cache_dir}")
         
-        logger.info(f"LLM Agent initialized with backend: {self.backend}")
+        logger.info(f"LLM Agent initialized with provider: {self.provider}")
+        if self.provider == 'local':
+            logger.info(f"Local backend: {self.backend}")
         logger.info(f"API URL: {self.api_url}")
         logger.info(f"Valid actions: {len(valid_actions)} possible actions")
         logger.info(f"Summary feature is {'enabled' if use_summary else 'disabled'}")
@@ -108,9 +133,17 @@ class LLMAgent:
     def _maybe_start_server(self):
         """
         Start an integrated model server if configured.
+        For external API providers like OpenAI, Claude, or Mistral, this is skipped.
         """
+        # Skip server startup for external providers
+        if self.provider != 'local':
+            logger.info(f"Using external provider {self.provider}, skipping local server startup")
+            return
+            
+        # Check if autostart is enabled
         autostart = self.model_config.get('autostart_server', False)
         if not autostart:
+            logger.info("Autostart disabled, skipping server startup")
             return
             
         # Start the appropriate server based on backend
@@ -460,13 +493,11 @@ class LLMAgent:
             )
         
         # The summary is already included in the template if needed
-        
         user_message = "What action should I take in this game? Choose one of the available actions or 'None' to do nothing."
         
-        # Construct the prompt differently based on backend
-        if self.backend == 'llama.cpp':
-            # For llama.cpp, we need to format the messages differently
-            # Format based on OpenAI Vision API
+        # Construct the prompt based on the provider and backend
+        if self.provider == 'openai':
+            # OpenAI GPT-4o format
             messages = [
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": [
@@ -475,20 +506,61 @@ class LLMAgent:
                      "image_url": {"url": f"data:image/png;base64,{image_data}"}}
                 ]}
             ]
-        else:
-            # For vLLM, use the standard format
+        elif self.provider == 'anthropic':
+            # Claude format 
             messages = [
                 {"role": "system", "content": system_message},
-                {
-                    "role": "user", 
-                    "content": [
-                        {"type": "image", "image": f"data:image/png;base64,{image_data}"},
-                        {"type": "text", "text": user_message}
-                    ]
-                }
+                {"role": "user", "content": [
+                    {"type": "text", "text": user_message},
+                    {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": image_data}}
+                ]}
+            ]
+        elif self.provider == 'mistral':
+            # Mistral Pixtral format (similar to OpenAI format)
+            messages = [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": [
+                    {"type": "text", "text": user_message},
+                    {"type": "image_url", 
+                     "image_url": {"url": f"data:image/png;base64,{image_data}"}}
+                ]}
+            ]
+        elif self.provider == 'local':
+            # Local backends (llama.cpp or vLLM)
+            if self.backend == 'llama.cpp':
+                # For llama.cpp, format based on OpenAI Vision API
+                messages = [
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": [
+                        {"type": "text", "text": user_message},
+                        {"type": "image_url", 
+                         "image_url": {"url": f"data:image/png;base64,{image_data}"}}
+                    ]}
+                ]
+            else:
+                # For vLLM, use the standard format
+                messages = [
+                    {"role": "system", "content": system_message},
+                    {
+                        "role": "user", 
+                        "content": [
+                            {"type": "image", "image": f"data:image/png;base64,{image_data}"},
+                            {"type": "text", "text": user_message}
+                        ]
+                    }
+                ]
+        else:
+            # Custom OpenAI API-compatible server format (default to OpenAI format)
+            messages = [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": [
+                    {"type": "text", "text": user_message},
+                    {"type": "image_url", 
+                     "image_url": {"url": f"data:image/png;base64,{image_data}"}}
+                ]}
             ]
         
-        # Set model parameters based on backend
+        # Set base model parameters
         params = {
             "messages": messages,
             "max_tokens": self.model_config.get('max_tokens', 200),  # Increased for JSON response
@@ -496,18 +568,27 @@ class LLMAgent:
             "stream": False
         }
         
-        # Add appropriate response format based on backend
-        if self.backend == 'llama.cpp':
-            # llama.cpp uses json_object type format
-            params["response_format"] = {
-                "type": "json_object"
-            }
-        else:
-            # vLLM uses json_schema type format
-            params["response_format"] = {
-                "type": "json_schema",
-                "schema": json_schema
-            }
+        # Add model name for external APIs if specified
+        if self.model_name and self.provider != 'local':
+            params["model"] = self.model_name
+        
+        # Add response format if JSON schema is supported
+        if self.model_config.get('json_schema_support', True):
+            if self.provider == 'anthropic':
+                # Claude uses a different response format parameter
+                params["response_format"] = {"type": "json_object"}
+            elif self.provider == 'openai' or self.provider == 'mistral' or (self.provider == 'local' and self.backend == 'llama.cpp'):
+                # OpenAI, Mistral and llama.cpp use json_object type format
+                params["response_format"] = {"type": "json_object"}
+            elif self.provider == 'local' and self.backend != 'llama.cpp':
+                # vLLM uses json_schema type format
+                params["response_format"] = {
+                    "type": "json_schema",
+                    "schema": json_schema
+                }
+            else:
+                # Default for other providers (custom OpenAI API-compatible)
+                params["response_format"] = {"type": "json_object"}
         
         return params
     
@@ -524,27 +605,52 @@ class LLMAgent:
         try:
             start_time = time.time()
             
-            # Check if backend supports JSON response format
+            # Check if the provider supports JSON response format
             supports_json_response = True
             
-            # Some older versions may not support response_format at all
+            # Some providers/models may not support response_format at all
             if self.model_config.get('json_schema_support', True) is False:
                 # Remove the response_format from the prompt if not supported
                 if 'response_format' in prompt:
-                    logger.warning("JSON response format not supported by this backend, removing response_format")
+                    logger.warning("JSON response format not supported by this provider, removing response_format")
                     prompt.pop('response_format')
                     supports_json_response = False
             
-            # Both backends (vLLM and llama.cpp) provide OpenAI-compatible API
-            logger.debug(f"Sending request to {self.backend} backend at {self.api_url}")
+            # Prepare headers
+            headers = {"Content-Type": "application/json"}
             
-            # For debugging: print out the exact payload we're sending
+            # Add API key and organization ID for external providers if provided
+            if self.provider in ['openai', 'anthropic', 'mistral'] and self.api_key:
+                if self.provider == 'openai':
+                    headers["Authorization"] = f"Bearer {self.api_key}"
+                    if self.organization_id:
+                        headers["OpenAI-Organization"] = self.organization_id
+                elif self.provider == 'anthropic':
+                    headers["x-api-key"] = self.api_key
+                    headers["anthropic-version"] = "2023-06-01"  # Use appropriate Anthropic API version
+                elif self.provider == 'mistral':
+                    headers["Authorization"] = f"Bearer {self.api_key}"
+            
+            # Determine the endpoint based on the provider
+            if self.provider == 'anthropic':
+                endpoint = f"{self.api_url}/v1/messages"
+            else:
+                # OpenAI, Mistral, and OpenAI-compatible APIs use the same endpoint
+                endpoint = f"{self.api_url}/v1/chat/completions"
+            
+            # Log request info
+            provider_info = f"{self.provider}"
+            if self.provider == 'local':
+                provider_info += f" with {self.backend} backend"
+                
+            logger.debug(f"Sending request to {provider_info} at {endpoint}")
             logger.debug(f"Request payload: {json.dumps(prompt)}")
             
+            # Send the request to the appropriate endpoint
             response = requests.post(
-                f"{self.api_url}/v1/chat/completions",
+                endpoint,
                 json=prompt,
-                headers={"Content-Type": "application/json"},
+                headers=headers,
                 timeout=60  # Models with vision can take longer, especially first requests
             )
             
@@ -553,15 +659,19 @@ class LLMAgent:
             
             if response.status_code != 200:
                 logger.error(f"API error: {response.status_code} - {response.text}")
-                # Provide more detailed error with backend info
-                backend_info = f"using {self.backend} backend"
-                return f"Error {response.status_code} {backend_info}"
+                # Provide more detailed error with provider info
+                return f"Error {response.status_code} from {provider_info}"
             
             result = response.json()
-            # Extract the text content from the API response
-            # The exact path should be the same for both backends (OpenAI format)
+            
+            # Extract the text content from the API response based on provider format
             try:
-                text_response = result["choices"][0]["message"]["content"]
+                if self.provider == 'anthropic':
+                    # Claude API response format
+                    text_response = result["content"][0]["text"]
+                else:
+                    # OpenAI, Mistral, and compatible API response format
+                    text_response = result["choices"][0]["message"]["content"]
                 
                 # Store the raw response for debugging and testing
                 self._last_raw_response = text_response
@@ -681,17 +791,29 @@ class LLMAgent:
             except (KeyError, IndexError) as e:
                 logger.error(f"Failed to parse API response: {e}")
                 logger.debug(f"Response: {result}")
-                # Add retry logic for connection issues
-                if "choices" not in result:
+                
+                # Different error handling based on provider
+                if self.provider == 'anthropic' and "content" not in result:
+                    logger.warning("Response missing 'content' field, Claude API may be incompatible")
+                elif "choices" not in result:
                     logger.warning("Response missing 'choices' field, API may be incompatible")
+                
                 return "Error parsing response"
                 
         except requests.RequestException as e:
             logger.error(f"Request to model API failed: {e}")
+            
+            # Provide helpful error messages based on the error type
             if "Connection refused" in str(e):
-                logger.error(f"Connection refused. Please ensure the {self.backend} server is running at {self.api_url}")
+                if self.provider == 'local':
+                    logger.error(f"Connection refused. Please ensure the {self.backend} server is running at {self.api_url}")
+                else:
+                    logger.error(f"Connection refused to {self.provider} API at {self.api_url}")
             elif "timed out" in str(e):
-                logger.error(f"Request timed out. The {self.backend} server might be overloaded or processing a large request")
+                logger.error(f"Request timed out. The {self.provider} API might be overloaded or processing a large request")
+            elif "unauthorized" in str(e).lower() or "401" in str(e):
+                logger.error(f"Authorization failed. Please check your API key for {self.provider}")
+            
             return "Error connecting to model server"
     
     def _update_history(self, frame: Image.Image, response: str) -> None:
