@@ -7,7 +7,7 @@ This document provides guidance for running EmuVLM on macOS systems, addressing 
 EmuVLM supports two VLM (Vision Language Model) backends:
 
 1. **vLLM with Qwen2.5-VL (Linux only)**: The original implementation which requires CUDA.
-2. **llama.cpp with LLaVA (Cross-platform)**: Implementation that works on macOS, Linux, and Windows.
+2. **llama.cpp with Qwen2-VL (Cross-platform)**: Implementation that works on macOS, Linux, and Windows.
 
 On macOS, the system automatically uses the llama.cpp backend.
 
@@ -32,7 +32,7 @@ On macOS, the system automatically uses the llama.cpp backend.
    pip install -e ".[macos]"
    ```
 
-3. Download the LLaVA model:
+3. Download the Qwen2-VL model:
    ```bash
    emuvlm-download-model
    ```

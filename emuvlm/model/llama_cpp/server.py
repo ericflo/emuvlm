@@ -24,7 +24,7 @@ _server_process = None
 
 def download_mmproj_file() -> str:
     """
-    Download the LLaVA multimodal projector file if it doesn't exist.
+    Download the Qwen2-VL-7B-Instruct multimodal projector file if it doesn't exist.
     
     Returns:
         str: Path to the mmproj file
@@ -32,17 +32,17 @@ def download_mmproj_file() -> str:
     # Define paths
     model_dir = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
     mmproj_dir = model_dir / "models"
-    mmproj_file = mmproj_dir / "llava-v1.5-7b-mmproj-f16.gguf"
+    mmproj_file = mmproj_dir / "mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
     
     # Create directory if it doesn't exist
     os.makedirs(mmproj_dir, exist_ok=True)
     
     # Check if the file already exists
     if not mmproj_file.exists():
-        logger.info(f"Downloading LLaVA multimodal projector file to {mmproj_file}")
+        logger.info(f"Downloading Qwen2-VL-7B-Instruct multimodal projector file to {mmproj_file}")
         
         # URL for the mmproj file - updated to correct URL
-        mmproj_url = "https://huggingface.co/mys/ggml_llava-v1.5-7b/resolve/main/mmproj-model-f16.gguf"
+        mmproj_url = "https://huggingface.co/bartowski/Qwen2-VL-7B-Instruct-GGUF/resolve/main/mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
         
         try:
             # Download the file
@@ -108,7 +108,7 @@ def start_server(
     
     # Determine if this is a multimodal model by checking filename
     model_name = os.path.basename(model_path).lower()
-    is_llava_model = "llava" in model_name or multimodal
+    is_multimodal_model = "qwen" in model_name or "vl" in model_name or multimodal
     
     # Build command with enhanced options for better performance
     cmd = [
@@ -123,8 +123,8 @@ def start_server(
         "--cache", "True",
     ]
     
-    # Add multimodal support for LLaVA models
-    if is_llava_model:
+    # Add multimodal support for Qwen2-VL models
+    if is_multimodal_model:
         try:
             mmproj_path = download_mmproj_file()
             logger.info(f"Using multimodal projector: {mmproj_path}")

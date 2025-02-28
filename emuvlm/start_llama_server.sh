@@ -112,13 +112,13 @@ else
     PYTHON="python"
 fi
 
-# Check if we need to download the mmproj file for LLaVA
-MMPROJ_PATH="models/llava-v1.5-7b-mmproj-f16.gguf"
+# Check if we need to download the mmproj file for Qwen2-VL
+MMPROJ_PATH="models/mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
 if [[ ! -f "$MMPROJ_PATH" ]]; then
     echo "Multimodal projector file not found, will attempt to download it automatically"
     
     # URL for the mmproj file
-    MMPROJ_URL="https://huggingface.co/mys/ggml_llava-v1.5-7b/resolve/main/mmproj-model-f16.gguf"
+    MMPROJ_URL="https://huggingface.co/bartowski/Qwen2-VL-7B-Instruct-GGUF/resolve/main/mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
     
     # Download the file if curl is available
     if command -v curl &> /dev/null; then
@@ -136,9 +136,9 @@ if [[ ! -f "$MMPROJ_PATH" ]]; then
     fi
 fi
 
-# Check if this is a LLaVA model
-if [[ "$MODEL_PATH" == *"llava"* ]] || [[ "$MODEL_PATH" == *"LLaVA"* ]]; then
-    echo "Detected LLaVA model, enabling multimodal support"
+# Check if this is a Qwen2-VL model
+if [[ "$MODEL_PATH" == *"qwen"* ]] || [[ "$MODEL_PATH" == *"Qwen"* ]] || [[ "$MODEL_PATH" == *"vl"* ]] || [[ "$MODEL_PATH" == *"VL"* ]]; then
+    echo "Detected Qwen2-VL model, enabling multimodal support"
     if [[ -f "$MMPROJ_PATH" ]]; then
         "$PYTHON" -m llama_cpp.server \
             --model "$MODEL_PATH" \
@@ -157,7 +157,7 @@ if [[ "$MODEL_PATH" == *"llava"* ]] || [[ "$MODEL_PATH" == *"LLaVA"* ]]; then
         echo "Warning: Multimodal projector file not found at $MMPROJ_PATH"
         echo "Will try to download it automatically, but if this fails,"
         echo "you can manually download it from:"
-        echo "https://huggingface.co/second-state/Llava-v1.5-7B-GGUF/resolve/main/mmproj-model-f16.gguf"
+        echo "https://huggingface.co/bartowski/Qwen2-VL-7B-Instruct-GGUF/resolve/main/mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
         
         # Run without the mmproj file - our Python module will handle downloading
         "$PYTHON" -m llama_cpp.server \

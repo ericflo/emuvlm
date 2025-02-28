@@ -72,7 +72,7 @@ def start_vllm_server():
 def start_llama_server():
     """Entry point for the emuvlm-llama-server command."""
     # Parse arguments properly
-    parser = argparse.ArgumentParser(description="Start llama.cpp server with LLaVA model")
+    parser = argparse.ArgumentParser(description="Start llama.cpp server with Qwen2-VL model")
     parser.add_argument("model_path", nargs='?', help="Path to GGUF model file (optional, will use config.yaml if not provided)")
     parser.add_argument("--host", default="0.0.0.0", help="Host address to bind to")
     parser.add_argument("--port", type=int, default=8000, help="Port to listen on")
@@ -250,8 +250,8 @@ def download_model():
             print("Download cancelled")
             return
     
-    print(f"Downloading LLaVA model from {model_url}")
-    print(f"This may take a while as it's a large file (~4GB)")
+    print(f"Downloading Qwen2-VL model from {model_url}")
+    print(f"This may take a while as it's a large file (~4-5GB)")
     
     try:
         # Start the request with stream=True

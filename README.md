@@ -299,7 +299,7 @@ After running the script, you can verify your emulator installations using the t
 
 If you encounter persistent issues:
 - Check the project GitHub Issues page
-- Consult the documentation for [PyBoy](https://github.com/Baekalfen/PyBoy), [mGBA](https://mgba.io/), [vLLM](https://github.com/vllm-project/vllm), or [Qwen2.5-VL](https://github.com/QwenLM/Qwen2-VL) depending on where the problem lies
+- Consult the documentation for [PyBoy](https://github.com/Baekalfen/PyBoy), [mGBA](https://mgba.io/), [vLLM](https://github.com/vllm-project/vllm), or [Qwen2-VL](https://github.com/QwenLM/Qwen2-VL) depending on where the problem lies
 - Run with debug logging: `emuvlm --debug`
 
 ## Usage
