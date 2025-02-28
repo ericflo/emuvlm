@@ -1,5 +1,5 @@
 #!/bin/bash
-# Start the llama.cpp server with LLaVA compatible model
+# Start the llama.cpp server with vision language model support
 # This provides an OpenAI-compatible API on macOS, where vLLM is not supported
 
 # Process command line arguments
@@ -11,6 +11,7 @@ HOST="0.0.0.0"
 PORT="8000"
 N_GPU_LAYERS="-1"
 N_CTX=""  # Will be determined automatically
+MODEL_TYPE="llava"  # Default model type: llava, qwen, or minicpm
 
 # Process additional arguments
 while [[ $# -gt 0 ]]; do
@@ -31,6 +32,10 @@ while [[ $# -gt 0 ]]; do
       N_CTX="$2"
       shift 2
       ;;
+    --model-type)
+      MODEL_TYPE="$2"
+      shift 2
+      ;;
     *)
       # Unknown option
       echo "Warning: Unknown option $1"
@@ -48,7 +53,7 @@ fi
 
 # Start the server
 echo "Starting llama.cpp server with model: $MODEL_PATH"
-echo "Using Llava-v1.5-7B GGUF model for vision-language tasks"
+echo "Using $MODEL_TYPE model type for vision-language tasks"
 
 # Enable GPU acceleration based on platform
 if [[ "$(uname)" == "Darwin" ]]; then
@@ -112,13 +117,27 @@ else
     PYTHON="python"
 fi
 
-# Check if we need to download the mmproj file for Qwen2-VL
-MMPROJ_PATH="models/mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
-if [[ ! -f "$MMPROJ_PATH" ]]; then
-    echo "Multimodal projector file not found, will attempt to download it automatically"
-    
-    # URL for the mmproj file
+# Set multimodal projector path based on model type
+if [[ "$MODEL_TYPE" == "llava" ]]; then
+    MMPROJ_PATH="models/llava-v1.5-7b-mmproj-f16.gguf"
+    MMPROJ_URL="https://huggingface.co/mys/ggml_llava-v1.5-7b/resolve/main/mmproj-model-f16.gguf"
+elif [[ "$MODEL_TYPE" == "qwen" ]]; then
+    MMPROJ_PATH="models/mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
     MMPROJ_URL="https://huggingface.co/bartowski/Qwen2-VL-7B-Instruct-GGUF/resolve/main/mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
+elif [[ "$MODEL_TYPE" == "minicpm" ]]; then
+    MMPROJ_PATH="models/mmproj-model-f16.gguf"
+    MMPROJ_URL="https://huggingface.co/openbmb/MiniCPM-o-2_6-gguf/resolve/main/mmproj-model-f16.gguf"
+else
+    # Default to LLaVA
+    MMPROJ_PATH="models/llava-v1.5-7b-mmproj-f16.gguf"
+    MMPROJ_URL="https://huggingface.co/mys/ggml_llava-v1.5-7b/resolve/main/mmproj-model-f16.gguf"
+    echo "Unknown model type '$MODEL_TYPE', defaulting to llava"
+    MODEL_TYPE="llava"
+fi
+
+# Check if we need to download the mmproj file
+if [[ ! -f "$MMPROJ_PATH" ]]; then
+    echo "Multimodal projector file for $MODEL_TYPE not found, will attempt to download it automatically"
     
     # Download the file if curl is available
     if command -v curl &> /dev/null; then
@@ -136,45 +155,28 @@ if [[ ! -f "$MMPROJ_PATH" ]]; then
     fi
 fi
 
-# Check if this is a Qwen2-VL model
-if [[ "$MODEL_PATH" == *"qwen"* ]] || [[ "$MODEL_PATH" == *"Qwen"* ]] || [[ "$MODEL_PATH" == *"vl"* ]] || [[ "$MODEL_PATH" == *"VL"* ]]; then
-    echo "Detected Qwen2-VL model, enabling multimodal support"
-    if [[ -f "$MMPROJ_PATH" ]]; then
-        "$PYTHON" -m llama_cpp.server \
-            --model "$MODEL_PATH" \
-            --host "$HOST" \
-            --port "$PORT" \
-            --n_gpu_layers "$N_GPU_LAYERS" \
-            --n_ctx "$CTX_SIZE" \
-            --n_batch 512 \
-            --chat_format chatml \
-            --temperature 0.2 \
-            --top_p 0.9 \
-            --mmproj "$MMPROJ_PATH" \
-            --cache-type "prefix" \
-            --cache-size 2048
-    else
-        echo "Warning: Multimodal projector file not found at $MMPROJ_PATH"
-        echo "Will try to download it automatically, but if this fails,"
-        echo "you can manually download it from:"
-        echo "https://huggingface.co/bartowski/Qwen2-VL-7B-Instruct-GGUF/resolve/main/mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
-        
-        # Run without the mmproj file - our Python module will handle downloading
-        "$PYTHON" -m llama_cpp.server \
-            --model "$MODEL_PATH" \
-            --host "$HOST" \
-            --port "$PORT" \
-            --n_gpu_layers "$N_GPU_LAYERS" \
-            --n_ctx "$CTX_SIZE" \
-            --n_batch 512 \
-            --chat_format chatml \
-            --temperature 0.2 \
-            --top_p 0.9 \
-            --cache-type "prefix" \
-            --cache-size 2048
-    fi
+# Run server with projector if available
+if [[ -f "$MMPROJ_PATH" ]]; then
+    echo "Using $MODEL_TYPE multimodal projector: $MMPROJ_PATH"
+    "$PYTHON" -m llama_cpp.server \
+        --model "$MODEL_PATH" \
+        --host "$HOST" \
+        --port "$PORT" \
+        --n_gpu_layers "$N_GPU_LAYERS" \
+        --n_ctx "$CTX_SIZE" \
+        --n_batch 512 \
+        --chat_format chatml \
+        --temperature 0.2 \
+        --top_p 0.9 \
+        --mmproj "$MMPROJ_PATH" \
+        --cache-type "prefix" \
+        --cache-size 2048
 else
-    # Standard model without multimodal
+    echo "Warning: Multimodal projector file not found at $MMPROJ_PATH"
+    echo "Will try to download it automatically, but if this fails,"
+    echo "you can manually download it from: $MMPROJ_URL"
+    
+    # Run without the mmproj file - our Python module will handle downloading
     "$PYTHON" -m llama_cpp.server \
         --model "$MODEL_PATH" \
         --host "$HOST" \

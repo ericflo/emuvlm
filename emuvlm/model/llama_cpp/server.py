@@ -22,27 +22,42 @@ logger = logging.getLogger(__name__)
 # Global to store the subprocess reference
 _server_process = None
 
-def download_mmproj_file() -> str:
+def download_mmproj_file(model_type: str = "llava") -> str:
     """
-    Download the Qwen2-VL-7B-Instruct multimodal projector file if it doesn't exist.
+    Download the multimodal projector file for the specified model type if it doesn't exist.
     
+    Args:
+        model_type: Type of model ("llava", "qwen", or "minicpm")
+        
     Returns:
         str: Path to the mmproj file
     """
     # Define paths
     model_dir = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
     mmproj_dir = model_dir / "models"
-    mmproj_file = mmproj_dir / "mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
+    
+    # Set the correct mmproj file and URL based on model type
+    if model_type == "llava":
+        mmproj_file = mmproj_dir / "llava-v1.5-7b-mmproj-f16.gguf"
+        mmproj_url = "https://huggingface.co/mys/ggml_llava-v1.5-7b/resolve/main/mmproj-model-f16.gguf"
+    elif model_type == "qwen":
+        mmproj_file = mmproj_dir / "mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
+        mmproj_url = "https://huggingface.co/bartowski/Qwen2-VL-7B-Instruct-GGUF/resolve/main/mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
+    elif model_type == "minicpm":
+        mmproj_file = mmproj_dir / "mmproj-model-f16.gguf"
+        mmproj_url = "https://huggingface.co/openbmb/MiniCPM-o-2_6-gguf/resolve/main/mmproj-model-f16.gguf"
+    else:
+        # Default to LLaVA
+        logger.warning(f"Unknown model type '{model_type}', defaulting to llava")
+        mmproj_file = mmproj_dir / "llava-v1.5-7b-mmproj-f16.gguf"
+        mmproj_url = "https://huggingface.co/mys/ggml_llava-v1.5-7b/resolve/main/mmproj-model-f16.gguf"
     
     # Create directory if it doesn't exist
     os.makedirs(mmproj_dir, exist_ok=True)
     
     # Check if the file already exists
     if not mmproj_file.exists():
-        logger.info(f"Downloading Qwen2-VL-7B-Instruct multimodal projector file to {mmproj_file}")
-        
-        # URL for the mmproj file - updated to correct URL
-        mmproj_url = "https://huggingface.co/bartowski/Qwen2-VL-7B-Instruct-GGUF/resolve/main/mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
+        logger.info(f"Downloading {model_type} multimodal projector file to {mmproj_file}")
         
         try:
             # Download the file
@@ -71,7 +86,8 @@ def start_server(
     temperature: float = 0.2,
     top_p: float = 0.9,
     verbose: bool = False,
-    multimodal: bool = True
+    multimodal: bool = True,
+    model_type: str = "llava"
 ) -> None:
     """
     Start the llama.cpp server with OpenAI API compatibility.
@@ -86,7 +102,8 @@ def start_server(
         temperature: Temperature for sampling
         top_p: Top p for sampling
         verbose: Enable verbose logging
-        multimodal: Use multimodal LLaVA support
+        multimodal: Use multimodal support
+        model_type: Type of model ("llava", "qwen", or "minicpm")
     """
     global _server_process
     
@@ -106,9 +123,14 @@ def start_server(
         os.environ["LLAMA_CUBLAS"] = "1"
         logger.info("Enabling CUDA acceleration for Linux")
     
-    # Determine if this is a multimodal model by checking filename
-    model_name = os.path.basename(model_path).lower()
-    is_multimodal_model = "qwen" in model_name or "vl" in model_name or multimodal
+    # Determine if this is a multimodal model
+    is_multimodal_model = True if multimodal else False
+    
+    # Check for known model types in filename as fallback
+    if not is_multimodal_model:
+        model_name = os.path.basename(model_path).lower()
+        if any(x in model_name for x in ["llava", "qwen", "minicpm", "vl"]):
+            is_multimodal_model = True
     
     # Build command with enhanced options for better performance
     cmd = [
@@ -123,11 +145,12 @@ def start_server(
         "--cache", "True",
     ]
     
-    # Add multimodal support for Qwen2-VL models
+    # Add multimodal support for vision language models
     if is_multimodal_model:
         try:
-            mmproj_path = download_mmproj_file()
-            logger.info(f"Using multimodal projector: {mmproj_path}")
+            # Download appropriate mmproj file for the model type
+            mmproj_path = download_mmproj_file(model_type)
+            logger.info(f"Using {model_type} multimodal projector: {mmproj_path}")
             # Use a new parameter name that the server script supports
             cmd.extend(["--clip_model_path", mmproj_path])
         except Exception as e:

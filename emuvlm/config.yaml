@@ -29,8 +29,9 @@ model:
 
   # llama.cpp specific settings (for local backend with Mac compatibility)
   autostart_server: false # Whether to automatically start the local model server
-  model_path: "models/Qwen2-VL-7B-Instruct-Q4_K_M.gguf" # Path to GGUF model file (for llama.cpp)
-  model_url: "https://huggingface.co/bartowski/Qwen2-VL-7B-Instruct-GGUF/resolve/main/Qwen2-VL-7B-Instruct-Q4_K_M.gguf" # URL for auto-download
+  model_path: "models/llava-v1.5-7b-Q4_K_S.gguf" # Path to GGUF model file (for llama.cpp)
+  model_url: "https://huggingface.co/second-state/Llava-v1.5-7B-GGUF/resolve/main/llava-v1.5-7b-Q4_K_S.gguf" # URL for auto-download
+  model_type: "llava" # Model type: "llava", "qwen", or "minicpm"
   n_gpu_layers: -1 # Number of layers to offload to GPU (-1 for all)
   n_ctx: 2048 # Context window size
 
