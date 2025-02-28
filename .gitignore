@@ -58,6 +58,9 @@ roms/*/*.ccd
 roms/*/*.img
 roms/*/*.sub
 roms/*/*.ram
+roms/*/*.zip
+roms/*/*.gg
+roms/*/*.sms
 
 # IDEs and editors
 .idea/
