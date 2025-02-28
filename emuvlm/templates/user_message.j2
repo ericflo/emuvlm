@@ -1,0 +1,10 @@
+What action should I take in this game? This is frame number {{ frame_number }} (game time: {{ game_time }}). Choose one of the available actions or 'None' to do nothing.
+
+{% if previous_actions %}
+Recent actions:
+{% for action, timestamp in previous_actions %}
+- Frame {{ timestamp }}: {{ action }}
+{% endfor %}
+{% endif %}
+
+Remember to always provide detailed reasoning for your choice with specific visual evidence from the screen.

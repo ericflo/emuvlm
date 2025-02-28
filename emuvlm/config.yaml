@@ -10,6 +10,9 @@ model:
   summary_interval: 10 # Generate summary every X turns when summary feature is enabled
   max_tokens: 200 # Max tokens to generate for action decision (increased for JSON responses)
   temperature: 0.2 # Lower temperature for more focused responses
+  
+  # Message history settings
+  max_message_history: 5  # Number of past interactions to include in context
 
   # API authentication (for external providers)
   api_key: null # API key for OpenAI, Claude, Mistral (set via environment variable or directly)

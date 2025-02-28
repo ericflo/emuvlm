@@ -100,6 +100,10 @@ class LLMAgent:
             if self.model_name:
                 logger.info(f"Model: {self.model_name}")
         
+        # For conversation history tracking
+        self.message_history = []
+        self.max_message_history = model_config.get('max_message_history', 5)  # Number of past turns to keep
+        
         # For summary feature
         self.history = []
         self.summary = ""
@@ -126,6 +130,7 @@ class LLMAgent:
             logger.info(f"Local backend: {self.backend}")
         logger.info(f"API URL: {self.api_url}")
         logger.info(f"Valid actions: {len(valid_actions)} possible actions")
+        logger.info(f"Message history: keeping last {self.max_message_history} interactions")
         logger.info(f"Summary feature is {'enabled' if use_summary else 'disabled'}")
         logger.info(f"Frame saving is {'enabled' if self.enable_cache else 'disabled'}")
         logger.info(f"JSON schema support is {'enabled' if model_config.get('json_schema_support', True) else 'disabled'}")
@@ -261,6 +266,13 @@ class LLMAgent:
             valid_action = self.parse_action(response)
             logger.info(f"Parsed text response into action: {valid_action}")
         
+        # Update message history with this action and timestamp
+        frame_number = self.turn_count
+        self.message_history.insert(0, (valid_action, frame_number))
+        # Trim history to max length
+        while len(self.message_history) > self.max_message_history:
+            self.message_history.pop()
+        
         # Update history if summary feature is enabled
         if self.use_summary:
             self._update_history(frame, valid_action)
@@ -281,6 +293,9 @@ class LLMAgent:
             except (json.JSONDecodeError, KeyError):
                 # Ignore any JSON parsing errors here
                 pass
+        
+        # Increment turn counter
+        self.turn_count += 1
         
         # Save the frame to disk for future analysis if needed
         if self.enable_cache and self.last_frame_hash is not None:
@@ -485,8 +500,31 @@ class LLMAgent:
                 summary=summary
             )
         
-        # The summary is already included in the template if needed
-        user_message = "What action should I take in this game? Choose one of the available actions or 'None' to do nothing. Remember to always provide detailed reasoning for your choice with specific visual evidence from the screen."
+        # Prepare previous actions for the user message template
+        previous_actions = []
+        if self.message_history:
+            # Extract the last few actions from message history
+            for i, (action, timestamp) in enumerate(self.message_history):
+                if i >= self.max_message_history:
+                    break
+                previous_actions.append((action, timestamp))
+        
+        # Current frame number and game time
+        frame_number = self.turn_count
+        game_time = time.strftime("%H:%M:%S", time.localtime())
+        
+        # Render the user message from template
+        try:
+            user_template = self.jinja_env.get_template("user_message.j2")
+            user_message = user_template.render(
+                frame_number=frame_number,
+                game_time=game_time,
+                previous_actions=previous_actions
+            )
+        except Exception as e:
+            logger.warning(f"Failed to load user message template: {e}")
+            # Fallback to basic user message
+            user_message = "What action should I take in this game? Choose one of the available actions or 'None' to do nothing. Remember to always provide detailed reasoning for your choice with specific visual evidence from the screen."
         
         # Construct the prompt based on the provider and backend
         if self.provider == 'openai':
@@ -878,7 +916,6 @@ class LLMAgent:
         """
         # Add this turn to history
         self.history.append(f"Turn {self.turn_count}: Model chose action '{response}'")
-        self.turn_count += 1
         
         # Check if it's time to generate a summary
         if self.use_summary and self.turn_count % self.summary_interval == 0 and self.history:
