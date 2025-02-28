@@ -7,14 +7,16 @@ Our system now supports game-specific configurations that enhance AI gameplay fo
 ## Features
 
 - Support for multiple gaming platforms with dedicated emulators:
-  - Game Boy / Game Boy Color (PyBoy)
-  - Game Boy Advance (mGBA)
-  - Sega Game Gear (limited support via various emulators)
-  - Nintendo Entertainment System (FCEUX)
-  - Super Nintendo / SNES (Snes9x)
-  - Sega Genesis / Mega Drive (Genesis Plus GX)
-  - Nintendo 64 (Mupen64Plus)
-  - PlayStation (DuckStation)
+  - Game Boy / Game Boy Color (PyBoy) - **Fully Supported**
+  - Game Boy Advance (mGBA) - **Beta**
+  - Sega Game Gear - **Beta** (limited support via various emulators)
+  - Nintendo Entertainment System (FCEUX) - **Beta**
+  - Super Nintendo / SNES (Snes9x) - **Beta**
+  - Sega Genesis / Mega Drive (Genesis Plus GX) - **Beta**
+  - Nintendo 64 (Mupen64Plus) - **Beta**
+  - PlayStation (DuckStation) - **Beta**
+
+**NOTE: Only Game Boy/Game Boy Color emulation is fully supported at this time. All other emulators are in beta and may have limited functionality or stability issues.**
 - Multi-platform VLM support:
   - Linux: Integration with Qwen2.5-VL via vLLM
   - macOS: Integration with LLaVA via llama.cpp
