@@ -659,8 +659,11 @@ class LLMAgent:
         # Add response format if JSON schema is supported
         if self.model_config.get('json_schema_support', True):
             if self.provider == 'anthropic':
-                # Claude uses a different response format parameter
-                params["response_format"] = {"type": "json_object"}
+                # For Anthropic API, format is now specified differently in the API
+                # Using a different approach: add a format instruction to the system prompt
+                original_system = params.get("system", "")
+                format_instruction = "\n\nYou must respond with valid JSON in this format: {\"reasoning\": \"...\", \"action\": \"...\", \"game_summary\": \"...\"}"
+                params["system"] = original_system + format_instruction
             elif self.provider == 'openai':
                 # OpenAI supports json_schema format
                 params["response_format"] = {
