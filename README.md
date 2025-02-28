@@ -1,8 +1,16 @@
 # EmuVLM
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![GitHub issues](https://img.shields.io/github/issues/ericflo/emuvlm)](https://github.com/ericflo/emuvlm/issues)
+[![GitHub stars](https://img.shields.io/github/stars/ericflo/emuvlm)](https://github.com/ericflo/emuvlm/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/ericflo/emuvlm)](https://github.com/ericflo/emuvlm/network)
+[![GitHub contributors](https://img.shields.io/github/contributors/ericflo/emuvlm)](https://github.com/ericflo/emuvlm/graphs/contributors)
+[![Last Commit](https://img.shields.io/github/last-commit/ericflo/emuvlm)](https://github.com/ericflo/emuvlm/commits/main)
+
 EmuVLM lets AI play retro games by "seeing" the game screen and choosing actions. It connects emulators with vision language models (VLMs) that can understand images.
 
-![EmuVLM Demo](https://github.com/yourusername/emuvlm/raw/main/docs/images/demo.gif)
+<!--![EmuVLM Demo](https://github.com/ericflo/emuvlm/raw/main/docs/images/demo.gif)-->
 
 ## What it does
 
@@ -28,7 +36,7 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install EmuVLM
-git clone https://github.com/yourusername/emuvlm.git
+git clone https://github.com/ericflo/emuvlm.git
 cd emuvlm
 pip install -e .
 
@@ -132,14 +140,27 @@ games:
   - `cli.py` - Command-line interface
   - `config.yaml` - Default configuration
 
+## Contributing
+
+Contributions welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add some amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+Please make sure to update tests as appropriate.
+
 ## License
 
-MIT License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
-- PyBoy, mGBA, and other emulator projects
-- LLaVA, Qwen, and MiniCPM model creators
+- [PyBoy](https://github.com/Baekalfen/PyBoy), [mGBA](https://mgba.io/), and other emulator projects
+- [LLaVA](https://github.com/haotian-liu/LLaVA), [Qwen](https://github.com/QwenLM/Qwen-VL), and [MiniCPM](https://github.com/OpenBMB/MiniCPM) model creators
+- [llama.cpp](https://github.com/ggerganov/llama.cpp) for local model inference
 
-For more details on implementation, see `PLAN.md`.
-For development status and upcoming features, see `TODO.md`.
+For more details on implementation, see [PLAN.md](PLAN.md).
+For macOS compatibility details, see [MAC_COMPATIBILITY.md](MAC_COMPATIBILITY.md).
