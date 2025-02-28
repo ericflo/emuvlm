@@ -5,7 +5,8 @@ Place your ROM files in the appropriate subdirectories:
 - `gb/`: Game Boy ROMs (`.gb`)
 - `gbc/`: Game Boy Color ROMs (`.gbc`)
 - `gba/`: Game Boy Advance ROMs (`.gba`)
-- `gamegear/`: Sega Game Gear ROMs (`.gg`)
+- `gamegear/`: Sega Game Gear ROMs (`.gg`, `.sms`)
+  - *Note: Game Gear support is currently limited and experimental*
 - `nes/`: Nintendo Entertainment System ROMs (`.nes`)
 - `snes/`: Super Nintendo Entertainment System ROMs (`.snes`, `.smc`)
 - `genesis/`: Sega Genesis/Mega Drive ROMs (`.md`, `.bin`, `.smd`)

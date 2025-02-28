@@ -88,6 +88,10 @@ games:
       battle_anim_delay: 2.0        # Longer delay for battle animations
       text_scroll_delay: 1.0        # Delay for text scrolling
 
+  # Game Gear ROMs are challenging to support with current Python emulators
+# For best compatibility, use existing emulators with specific Game Gear support 
+# (like RetroArch or standalone emulators)
+
   # Add more games as needed
 
 # Session configuration

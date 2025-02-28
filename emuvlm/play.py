@@ -216,6 +216,8 @@ def main():
             emulator_type = "mupen64plus"
         elif ext in ['.iso', '.bin', '.cue', '.img']:
             emulator_type = "duckstation"
+        elif ext in ['.gg']:
+            emulator_type = "gamegear"
         else:
             raise ValueError(f"Unsupported ROM type: {ext}")
         
@@ -250,6 +252,9 @@ def main():
     elif emulator_type == 'duckstation':
         from emuvlm.emulators.duckstation_emulator import DuckstationEmulator
         emulator = DuckstationEmulator(game_config['rom'])
+    elif emulator_type == 'gamegear':
+        from emuvlm.emulators.gamegear_emulator import GameGearEmulator
+        emulator = GameGearEmulator(game_config['rom'])
     else:
         raise ValueError(f"Unsupported emulator: {game_config['emulator']}")
     

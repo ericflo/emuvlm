@@ -56,6 +56,7 @@ The following emulators are supported on macOS:
 - **Genesis Plus GX**: Sega Genesis emulator (partial support)
 - **Mupen64Plus**: Nintendo 64 emulator (available via Homebrew)
 - **DuckStation**: PlayStation emulator (available as standalone app)
+- **Game Gear**: Limited experimental support (via other emulators)
 
 ### Installing emulators on macOS
 
