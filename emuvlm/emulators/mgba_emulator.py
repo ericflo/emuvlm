@@ -12,6 +12,7 @@ import requests
 from typing import Dict, Any, Optional, Tuple
 
 from emuvlm.emulators.base import EmulatorBase
+from emuvlm.utils.rom_loader import load_rom
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +28,16 @@ class MGBAEmulator(EmulatorBase):
         Initialize the mGBA emulator.
         
         Args:
-            rom_path: Path to the Game Boy Advance ROM file
+            rom_path: Path to the Game Boy Advance ROM file or ZIP archive
             api_port: Port for the mGBA HTTP API
         """
         logger.info(f"Initializing mGBA emulator with ROM: {rom_path}")
         
-        self.rom_path = rom_path
+        # Handle ROM loading (extract from ZIP if needed)
+        actual_rom_path = load_rom(rom_path)
+        logger.info(f"Using ROM file: {actual_rom_path}")
+        
+        self.rom_path = actual_rom_path
         self.api_port = api_port
         self.api_url = f"http://localhost:{self.api_port}"
         self.mgba_process = None

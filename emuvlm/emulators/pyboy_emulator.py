@@ -12,6 +12,7 @@ except ImportError:
     from pyboy.utils import WindowEvent
 
 from emuvlm.emulators.base import EmulatorBase
+from emuvlm.utils.rom_loader import load_rom
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +26,13 @@ class PyBoyEmulator(EmulatorBase):
         Initialize the PyBoy emulator.
         
         Args:
-            rom_path: Path to the Game Boy ROM file
+            rom_path: Path to the Game Boy ROM file or ZIP archive
         """
         logger.info(f"Initializing PyBoy emulator with ROM: {rom_path}")
+        
+        # Handle ROM loading (extract from ZIP if needed)
+        actual_rom_path = load_rom(rom_path)
+        logger.info(f"Using ROM file: {actual_rom_path}")
         
         # PyBoy instance initialization - use SDL2 instead of headless for better rendering
         # Use a classic Game Boy color palette (light green)
@@ -41,7 +46,7 @@ class PyBoyEmulator(EmulatorBase):
             logger.info("Detected Zelda ROM - using special initialization settings")
             # For Zelda ROMs, we'll use more conservative settings
             self.emulator = PyBoy(
-                rom_path,
+                actual_rom_path,
                 window_type="SDL2",      # Use SDL2 window for better compatibility
                 game_wrapper=False,      # Disable game wrapper which might have issues with some ROMs
                 debug=False,
@@ -53,7 +58,7 @@ class PyBoyEmulator(EmulatorBase):
         else:
             # Standard initialization for other games
             self.emulator = PyBoy(
-                rom_path,
+                actual_rom_path,
                 window_type="SDL2",      # Use SDL2 window for better compatibility
                 game_wrapper=True,       # Enable game wrapper for game-specific features
                 debug=False,

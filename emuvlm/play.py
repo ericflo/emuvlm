@@ -10,12 +10,14 @@ import os
 import json
 import datetime
 import shutil
+import atexit
 from pathlib import Path
 from PIL import Image
 
 from emuvlm.emulators.pyboy_emulator import PyBoyEmulator
 from emuvlm.emulators.mgba_emulator import MGBAEmulator
 from emuvlm.model.agent import LLMAgent
+from emuvlm.utils.rom_loader import cleanup_rom_cache
 
 # Initialize basic logging
 logging.basicConfig(
@@ -395,6 +397,12 @@ def main():
         # Clean up
         emulator.close()
         logger.info(f"Game ended after {turn_count} turns")
+        
+        # Clean up extracted ROM files
+        cleanup_rom_cache()
+
+# Register cleanup for extracted ROM files even if the program is terminated
+atexit.register(cleanup_rom_cache)
 
 if __name__ == "__main__":
     main()
