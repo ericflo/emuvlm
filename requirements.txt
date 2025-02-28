@@ -1,0 +1,10 @@
+# This file is deprecated. Please use pip to install the package directly:
+# pip install -e .
+# 
+# For macOS compatibility, use:
+# pip install -e ".[macos]"
+# 
+# For development dependencies, use:
+# pip install -e ".[dev]"
+#
+# All dependencies are now defined in pyproject.toml for better package management.

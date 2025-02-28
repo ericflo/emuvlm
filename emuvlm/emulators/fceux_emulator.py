@@ -6,6 +6,7 @@ import subprocess
 import time
 import os
 import atexit
+import platform
 from PIL import Image
 import tempfile
 import requests
@@ -164,12 +165,30 @@ class FCEUXEmulator(EmulatorBase):
         Start the FCEUX process with Lua script for API communication.
         """
         # Check if fceux executable is available
-        if shutil.which("fceux") is None:
+        fceux_path = shutil.which("fceux")
+        if fceux_path is None:
+            # Provide a more helpful error message with installation instructions
             logger.error("FCEUX executable not found in PATH")
-            raise RuntimeError("FCEUX emulator not found. Please install FCEUX and ensure it's in your PATH.")
+            if platform.system() == 'Darwin':
+                error_msg = (
+                    "FCEUX emulator not found. Please install FCEUX using Homebrew:\n"
+                    "  brew install fceux lua"
+                )
+            elif platform.system() == 'Linux':
+                error_msg = (
+                    "FCEUX emulator not found. Please install FCEUX:\n"
+                    "  sudo apt install fceux lua5.1 liblua5.1-dev   # For Debian/Ubuntu\n"
+                    "  sudo dnf install fceux lua                    # For Fedora/CentOS"
+                )
+            else:
+                error_msg = "FCEUX emulator not found. Please install FCEUX and ensure it's in your PATH."
+            
+            raise RuntimeError(error_msg)
+        
+        logger.debug(f"Found FCEUX executable at: {fceux_path}")
             
         cmd = [
-            "fceux",
+            fceux_path,  # Use the full path to the executable
             "--loadlua", self.lua_script_path,
             "--nogui",  # Optional: Run without GUI for headless operation
             self.rom_path

@@ -1141,7 +1141,9 @@ Your response will be automatically validated against a JSON schema."""
         # Save 1 in every 10 frames, or if it's an important action
         important_actions = ['A', 'Start', 'Select']
         
-        should_save = (self.turn_count % 10 == 0) or any(a in action for a in important_actions)
+        # Use turn_count attribute if it exists, otherwise default to 0
+        turn_count = getattr(self, 'turn_count', 0)
+        should_save = (turn_count % 10 == 0) or any(a in action for a in important_actions)
         
         if should_save:
             # Create a filename with the hash and action

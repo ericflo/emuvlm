@@ -156,16 +156,23 @@ def main():
                       help='Override auto-save interval from config')
     args = parser.parse_args()
     
-    # Load configuration
+    # Load configuration with better path handling
     if os.path.isabs(args.config):
         config_path = args.config
     else:
-        # If it's not an absolute path, try relative to current directory
-        # and then fall back to the default in the package
-        if os.path.exists(args.config):
-            config_path = args.config
+        # First check if the path is relative to current working directory
+        cwd_path = os.path.join(os.getcwd(), args.config)
+        if os.path.exists(cwd_path):
+            config_path = cwd_path
         else:
-            config_path = os.path.join(os.path.dirname(__file__), "config.yaml")
+            # Then try relative to the script location (package directory)
+            package_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), args.config)
+            if os.path.exists(package_path):
+                config_path = package_path
+            else:
+                # Finally, fall back to the default config in the package
+                config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.yaml")
+                logger.info(f"Using default config at: {config_path}")
     
     config = load_config(config_path)
     

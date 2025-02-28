@@ -14,10 +14,15 @@ import re
 from pathlib import Path
 from PIL import Image
 
-# Import directly since this file is already in the emuvlm package
-
+# Import directly from within the package
 from emuvlm.model.agent import LLMAgent
-from emuvlm.model.llama_cpp import server as llama_cpp_server
+# Make sure llama_cpp is available before importing
+try:
+    from emuvlm.model.llama_cpp import server as llama_cpp_server
+except ImportError:
+    print("Error: Required packages not found. Please install the macOS dependencies with:")
+    print("pip install -e \".[macos]\"")
+    sys.exit(1)
 
 # Configure logging
 logging.basicConfig(

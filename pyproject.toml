@@ -38,6 +38,8 @@ dev = [
 ]
 macos = [
     "llama-cpp-python>=0.2.50",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
 ]
 
 [project.scripts]

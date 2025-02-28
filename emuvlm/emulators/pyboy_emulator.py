@@ -78,8 +78,11 @@ class PyBoyEmulator(EmulatorBase):
             logger.info("Starting game initialization sequence...")
         
         # Game Boot Phase: Set up debugging directory for frames
-        boot_frames_dir = os.path.join("output", "boot_frames")
+        # Use an absolute path based on the current package location for better cross-platform support
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        boot_frames_dir = os.path.join(base_dir, "output", "boot_frames")
         os.makedirs(boot_frames_dir, exist_ok=True)
+        logger.debug(f"Saving boot frames to: {boot_frames_dir}")
         
         # Initial Advance - Wait for ROM to load and initialize
         logger.info("Phase 1: Initial boot...")
@@ -312,9 +315,11 @@ class PyBoyEmulator(EmulatorBase):
         Special initialization sequence for Zelda games.
         This uses different keypresses and timing than the standard sequence.
         """
-        # Set up debugging directory for frames
-        boot_frames_dir = "output/boot_frames/zelda"
+        # Set up debugging directory for frames using absolute path
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        boot_frames_dir = os.path.join(base_dir, "output", "boot_frames", "zelda")
         os.makedirs(boot_frames_dir, exist_ok=True)
+        logger.debug(f"Saving Zelda boot frames to: {boot_frames_dir}")
         
         # Phase 1: Initial boot - just advance for a while to let the boot logo finish
         for i in range(200):  # Longer initial wait for boot sequence
