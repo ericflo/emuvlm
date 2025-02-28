@@ -97,15 +97,16 @@ class TestLLMAgent:
         assert payload['temperature'] == 0.2  # Default value
         assert payload['max_tokens'] == 200  # Default value
     
-    def test_frame_caching(self, sample_frame):
-        """Test that frame caching works correctly."""
+    def test_frame_comparison(self, sample_frame):
+        """Test that frame comparison logic works correctly."""
         model_config = {
             "api_url": "http://localhost:8000",
             "enable_cache": True
         }
         valid_actions = ["Up", "Down", "Left", "Right", "A", "B"]
         
-        with patch.object(LLMAgent, '_query_model') as mock_query:
+        with patch.object(LLMAgent, '_query_model') as mock_query, \
+             patch.object(LLMAgent, '_save_frame_to_cache') as mock_save:
             # Setup the mock to return a known response
             mock_query.return_value = "A"
             
@@ -117,13 +118,14 @@ class TestLLMAgent:
             assert result1 == "A"
             assert mock_query.call_count == 1
             
-            # Second call with same frame should use the cache
+            # Second call with same frame should still query the model
+            # (since we removed the cached action feature)
             result2 = agent.decide_action(sample_frame)
             assert result2 == "A"
-            assert mock_query.call_count == 1  # No additional calls
+            assert mock_query.call_count == 2
             
             # Call with a different frame should query the model again
             different_frame = Image.new('RGB', (160, 144), color='white')
             result3 = agent.decide_action(different_frame)
             assert result3 == "A"
-            assert mock_query.call_count == 2
+            assert mock_query.call_count == 3

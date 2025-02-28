@@ -78,10 +78,9 @@ class LLMAgent:
         self.summary_interval = model_config.get('summary_interval', 10)  # Summarize every X turns
         self.turn_count = 0
         
-        # For frame caching
+        # For frame storage and comparison
         self.enable_cache = model_config.get('enable_cache', True)
         self.cache_dir = Path(model_config.get('cache_dir', 'cache'))
-        self.frame_cache = {}  # Map from frame hash to (action, confidence)
         self.similarity_threshold = model_config.get('similarity_threshold', 0.95)
         self.last_frame = None
         self.last_frame_hash = None
@@ -98,7 +97,7 @@ class LLMAgent:
         logger.info(f"API URL: {self.api_url}")
         logger.info(f"Valid actions: {len(valid_actions)} possible actions")
         logger.info(f"Summary feature is {'enabled' if use_summary else 'disabled'}")
-        logger.info(f"Frame caching is {'enabled' if self.enable_cache else 'disabled'}")
+        logger.info(f"Frame saving is {'enabled' if self.enable_cache else 'disabled'}")
         logger.info(f"JSON schema support is {'enabled' if model_config.get('json_schema_support', True) else 'disabled'}")
     
     def _maybe_start_server(self):
@@ -184,11 +183,7 @@ class LLMAgent:
                 similarity = self._calculate_frame_similarity(frame, self.last_frame)
                 if similarity > self.similarity_threshold:
                     logger.info(f"Frame is similar to previous frame (similarity: {similarity:.4f})")
-                    # If we have a cached action for the last frame, use it
-                    if self.last_frame_hash in self.frame_cache:
-                        cached_action = self.frame_cache[self.last_frame_hash]
-                        logger.info(f"Using cached action: {cached_action}")
-                        return cached_action
+                    # We've removed the cached action feature as it was causing more trouble than it's worth
             
             # Calculate frame hash for caching
             frame_hash = self._calculate_frame_hash(frame)
@@ -197,11 +192,7 @@ class LLMAgent:
             self.last_frame = frame.copy()
             self.last_frame_hash = frame_hash
             
-            # Check if we have this exact frame cached
-            if frame_hash in self.frame_cache:
-                cached_action = self.frame_cache[frame_hash]
-                logger.info(f"Cache hit for frame hash {frame_hash[:8]}... - Action: {cached_action}")
-                return cached_action
+            # We've removed the cached action feature as it was causing more trouble than it's worth
         
         # If we get here, we need to query the model
         # Prepare the image for the model
@@ -249,10 +240,8 @@ class LLMAgent:
                 # Ignore any JSON parsing errors here
                 pass
         
-        # Cache the result if frame caching is enabled
+        # Save the frame to disk for future analysis if needed
         if self.enable_cache and self.last_frame_hash is not None:
-            self.frame_cache[self.last_frame_hash] = valid_action
-            # Save the frame to disk for future analysis if needed
             self._save_frame_to_cache(frame, self.last_frame_hash)
             
         return valid_action
@@ -978,8 +967,8 @@ Your response will be automatically validated against a JSON schema."""
         if not self.enable_cache:
             return
             
-        # Get the action for this frame from the cache
-        action = self.frame_cache.get(frame_hash, "Unknown")
+        # Use frame hash as part of the filename
+        action = "Unknown"
             
         # Only save a subset of frames to avoid filling up the disk
         # Save 1 in every 10 frames, or if it's an important action
@@ -1001,9 +990,8 @@ Your response will be automatically validated against a JSON schema."""
     
     def clear_cache(self) -> None:
         """
-        Clear the frame cache.
+        Clear the frame comparison cache.
         """
-        self.frame_cache = {}
         self.last_frame = None
         self.last_frame_hash = None
-        logger.info("Frame cache cleared")
+        logger.info("Frame comparison cache cleared")
