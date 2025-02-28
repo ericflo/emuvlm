@@ -44,27 +44,45 @@ class TestPlayModule:
     
     def test_determine_delay(self):
         """Test the delay determination logic."""
-        # Basic game config
+        # Basic game config with just action_delay
         game_config = {
             "action_delay": 1.0
         }
         
-        # Default delay - gets multiplied by 1.5 for "A" button
-        assert determine_delay(game_config, "A") == 1.5
+        # Default should be used for all actions
+        assert determine_delay(game_config, "A") == 1.0
+        assert determine_delay(game_config, "B") == 1.0
+        assert determine_delay(game_config, "Up") == 1.0
         
-        # With timing configuration
+        # With category-based timing configuration
         game_config["timing"] = {
-            "menu_nav_delay": 0.5,
-            "battle_anim_delay": 2.0,
-            "text_scroll_delay": 0.3
+            "categories": {
+                "navigation": 0.5,
+                "confirm": 2.0,
+                "cancel": 0.3,
+                "wait": 0.2
+            }
         }
         
-        # Test different actions
+        # Test different action categories
         assert determine_delay(game_config, "Up") == 0.5
         assert determine_delay(game_config, "Down") == 0.5
         assert determine_delay(game_config, "A") == 2.0
         assert determine_delay(game_config, "B") == 0.3
         assert determine_delay(game_config, "Start") == 1.0  # Uses default
+        assert determine_delay(game_config, "None") == 0.2  # Uses wait category
+        
+        # Test action-specific overrides
+        game_config["timing"]["actions"] = {
+            "A": 3.0,
+            "Start": 1.5
+        }
+        
+        # Action-specific should take precedence over categories
+        assert determine_delay(game_config, "A") == 3.0
+        assert determine_delay(game_config, "Start") == 1.5
+        # Other actions should still use categories
+        assert determine_delay(game_config, "Up") == 0.5
     
     @patch("os.makedirs")
     def test_save_session(self, mock_makedirs):

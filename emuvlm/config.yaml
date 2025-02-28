@@ -38,13 +38,21 @@ games:
     rom: "/Users/ericflo/Development/emuvlm/roms/gb/Pokemon - Blue Version (USA, Europe) (SGB Enhanced).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.5               # Seconds to wait after each action
+    action_delay: 0.5               # Default seconds to wait after each action
     game_type: "pokemon"            # Set game type to identify it as Pokemon
     # Game-specific timing configurations
     timing:
-      menu_nav_delay: 0.3           # Faster delay for menu navigation
-      battle_anim_delay: 1.5        # Longer delay for battle animations
-      text_scroll_delay: 0.8        # Medium delay for text scrolling
+      # Category-based delays for different action types
+      categories:
+        navigation: 0.3             # For directional inputs (Up, Down, Left, Right)
+        confirm: 1.5                # For A button (confirm actions, often triggers animations)
+        cancel: 0.8                 # For B button (cancel/back actions, often skips text)
+        menu: 0.5                   # For Start button (menu operations)
+        special: 0.4                # For Select button (special functions)
+        wait: 0.2                   # For "None" action (waiting)
+      # Specific action overrides when needed
+      actions:
+        # No overrides for Pokemon Blue
     prompt_additions:
       - "This is Pokemon Blue for Game Boy, a classic turn-based RPG where you catch and train Pokemon to battle other trainers."
       - "MAIN GOALS: Collect 8 gym badges, defeat Elite Four, catch 150 Pokemon, and complete the Pokedex."
@@ -65,14 +73,21 @@ games:
     rom: "/Users/ericflo/Development/emuvlm/roms/gb/Legend of Zelda, The - Link's Awakening (USA, Europe).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.4               # Seconds to wait after each action
+    action_delay: 0.4               # Default seconds to wait after each action
     game_type: "zelda"              # Game type for specific handling
     # Game-specific timing configurations
     timing:
-      menu_nav_delay: 0.3           # Delay for inventory navigation
-      dialog_delay: 1.0             # Delay for NPC dialog
-      screen_transition_delay: 0.7  # Delay for screen transitions
-      item_use_delay: 0.5           # Delay after using items
+      # Category-based delays for different action types
+      categories:
+        navigation: 0.3             # For directional inputs (Up, Down, Left, Right)
+        confirm: 0.6                # For A button (confirm, attack, interact)
+        cancel: 1.0                 # For B button (cancel, dialog, shield)
+        menu: 0.5                   # For Start button (menu operations, inventory)
+        special: 0.4                # For Select button (map)
+        wait: 0.2                   # For "None" action (waiting)
+      # Specific action overrides for common Zelda situations
+      actions:
+        A: 0.7                      # Attack/interact needs more time than standard confirm
     # Game-specific settings
     settings:
       detect_loading_screens: true  # Enable loading screen detection
@@ -99,13 +114,20 @@ games:
     rom: "/Users/ericflo/Development/emuvlm/roms/gb/Final Fantasy Legend, The (USA).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.5               # Seconds to wait after each action
+    action_delay: 0.5               # Default seconds to wait after each action
     # Game-specific timing configurations
     timing:
-      menu_nav_delay: 0.3           # Delay for menu navigation
-      battle_command_delay: 0.4     # Delay between selecting battle commands
-      battle_anim_delay: 1.0        # Delay for battle animations
-      text_scroll_delay: 0.6        # Delay for text scrolling
+      # Category-based delays for different action types
+      categories:
+        navigation: 0.3             # For directional inputs (Up, Down, Left, Right)
+        confirm: 0.6                # For A button (confirm selections)
+        cancel: 0.6                 # For B button (cancel selections)
+        menu: 0.4                   # For Start button (status menu)
+        special: 0.4                # For Select button (rarely used)
+        wait: 0.3                   # For "None" action (waiting)
+      # Specific action overrides for RPG-specific situations
+      actions:
+        A: 1.0                      # For battle confirmations and animations
     prompt_additions:
       - "This is Final Fantasy Legend (SaGa in Japan) for Game Boy, a challenging turn-based RPG with unique character progression systems."
       - "MAIN GOAL: Climb the tower connecting worlds, collect the SPHERE items from each world, and reach paradise to confront the Creator."
@@ -128,11 +150,20 @@ games:
     rom: "/Users/ericflo/Development/emuvlm/roms/gb/Metroid II - Return of Samus (World).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.4               # Seconds to wait after each action
+    action_delay: 0.4               # Default seconds to wait after each action
     # Game-specific timing configurations
     timing:
-      screen_transition_delay: 0.7  # Delay for screen transitions
-      weapon_switch_delay: 0.3      # Delay when switching weapons
+      # Category-based delays for different action types
+      categories:
+        navigation: 0.3             # For directional inputs (Up, Down, Left, Right)
+        confirm: 0.4                # For A button (jump)
+        cancel: 0.4                 # For B button (shoot)
+        menu: 0.7                   # For Start button (menu/pause)
+        special: 0.3                # For Select button (weapon switch)
+        wait: 0.2                   # For "None" action (waiting)
+      # Specific action overrides for action games
+      actions:
+        Down: 0.5                   # Morph ball transformation needs more time
     prompt_additions:
       - "This is Metroid II: Return of Samus for Game Boy, a nonlinear action-adventure platformer focused on exploration and upgrades."
       - "MAIN OBJECTIVE: Hunt and eliminate 39 Metroids on planet SR388, moving deeper into the planet as you kill them."
@@ -160,10 +191,20 @@ games:
     rom: "/Users/ericflo/Development/emuvlm/roms/gb/Kirby's Dream Land (USA, Europe).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.3               # Seconds to wait after each action
+    action_delay: 0.3               # Default seconds to wait after each action
     # Game-specific timing configurations
     timing:
-      ability_use_delay: 0.5        # Delay after using abilities
+      # Category-based delays for different action types
+      categories:
+        navigation: 0.25            # For directional inputs (Up, Down, Left, Right)
+        confirm: 0.4                # For A button (jump/float)
+        cancel: 0.5                 # For B button (inhale/spit)
+        menu: 0.3                   # For Start button (pause menu)
+        special: 0.3                # For Select button (rarely used)
+        wait: 0.2                   # For "None" action (waiting)
+      # Specific action overrides for platformers
+      actions:
+        Up: 0.5                     # Up is used for floating, needs more time
     prompt_additions:
       - "This is Kirby's Dream Land for Game Boy, HAL Laboratory's first Kirby game - a lighthearted platformer with unique floating mechanics."
       - "MAIN GOAL: King Dedede has stolen all the food from Dream Land. Travel through 5 stages to recover the food and defeat King Dedede."
@@ -193,7 +234,18 @@ games:
     rom: "/Users/ericflo/Development/emuvlm/roms/gb/Super Mario Land (World).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.3               # Seconds to wait after each action
+    action_delay: 0.3               # Default seconds to wait after each action
+    # Game-specific timing configurations
+    timing:
+      # Category-based delays for different action types
+      categories:
+        navigation: 0.25            # For directional inputs (Up, Down, Left, Right)
+        confirm: 0.35               # For A button (jump)
+        cancel: 0.3                 # For B button (run/shoot)
+        menu: 0.4                   # For Start button (pause)
+        special: 0.3                # For Select button (rarely used)
+        wait: 0.2                   # For "None" action (waiting)
+      # No specific action overrides needed for Mario Land
     prompt_additions:
       - "This is Super Mario Land for Game Boy, a compact 2D platformer designed by Gunpei Yokoi's team (not Shigeru Miyamoto)."
       - "MAIN GOAL: Rescue Princess Daisy from the alien Tatanga across 4 worlds with 3 levels each, for a total of 12 stages."
@@ -223,7 +275,20 @@ games:
     rom: "/Users/ericflo/Development/emuvlm/roms/gb/Tetris (World).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.2               # Seconds to wait after each action
+    action_delay: 0.2               # Default seconds to wait after each action
+    # Game-specific timing configurations
+    timing:
+      # Category-based delays for different action types
+      categories:
+        navigation: 0.15            # For directional inputs (Left, Right)
+        confirm: 0.15               # For A button (rotate)
+        cancel: 0.15                # For B button (rotate)
+        menu: 0.3                   # For Start button (pause/menu)
+        special: 0.2                # For Select button (rarely used)
+        wait: 0.1                   # For "None" action (waiting)
+      # Specific action overrides for Tetris
+      actions:
+        Down: 0.08                  # Down is used for soft drop, needs faster response
     prompt_additions:
       - "This is Tetris for Game Boy (1989), the definitive version of the classic Soviet puzzle game that helped popularize the Game Boy."
       - "MAIN OBJECTIVE: Arrange falling tetrominoes (shapes made of 4 blocks) to form complete horizontal lines that will disappear."
@@ -260,9 +325,21 @@ games:
     rom: "/Users/ericflo/Development/emuvlm/roms/gb/Castlevania II - Belmont's Revenge (USA, Europe).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.4               # Seconds to wait after each action
+    action_delay: 0.4               # Default seconds to wait after each action
+    # Game-specific timing configurations
     timing:
-      weapon_use_delay: 0.5         # Delay after using weapons
+      # Category-based delays for different action types
+      categories:
+        navigation: 0.3             # For directional inputs (Up, Down, Left, Right)
+        confirm: 0.4                # For A button (jump)
+        cancel: 0.5                 # For B button (attack with whip)
+        menu: 0.4                   # For Start button (pause)
+        special: 0.3                # For Select button (rarely used)
+        wait: 0.2                   # For "None" action (waiting)
+      # Specific action overrides for Castlevania
+      actions:
+        B: 0.5                      # Whip attack needs more time
+        Up: 0.6                     # Up+B for sub-weapon needs more time
     prompt_additions:
       - "This is Castlevania II: Belmont's Revenge for Game Boy, a precise action platformer and sequel to Castlevania: The Adventure."
       - "STORY CONTEXT: 15 years after defeating Dracula, Christopher Belmont's son Soleiyu is kidnapped and transformed by Dracula's curse."
@@ -306,9 +383,21 @@ games:
     rom: "/Users/ericflo/Development/emuvlm/roms/gb/Kid Icarus - Of Myths and Monsters (USA, Europe).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.3               # Seconds to wait after each action
+    action_delay: 0.3               # Default seconds to wait after each action
+    # Game-specific timing configurations
     timing:
-      weapon_use_delay: 0.3         # Delay after using weapons
+      # Category-based delays for different action types
+      categories:
+        navigation: 0.25            # For directional inputs (Up, Down, Left, Right)
+        confirm: 0.35               # For A button (jump/fly)
+        cancel: 0.3                 # For B button (shoot)
+        menu: 0.4                   # For Start button (pause)
+        special: 0.3                # For Select button (rarely used)
+        wait: 0.2                   # For "None" action (waiting)
+      # Specific action overrides for Kid Icarus
+      actions:
+        A: 0.4                      # Jump/fly needs slightly more time
+        B: 0.3                      # Shooting arrows
     prompt_additions:
       - "This is Kid Icarus: Of Myths and Monsters for Game Boy, a challenging action platformer sequel to the NES classic."
       - "STORY: You control Pit, an angel tasked with retrieving the Three Sacred Treasures to defeat the demon Orcos, who threatens Angel Land."
@@ -352,9 +441,21 @@ games:
     rom: "/Users/ericflo/Development/emuvlm/roms/gb/Mega Man - Dr. Wily's Revenge (USA).zip"
     emulator: "pyboy" 
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.3               # Seconds to wait after each action
+    action_delay: 0.3               # Default seconds to wait after each action
+    # Game-specific timing configurations
     timing:
-      weapon_switch_delay: 0.3      # Delay when switching weapons
+      # Category-based delays for different action types
+      categories:
+        navigation: 0.25            # For directional inputs (Up, Down, Left, Right)
+        confirm: 0.35               # For A button (jump)
+        cancel: 0.3                 # For B button (shoot)
+        menu: 0.4                   # For Start button (weapon selection)
+        special: 0.3                # For Select button (rarely used)
+        wait: 0.2                   # For "None" action (waiting)
+      # Specific action overrides for Mega Man
+      actions:
+        B: 0.35                     # Shooting needs slightly more time
+        Start: 0.5                  # Weapon selection screen needs more time
     prompt_additions:
       - "This is Mega Man: Dr. Wily's Revenge for Game Boy, the first portable Mega Man action platformer combining elements from Mega Man 1 and 2."
       - "GAME STRUCTURE: Four initial Robot Masters, then Dr. Wily's fortress with four more Robot Masters (from Mega Man 2) and final confrontations."

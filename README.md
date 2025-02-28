@@ -23,7 +23,7 @@ Our system now supports game-specific configurations that enhance AI gameplay fo
   - Cross-platform compatibility with automatic backend selection
 - Frame caching to reduce redundant model calls and improve performance
 - Session management for saving and resuming gameplay
-- Dynamic timing system that adjusts delays based on context
+- Hierarchical timing system that adjusts delays based on action categories and specific buttons
 - Enhanced logging with frame capture for debugging
 - Demo mode with built-in simple game (no ROM required)
 - Monitoring interface for viewing and intervening in gameplay
@@ -447,9 +447,17 @@ games:
     action_delay: 0.5
     game_type: "pokemon"            # Game type for specialized handling
     timing:
-      menu_nav_delay: 0.3
-      battle_anim_delay: 1.5
-      text_scroll_delay: 0.8
+      # Category-based delays for different action types
+      categories:
+        navigation: 0.3             # For directional inputs (Up, Down, Left, Right)
+        confirm: 1.5                # For A button (confirm actions, often triggers animations)
+        cancel: 0.8                 # For B button (cancel/back actions, often skips text)
+        menu: 0.5                   # For Start button (menu operations)
+        special: 0.4                # For Select button (special functions)
+        wait: 0.2                   # For "None" action (waiting)
+      # Specific action overrides when needed
+      actions:
+        A: 2.0                      # Override specific button timing if needed
     settings:
       detect_loading_screens: true  # Enable loading screen detection
       max_blank_frames: 5           # Anti-stalling setting
@@ -461,10 +469,17 @@ games:
     action_delay: 0.4
     game_type: "zelda"              # Game type identifier
     timing:
-      menu_nav_delay: 0.3           # Zelda-specific timing
-      dialog_delay: 1.0
-      screen_transition_delay: 0.7
-      item_use_delay: 0.5
+      # Category-based delays for different action types
+      categories:
+        navigation: 0.3             # For directional inputs (Up, Down, Left, Right)
+        confirm: 0.6                # For A button (confirm, attack, interact)
+        cancel: 1.0                 # For B button (cancel, dialog, shield)
+        menu: 0.5                   # For Start button (menu operations, inventory)
+        special: 0.4                # For Select button (map)
+        wait: 0.2                   # For "None" action (waiting)
+      # Specific action overrides for common Zelda situations
+      actions:
+        A: 0.7                      # Attack/interact needs more time
     settings:
       detect_loading_screens: true
       frame_analysis: true          # More detailed frame analysis
@@ -521,6 +536,39 @@ output/                  - All generated files (gitignored)
 Additional scripts:
 - `install_emulators.sh` - Helper script to install all emulator dependencies
 - `scripts/test_emulator_example.sh` - Example script to test all emulator implementations
+
+## Hierarchical Timing System
+
+EmuVLM uses a sophisticated timing system that determines appropriate delays after each action based on the context:
+
+### Delay Determination Logic
+
+1. **Action-Specific Delays**: The highest priority. Define exact delays for specific buttons:
+   ```yaml
+   timing:
+     actions:
+       A: 0.7       # Override A button specifically
+       Start: 1.0   # Override Start button specifically
+   ```
+
+2. **Category-Based Delays**: Used when no action-specific delay is defined. Buttons are grouped into functional categories:
+   ```yaml
+   timing:
+     categories:
+       navigation: 0.3  # Used for Up, Down, Left, Right
+       confirm: 0.6     # Used for A button (confirm actions)
+       cancel: 0.8      # Used for B button (cancel actions)
+       menu: 0.5        # Used for Start button (menu operations)
+       special: 0.4     # Used for Select button
+       wait: 0.2        # Used for "None" action (waiting)
+   ```
+
+3. **Default Action Delay**: Fallback when neither of the above is specified:
+   ```yaml
+   action_delay: 0.5  # Default delay for all actions if not overridden
+   ```
+
+This system allows fine-tuning the timing for each game's specific requirements. For example, in platformers like Mario, directional inputs need faster responses than in turn-based RPGs like Pokemon.
 
 ## Game-Specific Enhancements
 

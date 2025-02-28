@@ -107,6 +107,11 @@ def determine_delay(game_config, action):
     """
     Determine the appropriate delay for the given action and game context.
     
+    The timing system uses a hierarchical approach:
+    1. Check for action-specific delay in timing.actions
+    2. Check for action-type category delay in timing.categories
+    3. Fall back to default action_delay
+    
     Args:
         game_config: Game configuration from config file
         action: The action being executed
@@ -118,20 +123,34 @@ def determine_delay(game_config, action):
     timing = game_config.get('timing', {})
     
     # Default to the general action_delay
-    delay = game_config.get('action_delay', 1.0)
+    default_delay = game_config.get('action_delay', 1.0)
     
-    # Adjust based on action type
+    # First check if there's a specific delay defined for this exact action
+    action_delays = timing.get('actions', {})
+    if action in action_delays:
+        return action_delays[action]
+    
+    # Then check for category-based delays
+    categories = timing.get('categories', {})
+    
+    # Map actions to categories
     if action in ['Up', 'Down', 'Left', 'Right']:
-        # Navigation actions use menu_nav_delay
-        delay = timing.get('menu_nav_delay', delay)
-    elif action in ['A']:
-        # A button could trigger battle animation
-        delay = timing.get('battle_anim_delay', delay * 1.5)
-    elif action in ['B']:
-        # B button is often used to skip dialog
-        delay = timing.get('text_scroll_delay', delay)
+        category = 'navigation'
+    elif action == 'A':
+        category = 'confirm'
+    elif action == 'B':
+        category = 'cancel'
+    elif action == 'Start':
+        category = 'menu'
+    elif action == 'Select':
+        category = 'special'
+    elif action == 'None':
+        category = 'wait'
+    else:
+        category = 'default'
     
-    return delay
+    # Get delay from category or default
+    return categories.get(category, default_delay)
 
 def save_frame(frame, frame_dir, turn_count, action):
     """Save a frame to disk for debugging."""
