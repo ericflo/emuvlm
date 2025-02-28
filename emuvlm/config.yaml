@@ -1,445 +1,49 @@
-# Configuration for LLM-powered Game Player
-
-# Model configuration
-model:
-  # Common settings
-  api_url: "http://127.0.0.1:8000" # API server URL
-  provider: "local" # Provider options: "local", "openai", "anthropic", "mistral", or "custom"
-  backend: "auto" # Local backend: "auto", "vllm", or "llama.cpp" (only used when provider is "local")
-  model_name: null # Model name for external providers (e.g., "gpt-4o", "claude-3-haiku-20240307", "pixtral-12b-2409")
-  summary_interval: 10 # Generate summary every X turns when summary feature is enabled
-  max_tokens: 200 # Max tokens to generate for action decision (increased for JSON responses)
-  temperature: 0.2 # Lower temperature for more focused responses
-
-  # Message history settings
-  max_message_history: 8 # Number of past interactions to include in context
-
-  # API authentication (for external providers)
-  api_key: null # API key for OpenAI, Claude, Mistral (set via environment variable or directly)
-  organization_id: null # Organization ID (for OpenAI)
-
-  # Response format configuration
-  json_schema_support: true # Whether the model supports JSON schema responses
-  try_json_schema: true # Try using JSON schema with llama.cpp and local providers
-
-  # Frame caching configuration
-  enable_cache: true # Enable frame caching to reduce API calls
-  cache_dir: "output/cache" # Directory to store cached frames
-  similarity_threshold: 0.95 # Threshold for considering frames similar (0-1)
-
-  # llama.cpp specific settings (for local backend with Mac compatibility)
-  autostart_server: false # Whether to automatically start the local model server
-  model_path: "models/llava-v1.5-7b-Q4_K_S.gguf" # Path to GGUF model file (for llama.cpp)
-  model_url: "https://huggingface.co/second-state/Llava-v1.5-7B-GGUF/resolve/main/llava-v1.5-7b-Q4_K_S.gguf" # URL for auto-download
-  model_type: "llava" # Model type: "llava", "qwen", or "minicpm"
-  n_gpu_layers: -1 # Number of layers to offload to GPU (-1 for all)
-  n_ctx: 2048 # Context window size
-
-# Example configurations for different providers (commented out)
-#
-# # OpenAI GPT-4o Configuration
-# model:
-#   provider: "openai"
-#   api_url: "https://api.openai.com"
-#   model_name: "gpt-4o"
-#   api_key: ${OPENAI_API_KEY}      # Set via environment variable
-#   temperature: 0.2
-#   max_tokens: 200
-#
-# # Claude Configuration
-# model:
-#   provider: "anthropic"
-#   api_url: "https://api.anthropic.com"
-#   model_name: "claude-3-haiku-20240307"  # or "claude-3-sonnet-20240229" or "claude-3-opus-20240229"
-#   api_key: ${ANTHROPIC_API_KEY}   # Set via environment variable
-#   temperature: 0.2
-#   max_tokens: 200
-#
-# # Mistral Pixtral Configuration
-# model:
-#   provider: "mistral"
-#   api_url: "https://api.mistral.ai"
-#   model_name: "pixtral-12b-2409"
-#   api_key: ${MISTRAL_API_KEY}     # Set via environment variable
-#   temperature: 0.2
-#   max_tokens: 200
-#
-# # Custom OpenAI-compatible Server (e.g., local vLLM serving Qwen2.5-VL)
-# model:
-#   provider: "custom"
-#   api_url: "http://localhost:8000"
-#   temperature: 0.2
-#   max_tokens: 200
-
-# Logging configuration
-logging:
-  level: "INFO" # Logging level (DEBUG, INFO, WARNING, ERROR)
-  save_frames: true # Save frames to disk for debugging
-  frames_dir: "output/logs/frames" # Directory to save frames
-  log_file: "output/logs/emuvlm.log" # Log file path
-
-# Game configurations
 games:
-  # Game Boy / Game Boy Color game configuration - Fully Supported
-  pokemon_blue:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Pokemon - Blue Version (USA, Europe) (SGB Enhanced).zip"
-    emulator: "pyboy"
-    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.5 # Default seconds to wait after each action
-    game_type: "pokemon" # Set game type to identify it as Pokemon
-    example_json: |
-      {
-        "action": "Down",
-        "reasoning": "I'm pressing Down to navigate toward the tall grass visible at the bottom of the screen. The character is currently standing on a path in what appears to be Route 1, and I can see patches of tall grass about 2-3 tiles below. In Pokémon games, tall grass is where wild Pokémon encounters occur, which is essential for catching new Pokémon and gaining experience points to level up my current team. The screen shows no NPCs or obstacles between my character and the grass. My character appears to be at full health as there's no indication otherwise on the interface, and I have Pokéballs in my inventory as shown by the item counter, making this an ideal time to look for wild Pokémon encounters.",
-        "game_summary": "I'm at the beginning of my Pokémon journey on Route 1 between Pallet Town and Viridian City. I've chosen my starter Pokémon (Squirtle) and received my Pokédex from Professor Oak. My current objective is to catch some wild Pokémon to build my team and then proceed to Viridian City to continue the main quest. My Squirtle is at level 5 with no status conditions."
-      }
-    # Game-specific timing configurations
-    timing:
-      # Category-based delays for different action types
-      categories:
-        navigation: 0.3 # For directional inputs (Up, Down, Left, Right)
-        confirm: 1.5 # For A button (confirm actions, often triggers animations)
-        cancel: 0.8 # For B button (cancel/back actions, often skips text)
-        menu: 0.5 # For Start button (menu operations)
-        special: 0.4 # For Select button (special functions)
-        wait: 0.2 # For "None" action (waiting)
-      # Specific action overrides when needed
-      actions:
-        # No overrides for Pokemon Blue
-    prompt_additions:
-      - "This is Pokemon Blue for Game Boy, a classic turn-based RPG where you catch and train Pokemon to battle other trainers."
-      - "MAIN GOALS: Collect 8 gym badges, defeat Elite Four, catch 150 Pokemon, and complete the Pokedex."
-      - "STARTING SEQUENCE: Choose 'NEW GAME', enter your name. Select a starter Pokemon (Bulbasaur, Charmander, or Squirtle)."
-      - "BATTLE MECHANICS: Pokemon take turns attacking. Choose 'FIGHT' for attacks, 'PKMN' to switch Pokemon, 'ITEM' for items, 'RUN' to escape wild battles."
-      - "TYPE EFFECTIVENESS: Critical knowledge for battle decisions! Water > Fire > Grass > Water. Electric > Water. Ground > Electric. Psychic > Fighting/Poison."
-      - "KEY EARLY MOVES: Tackle, Growl (reduces opponent's attack), status moves like Sleep Powder, Stun Spore, and Poison Powder."
-      - "CATCHING POKEMON: Weaken wild Pokemon (reduce HP to red bar, ~10-20% health), apply status effects if possible, then use Pokeballs."
-      - "HEALING: Use Potions to restore health. Centers with red roofs fully heal your team (talk to nurse at counter)."
-      - "PROGRESSION PATH: Pallet Town → Viridian City → Pewter City (1st gym) → Mt. Moon → Cerulean City (2nd gym) → and so on."
-      - "KEY ITEMS: HM01 (Cut) needed for obstacles, Bike for faster travel, Itemfinder for hidden items, Old Rod/Good Rod for fishing."
-      - "LEVELING: Keep team balanced, grind before gyms if team is underleveled. First gym (Brock) around level 10-12 is optimal."
-      - "BUTTON MECHANICS: A to confirm/interact, B to cancel/exit menus/run, Start opens menu, Select used rarely."
-      - "ALWAYS CHECK TEXT: When text appears, WAIT (use 'None') until fully displayed before pressing A to continue."
-      - "SAVING: Open menu with Start, select SAVE, then confirm. Save frequently, especially after significant progress."
-
-  zelda_links_awakening:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Legend of Zelda, The - Link's Awakening (USA, Europe).zip"
-    emulator: "pyboy"
-    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.4 # Default seconds to wait after each action
-    game_type: "zelda" # Game type for specific handling
-    example_json: |
-      {
-        "action": "Right",
-        "reasoning": "I'm pressing Right to move toward what appears to be a cave entrance visible at the right side of the screen. Link is currently in an outdoor area that looks like Koholint Island's mountainous region, and I can see a distinct dark opening in the rock face about 5-6 tiles to the right of Link's position. In Zelda games, caves often contain important items, heart pieces, or story elements. There are no enemies visible between Link and the cave entrance, making it safe to approach. Link's health shows 3 hearts at full capacity in the top-left corner of the screen, so we're in good condition to explore. The cave entrance matches the typical visual style of accessible doorways in this game, indicating it can be entered.",
-        "game_summary": "I'm exploring Koholint Island in search of the Tail Key needed to access the third dungeon (Key Cavern). I've already completed the Tail Cave and Bottle Grotto dungeons, obtaining the Full Moon Cello and Conch Horn instruments. Link has 3 heart containers, the Roc's Feather for jumping, and bombs for breaking cracked walls. My current location is in the Tal Tal Mountain Range to the north of Mabe Village."
-      }
-    # Game-specific timing configurations
-    timing:
-      # Category-based delays for different action types
-      categories:
-        navigation: 0.3 # For directional inputs (Up, Down, Left, Right)
-        confirm: 0.6 # For A button (confirm, attack, interact)
-        cancel: 1.0 # For B button (cancel, dialog, shield)
-        menu: 0.5 # For Start button (menu operations, inventory)
-        special: 0.4 # For Select button (map)
-        wait: 0.2 # For "None" action (waiting)
-      # Specific action overrides for common Zelda situations
-      actions:
-        A: 0.7 # Attack/interact needs more time than standard confirm
-    # Game-specific settings
-    settings:
-      detect_loading_screens: true # Enable loading screen detection
-      frame_analysis: true # Enable more detailed frame analysis
-      max_blank_frames: 5 # Maximum consecutive blank frames before skipping
-    prompt_additions:
-      - "This is The Legend of Zelda: Link's Awakening for Game Boy, a top-down action-adventure game featuring puzzle-solving and combat."
-      - "MAIN GOAL: Collect 8 instruments from dungeons to awaken the Wind Fish and escape Koholint Island."
-      - "CONTROLS: A button is your action button (sword slash, use items, talk). B button is for shield and secondary items."
-      - "MOVEMENT STRATEGY: Walk with directional buttons, always approach enemies cautiously, shield ready (B button) when facing them."
-      - "COMBAT TIPS: Time sword slashes carefully. Spin attack by holding sword button then releasing. Block projectiles with shield."
-      - "DUNGEON SEQUENCE: Tail Cave → Bottle Grotto → Key Cavern → Angler's Tunnel → Catfish's Maw → Face Shrine → Eagle's Tower → Turtle Rock."
-      - "ESSENTIAL ITEMS: Power Bracelet (lift heavy objects), Pegasus Boots (dash), Hookshot (cross gaps), Flippers (swim), Ocarina (teleport)."
-      - "PROGRESSION BLOCKERS: Look for cracked walls (bomb them), rocks (lift with bracelet), or suspicious tiles (push/pull)."
-      - "INVENTORY MANAGEMENT: Press Start for inventory, assign items to A/B buttons. Sword always stays equipped once obtained."
-      - "MAP NAVIGATION: Press Select for map. Owl statues mark important locations. Villages have shops and hint-giving NPCs."
-      - "HEART PIECES: Collect 4 pieces to gain a new heart container. Search for them in hard-to-reach areas or complete mini-games."
-      - "TRADING SEQUENCE: Important side quest. Start with Yoshi Doll from crane game, trade with NPCs in specific order for final reward."
-      - "BOSS STRATEGY: Most bosses have pattern-based attacks. Identify pattern, attack during vulnerable moments, repeat."
-      - "SECRET SEASHELLS: Collect and bring to mansion in Ukuku Prairie. Reward at 20 shells is powerful L-2 Sword."
-      - "DANGER INDICATORS: Low health alarm beeps - find hearts or fairies immediately. Blinking enemy means it's about to attack."
-
-  final_fantasy_legend:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Final Fantasy Legend, The (USA).zip"
-    emulator: "pyboy"
-    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.5 # Default seconds to wait after each action
-    example_json: |
-      {
-        "action": "A",
-        "reasoning": "I'm pressing A to confirm interaction with the NPC standing directly in front of my character. The screen shows my party in what appears to be a town environment, and there's a townsperson character positioned one tile in front of my party leader. In Final Fantasy Legend, the A button is used to interact with NPCs, doors, chests and other objects. Based on the dialogue box at the bottom of the screen, which is currently empty but ready for text, this interaction will likely provide important information about the current quest objective or town features. The NPC's appearance (looks like a merchant or information giver) suggests they may have valuable information. There are no visible threats or combat situations, making this a safe interaction.",
-        "game_summary": "I'm in the second world of Final Fantasy Legend, having already obtained the first SPHERE from World 1. My party consists of a Human fighter, a Mutant with magic abilities, and two Monster characters. The team is around level 12 with decent equipment (steel sword, chainmail). I'm currently in the main town of World 2, gathering information about where to find this world's SPHERE before proceeding to the next door in the Tower."
-      }
-    # Game-specific timing configurations
-    timing:
-      # Category-based delays for different action types
-      categories:
-        navigation: 0.3 # For directional inputs (Up, Down, Left, Right)
-        confirm: 0.6 # For A button (confirm selections)
-        cancel: 0.6 # For B button (cancel selections)
-        menu: 0.4 # For Start button (status menu)
-        special: 0.4 # For Select button (rarely used)
-        wait: 0.3 # For "None" action (waiting)
-      # Specific action overrides for RPG-specific situations
-      actions:
-        A: 1.0 # For battle confirmations and animations
-    prompt_additions:
-      - "This is Final Fantasy Legend (SaGa in Japan) for Game Boy, a challenging turn-based RPG with unique character progression systems."
-      - "MAIN GOAL: Climb the tower connecting worlds, collect the SPHERE items from each world, and reach paradise to confront the Creator."
-      - "CHARACTER TYPES: Party consists of 4 members with distinct advancement systems:"
-      - "HUMANS: Gain stats through purchasable potions only. Strongest with weapons but can't learn spells. Most reliable damage dealers."
-      - "MUTANTS: Gain/lose abilities randomly after battles. Can learn up to 8 powerful abilities but are unpredictable. Balance physical and magical skills."
-      - "MONSTERS: Transform by eating meat from defeated monsters. Their form determines all stats and abilities. No equipment slots."
-      - "COMBAT SYSTEM: Turn-based with agility determining action order. Each character acts individually when their portrait is highlighted."
-      - "WEAPON DURABILITY: Most weapons have limited uses (shown as number next to weapon). CRUCIAL: They break permanently when uses reach 0."
-      - "MAGIC SYSTEM: Spells have limited charges. Purchase new spell books when depleted. Spells are organized by 4 elements (Fire, Water, Electricity, Earth)."
-      - "WORLD STRUCTURE: Begin in first world, find door to next world, repeat until reaching paradise. Each world has different themes and monsters."
-      - "CRUCIAL STATS: HP (hit points), Str (physical damage), Agl (turn order speed), Mana (magic damage), Def (physical defense)."
-      - "NAVIGATION: Towns have inns (restore HP/MP), shops (buy equipment), guild (recruit new members if someone dies)."
-      - "ECONOMY TIPS: Money is scarce. Prioritize weapons for Humans, spell books for Mutants, and saving meat for Monsters."
-      - "BUTTON FUNCTIONS: A confirms, B cancels, directional buttons navigate. START shows status (rarely needed), SELECT not used."
-      - "DIALOGUE STRATEGY: Talk to all NPCs for critical hints about progression, hidden items, and world mechanics."
-      - "DIFFICULTY NOTE: Game is notoriously hard. Grinding for money and experience is often necessary before progressing to new areas."
-
-  metroid_ii:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Metroid II - Return of Samus (World).zip"
-    emulator: "pyboy"
-    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.4 # Default seconds to wait after each action
-    example_json: |
-      {
-        "action": "B",
-        "reasoning": "I'm pressing B to shoot at the enemy that's visible about 4 tiles to the right of Samus. The screen shows Samus in what appears to be a cave-like environment on planet SR388 with an approaching hostile creature (looks like a Gawron - the flying bug-like enemies). The B button fires Samus's arm cannon, which is necessary to eliminate threats. Based on the position of the enemy and its movement pattern (flying in a wave-like motion), a horizontal shot is most likely to hit it. Samus appears to be in a safe position with solid ground beneath her, and her energy meter in the top left shows approximately 60 energy remaining, so engaging this enemy is safer than trying to avoid it in the confined space. There are no other immediate threats visible on screen.",
-        "game_summary": "I'm in the early areas of SR388 in Metroid II: Return of Samus, hunting for the 39 Metroids on the planet. I've defeated 2 Metroids so far (shown by the counter at the bottom of the screen showing 37 remaining). Samus has 60 energy, 5 missiles, and has acquired the Morph Ball and Bombs abilities. I'm currently exploring to find the next Metroid and potentially locate more upgrades to improve Samus's capabilities."
-      }
-    # Game-specific timing configurations
-    timing:
-      # Category-based delays for different action types
-      categories:
-        navigation: 0.3 # For directional inputs (Up, Down, Left, Right)
-        confirm: 0.4 # For A button (jump)
-        cancel: 0.4 # For B button (shoot)
-        menu: 0.7 # For Start button (menu/pause)
-        special: 0.3 # For Select button (weapon switch)
-        wait: 0.2 # For "None" action (waiting)
-      # Specific action overrides for action games
-      actions:
-        Down: 0.5 # Morph ball transformation needs more time
-    prompt_additions:
-      - "This is Metroid II: Return of Samus for Game Boy, a nonlinear action-adventure platformer focused on exploration and upgrades."
-      - "MAIN OBJECTIVE: Hunt and eliminate 39 Metroids on planet SR388, moving deeper into the planet as you kill them."
-      - "PROGRESSION SYSTEM: The planet has earthquake sequences that drain acid/lava after certain Metroids are defeated, opening new areas."
-      - "MOVEMENT CONTROLS: B fires weapons, A jumps (hold for higher jumps), Down+A while morphed places bombs."
-      - "ADVANCED MOVEMENT: Down twice activates morph ball. Morph ball is essential for small passages. Use bombs to propel ball upward in tight spaces."
-      - "COUNTER AT BOTTOM: Shows remaining Metroids in the area. When it reaches zero, an earthquake will occur, allowing deeper progression."
-      - "CRITICAL UPGRADES (in rough order):"
-      - "- Missiles (limited ammo): Required for colored doors and Metroid battles. Collect tanks to increase capacity."
-      - "- Bombs: Essential for morph ball navigation and breaking certain blocks."
-      - "- Spider Ball: Allows morph ball to climb walls and ceilings. Hold B while morphed to activate."
-      - "- Spring Ball: Lets you jump while in morph ball form. Press A while morphed."
-      - "- Space Jump: Allows continuous jumping in mid-air. Press A repeatedly while airborne."
-      - "- Plasma Beam: Most powerful beam weapon. Penetrates multiple enemies."
-      - "- Screw Attack: Turns Space Jump into a deadly weapon. Automatically activates during jumps."
-      - "STATUS DISPLAY: Bottom of screen shows Energy (health), Missile count, and remaining Metroids."
-      - "METROID BATTLES: Metroids evolve through stages (Alpha, Gamma, Zeta, Omega, Queen). Each requires different strategies:"
-      - "- Early Metroids: Fire missiles when they open their undersides."
-      - "- Later evolved forms: Aim for the head/nucleus, dodge lunge attacks."
-      - "SAVE STATIONS: Use these frequently! Appear as small rooms with a glowing structure. Crouch and press Up to save."
-      - "ENERGY REFILL: Small energy balls restore 5 units, large ones restore 20. Energy tanks increase max energy by 100."
-      - "MAPPING STRATEGY: The game has no in-game map. Mental mapping or noting landmarks is essential to avoid getting lost."
-
-  kirby_dream_land:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Kirby's Dream Land (USA, Europe).zip"
-    emulator: "pyboy"
-    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.3 # Default seconds to wait after each action
-    example_json: |
-      {
-        "action": "B",
-        "reasoning": "I'm pressing B to inhale the enemy that's visible about 3 tiles ahead of Kirby. The screen shows Kirby in what appears to be Green Greens stage with a Waddle Dee enemy approaching from the right. The B button activates Kirby's signature inhale ability, which will suck in the enemy. Once inhaled, I can either swallow the enemy by pressing B again (eliminating it) or spit it out as a projectile by pressing B while moving the D-pad. This enemy doesn't grant Kirby a copy ability in this game, but eliminating it is necessary to progress safely. Kirby currently has 5 health points as shown by the stars at the top of the screen, and there are no other immediate hazards visible.",
-        "game_summary": "I'm in the first stage (Green Greens) of Kirby's Dream Land. I've just started the game and am working toward reaching King Dedede's castle to recover the stolen food from Dream Land. Kirby has full health (5 points) and no special power-ups. This game doesn't feature copy abilities like later Kirby games, so the main attacks are inhaling enemies and spitting them out as projectiles."
-      }
-    # Game-specific timing configurations
-    timing:
-      # Category-based delays for different action types
-      categories:
-        navigation: 0.25 # For directional inputs (Up, Down, Left, Right)
-        confirm: 0.4 # For A button (jump/float)
-        cancel: 0.5 # For B button (inhale/spit)
-        menu: 0.3 # For Start button (pause menu)
-        special: 0.3 # For Select button (rarely used)
-        wait: 0.2 # For "None" action (waiting)
-      # Specific action overrides for platformers
-      actions:
-        Up: 0.5 # Up is used for floating, needs more time
-    prompt_additions:
-      - "This is Kirby's Dream Land for Game Boy, HAL Laboratory's first Kirby game - a lighthearted platformer with unique floating mechanics."
-      - "MAIN GOAL: King Dedede has stolen all the food from Dream Land. Travel through 5 stages to recover the food and defeat King Dedede."
-      - "STAGE PROGRESSION: Green Greens → Castle Lololo → Float Islands → Bubbly Clouds → Mt. Dedede (final stage)."
-      - "CORE MECHANICS - INHALING: Press and hold B to inhale enemies and objects. Release B while inhaling to swallow them."
-      - "CORE MECHANICS - STAR SPITTING: Press B again after inhaling (before swallowing) to spit enemies as damaging star projectiles."
-      - "CORE MECHANICS - FLOATING: Press A to jump, then press Up to inflate and float. While floating, you can press A repeatedly to gain height."
-      - "CORE MECHANICS - DEFLATING: Press Down while floating or continue pressing A to gradually descend. This creates a small puff that damages enemies below."
-      - "SPECIAL ITEMS:"
-      - "- Mint Leaf: Enables rapid-fire air puffs (press B repeatedly)."
-      - "- Microphone: Press B to emit a sound wave that destroys all on-screen enemies (limited to 3 uses per life)."
-      - "- Candy: Temporary invincibility."
-      - "- Maximum Tomato: Fully restores health."
-      - "- 1UP: Grants an extra life."
-      - "BOSS STRATEGIES:"
-      - "- Whispy Woods: Dodge apples, inhale puffs of air and shoot them back."
-      - "- Lololo & Lalala: Dodge blocks, push them off the edge to damage the bosses."
-      - "- Kaboola: Dodge cannonballs, inhale and spit back the stars to damage it."
-      - "- Kracko: Avoid lightning bolts, inhale mini-clouds and spit them back."
-      - "- King Dedede: Dodge his jumps and hammer, inhale his stars and shoot them back at him."
-      - "SCORING: Collect stars for points, aim for 1UP at 300,000 points."
-      - "CONTROLS NOTE: Unlike later Kirby games, there is NO ability copying in this first game."
-      - "HIDDEN CONTENT: Complete the game once to unlock 'Extra Game' - a harder difficulty with faster enemies and less health."
-      - "MOVEMENT TIP: Float over difficult obstacles and enemies. Kirby's floating ability is key to navigating many challenges safely."
-
-  super_mario_land:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Super Mario Land (World).zip"
-    emulator: "pyboy"
-    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.3 # Default seconds to wait after each action
-    example_json: |
-      {
-        "action": "A",
-        "reasoning": "I'm pressing A to jump over the gap that's visible about 4-5 tiles ahead of Mario. The screen shows Mario in the first level (World 1-1) with a pit that needs to be cleared. Jumping is necessary to avoid falling into the pit, which would result in losing a life. I can see that the gap is approximately 2-3 tiles wide, which requires a standard jump with good timing. There are no enemies directly in the jump path, though I can see a Goomba-like enemy (called a Chibibo in this game) approaching from the right side of the screen beyond the gap. Mario is currently in his small form as indicated by his size on screen, so I need to be extra careful as taking damage would result in losing a life.",
-        "game_summary": "I'm in World 1-1 of Super Mario Land, at the beginning of my quest to rescue Princess Daisy from the alien Tatanga. Mario is in his small form with 3 lives remaining and 0 coins collected so far. This is the first level of the game, and I'm working toward reaching the end-of-level flag to progress to World 1-2."
-      }
-    # Game-specific timing configurations
-    timing:
-      # Category-based delays for different action types
-      categories:
-        navigation: 0.25 # For directional inputs (Up, Down, Left, Right)
-        confirm: 0.35 # For A button (jump)
-        cancel: 0.3 # For B button (run/shoot)
-        menu: 0.4 # For Start button (pause)
-        special: 0.3 # For Select button (rarely used)
-        wait: 0.2 # For "None" action (waiting)
-      # No specific action overrides needed for Mario Land
-    prompt_additions:
-      - "This is Super Mario Land for Game Boy, a compact 2D platformer designed by Gunpei Yokoi's team (not Shigeru Miyamoto)."
-      - "MAIN GOAL: Rescue Princess Daisy from the alien Tatanga across 4 worlds with 3 levels each, for a total of 12 stages."
-      - "WORLD PROGRESSION: Birabuto (Egypt) → Muda (Marine) → Easton (Easter Island) → Chai (Ancient China) → Final Boss."
-      - "CONTROLS: B runs/shoots, A jumps. Hold B while moving for faster running speed. Press Down to crouch."
-      - "JUMPING MECHANICS: Jump height depends on how long A is pressed. Hold longer for higher jumps."
-      - "POWER-UPS:"
-      - "- Super Mushroom: Makes Mario grow, allowing him to take one hit without dying."
-      - "- Superball Flower: Transforms Mario and allows shooting bouncing Superballs (unlike traditional fireballs)."
-      - "- Superballs can collect coins and defeat enemies by hitting them from any angle, including bouncing off walls."
-      - "UNIQUE VEHICLE LEVELS:"
-      - "- World 2-3: The Marine Pop (submarine) - A shoots torpedoes, B ascends, submarine descends automatically."
-      - "- World 4-3: The Sky Pop (airplane) - A shoots bullets, Up/Down controls altitude, plane moves forward automatically."
-      - "SCORING SYSTEM:"
-      - "- Coins: Collect 100 for an extra life. Unlike other Mario games, coins are destroyed when shot with Superballs."
-      - "- Timer: Each level has a countdown timer. If it reaches zero, Mario loses a life."
-      - "- Hidden bonus rooms: Break blocks to find secret areas with coins and power-ups."
-      - "- End-of-level bonus: Timing your jump through the exit gate determines points (30, 50, or 100 points)."
-      - "ENEMIES DIFFERENCES:"
-      - "- Koopa shells explode after being jumped on, unlike traditional Mario games where they can be kicked."
-      - "- Some enemies are region-specific: Sphinx in Egypt world, octopi in marine world, Moai heads in Easter Island, Chinese dragons in Chai."
-      - "LIFE SYSTEM: Start with 2 lives. Collect 100 coins or find hearts for extra lives. Game Over returns to start of current world."
-      - "HIDDEN SECRETS: Look for blocks that contain power-ups or coins. Some invisible blocks contain extra lives."
-      - "BOSS STRATEGY: Jump three times on each world boss. For final boss (Tatanga), shoot his spaceship with Superballs or jump into him 3 times."
-
-  tetris2:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Tetris 2 (USA).zip"
-    emulator: "pyboy"
-    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.2 # Default seconds to wait after each action
-    example_json: |
-      {
-        "action": "Left",
-        "reasoning": "I'm pressing Left to position the current falling block closer to the left side of the screen. The game shows a falling block that appears to be a colored square, and there's a matching block at the bottom left of the playing field. In Tetris 2, the goal is to match blocks of the same color to make them disappear, rather than completing horizontal lines as in traditional Tetris. Moving this block to the left will allow me to place it adjacent to the matching colored block, which will set up a potential match if I can get a third block of the same color. The next piece is shown in the preview window, and I need to plan ahead to create color matches efficiently. There are already several rows of mixed blocks at the bottom of the screen, and managing these well is crucial to avoid the stack reaching the top.",
-        "game_summary": "I'm playing Tetris 2 for Game Boy at level 3 with a current score of 15,420 points. Unlike traditional Tetris, this game focuses on matching blocks of the same color rather than completing lines. I need to create groups of three or more identical blocks to make them disappear. The game speed is moderate at this level, and I'm working to clear the existing stack of blocks by creating strategic color matches."
-      }
-    # Game-specific timing configurations
-    timing:
-      # Category-based delays for different action types
-      categories:
-        navigation: 0.15 # For directional inputs (Left, Right)
-        confirm: 0.15 # For A button (rotate)
-        cancel: 0.15 # For B button (rotate)
-        menu: 0.3 # For Start button (pause/menu)
-        special: 0.2 # For Select button (rarely used)
-        wait: 0.1 # For "None" action (waiting)
-      # Specific action overrides for Tetris 2
-      actions:
-        Down: 0.08 # Down is used for soft drop, needs faster response
-    prompt_additions:
-      - "This is Tetris 2 for Game Boy (1993), a puzzle game that evolves the classic Tetris formula with color matching mechanics."
-      - "MAIN OBJECTIVE: Match blocks of the same color to clear them from the playing field, rather than completing horizontal lines."
-      - "GAME MODES: End Round (arcade-style levels), VS. Round (2-player mode), and Marathon (endless play)."
-      - "CONTROLS:"
-      - "- Left/Right: Move the current piece horizontally."
-      - "- Down: Soft drop (accelerate the piece's descent)."
-      - "- A or B: Rotate the piece (clockwise with A, counter-clockwise with B in this version)."
-      - "PIECE PREVIEW: The next piece appears in the top-right corner. Plan ahead using this information."
-      - "GAMEPLAY MECHANICS:"
-      - "- Blocks come in various colors (red, blue, yellow, etc.)"
-      - "- Match 3 or more blocks of the same color to make them disappear"
-      - "- Blocks float upward if there's nothing beneath them, allowing for chain reactions"
-      - "- Special 'bomb' blocks can clear larger areas when matched"
-      - "LEVEL PROGRESSION: Progress through levels by clearing a certain number of blocks, with speed increasing each level."
-      - "BLOCK TYPES:"
-      - "- Single blocks: Simple colored squares, easiest to place"
-      - "- Double blocks: Two connected squares of different colors"
-      - "- Triple blocks: Three connected squares in various configurations"
-      - "- Special blocks: Appear in later levels with unique behaviors"
-      - "CRITICAL STRATEGIES:"
-      - "- Focus on creating matches of the same color rather than completing lines"
-      - "- Set up 'chain reactions' where clearing one set of blocks causes others to fall and match"
-      - "- Try to clear blocks from the bottom up to avoid the stack reaching the top"
-      - "- Place unmatched blocks strategically so they can be used in future matches"
-      - "- Watch for opportunities to use floating blocks for unexpected matches"
-      - "SCORING: Points are awarded based on the number of blocks cleared simultaneously and chain reactions."
-      - "GAME OVER: Occurs when the stack of blocks reaches the top of the playing field."
-
   castlevania_ii:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Castlevania II - Belmont's Revenge (USA, Europe).zip"
-    emulator: "pyboy"
-    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.4 # Default seconds to wait after each action
-    example_json: |
-      {
-        "action": "B",
-        "reasoning": "I'm pressing B to attack the skeleton enemy that's approaching from the right side of the screen. The B button activates Christopher Belmont's whip attack, which is the primary way to defeat enemies. The skeleton is approximately 3-4 tiles away and moving toward Belmont, posing an immediate threat. The screen shows we're in what appears to be the Plant Castle, with vines and plant-like elements in the background. Belmont is standing on a solid platform with no pits nearby, making it safe to stand ground and attack. His health meter in the top left shows about 12 units remaining (out of 16), so we're in good shape to engage in combat. The whip appears to be at the Chain Whip upgrade level based on its length when attacking, giving us decent range to hit the skeleton before it comes within damaging distance.",
-        "game_summary": "I'm playing as Christopher Belmont in Castlevania II: Belmont's Revenge, currently exploring the Plant Castle (one of the four elemental castles). I've already obtained the Chain Whip upgrade, which extends attack range, and have collected the Cross sub-weapon (usable with Up+B). My health is at 12 units, and I'm progressing through the castle to eventually face the boss and obtain one of the sacred treasures needed to access Dracula's Castle for the final confrontation."
-      }
-    # Game-specific timing configurations
-    timing:
-      # Category-based delays for different action types
-      categories:
-        navigation: 0.3 # For directional inputs (Up, Down, Left, Right)
-        confirm: 0.4 # For A button (jump)
-        cancel: 0.5 # For B button (attack with whip)
-        menu: 0.4 # For Start button (pause)
-        special: 0.3 # For Select button (rarely used)
-        wait: 0.2 # For "None" action (waiting)
-      # Specific action overrides for Castlevania
-      actions:
-        B: 0.5 # Whip attack needs more time
-        Up: 0.6 # Up+B for sub-weapon needs more time
+    action_delay: 0.4
+    actions:
+      - Up
+      - Down
+      - Left
+      - Right
+      - A
+      - B
+      - Start
+      - Select
+    emulator: pyboy
+    example_json:
+      "{\n  \"action\": \"B\",\n  \"reasoning\": \"I'm pressing B to attack\
+      \ the skeleton enemy that's approaching from the right side of the screen. The\
+      \ B button activates Christopher Belmont's whip attack, which is the primary\
+      \ way to defeat enemies. The skeleton is approximately 3-4 tiles away and moving\
+      \ toward Belmont, posing an immediate threat. The screen shows we're in what\
+      \ appears to be the Plant Castle, with vines and plant-like elements in the\
+      \ background. Belmont is standing on a solid platform with no pits nearby, making\
+      \ it safe to stand ground and attack. His health meter in the top left shows\
+      \ about 12 units remaining (out of 16), so we're in good shape to engage in\
+      \ combat. The whip appears to be at the Chain Whip upgrade level based on its\
+      \ length when attacking, giving us decent range to hit the skeleton before it\
+      \ comes within damaging distance.\",\n  \"game_summary\": \"I'm playing as Christopher\
+      \ Belmont in Castlevania II: Belmont's Revenge, currently exploring the Plant\
+      \ Castle (one of the four elemental castles). I've already obtained the Chain\
+      \ Whip upgrade, which extends attack range, and have collected the Cross sub-weapon\
+      \ (usable with Up+B). My health is at 12 units, and I'm progressing through\
+      \ the castle to eventually face the boss and obtain one of the sacred treasures\
+      \ needed to access Dracula's Castle for the final confrontation.\"\n}\n"
     prompt_additions:
-      - "This is Castlevania II: Belmont's Revenge for Game Boy, a precise action platformer and sequel to Castlevania: The Adventure."
-      - "STORY CONTEXT: 15 years after defeating Dracula, Christopher Belmont's son Soleiyu is kidnapped and transformed by Dracula's curse."
-      - "MAIN OBJECTIVE: Clear four elemental castles in any order, then access the final castle to defeat Dracula and save Soleiyu."
-      - "CASTLE STRUCTURE: Crystal Castle, Rock Castle, Plant Castle, Cloud Castle, and finally Dracula's Castle."
+      - "This is Castlevania II: Belmont's Revenge for Game Boy, a precise action platformer
+        and sequel to Castlevania: The Adventure."
+      - "STORY CONTEXT: 15 years after defeating Dracula, Christopher Belmont's son
+        Soleiyu is kidnapped and transformed by Dracula's curse."
+      - "MAIN OBJECTIVE: Clear four elemental castles in any order, then access the
+        final castle to defeat Dracula and save Soleiyu."
+      - "CASTLE STRUCTURE: Crystal Castle, Rock Castle, Plant Castle, Cloud Castle,
+        and finally Dracula's Castle."
       - "MOVEMENT & COMBAT CONTROLS:"
-      - "- B button: Attack with whip. Unlike many Game Boy games, whip controls are responsive and precise."
-      - "- A button: Jump. IMPORTANT: You CANNOT control jump direction mid-air in Castlevania games!"
+      - "- B button: Attack with whip. Unlike many Game Boy games, whip controls are
+        responsive and precise."
+      - "- A button: Jump. IMPORTANT: You CANNOT control jump direction mid-air in Castlevania
+        games!"
       - "- Up+B: Use sub-weapon (if equipped). Each use consumes hearts (ammunition)."
       - "WHIP UPGRADES:"
       - "- Leather Whip: Starting weapon, short range."
@@ -468,50 +72,153 @@ games:
       - "- Rock monster: Attack the head, avoid falling rocks."
       - "- Plant creature: Destroy small plants first, then attack main boss."
       - "- Floating orbs: Hit them when aligned, avoid their lightning attacks."
-      - "- Dracula: First form shoots fireballs, second form is a floating demon - hit the head."
-      - "IMPROVEMENTS OVER FIRST GAME: Faster movement, better controls, ability to climb ropes, sub-weapons, no time limit on stages."
-
-  kid_icarus:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Kid Icarus - Of Myths and Monsters (USA, Europe).zip"
-    emulator: "pyboy"
-    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.3 # Default seconds to wait after each action
-    example_json: |
-      {
-        "action": "A",
-        "reasoning": "I'm pressing A to jump and then fly upward to reach the platform visible about 4-5 tiles above Pit's current position. The screen shows Pit in a vertically scrolling section of the Underworld fortress, with several platforms and a doorway visible at the top of the screen. The A button makes Pit jump, and holding it allows him to flap his wings and fly temporarily (as indicated by the flight meter at the bottom of the screen, which is currently about 70% full). There's a heart container visible on the upper platform, which would restore some of Pit's health. I can see that Pit's health bar in the top-left corner is at about 50%, so collecting this heart is important. There are no enemies directly in the flight path, making this a safe maneuver. The doorway at the top likely leads to the next area or a special room, which is my current objective.",
-        "game_summary": "I'm playing as Pit in Kid Icarus: Of Myths and Monsters, currently in the first world (Underworld fortress). I've acquired the bow weapon and can shoot arrows with the B button. Pit's health is at about 50%, and my flight meter is at 70% capacity. I'm working toward reaching the fortress guardian to obtain the first piece of the Three Sacred Treasures (likely the Light Arrow). My current strength level is 3, and defense level is 2, with no special items or abilities yet unlocked."
-      }
-    # Game-specific timing configurations
+      - "- Dracula: First form shoots fireballs, second form is a floating demon - hit
+        the head."
+      - "IMPROVEMENTS OVER FIRST GAME: Faster movement, better controls, ability to
+        climb ropes, sub-weapons, no time limit on stages."
+    rom:
+      /Users/ericflo/Development/emuvlm/roms/gb/Castlevania II - Belmont's Revenge
+      (USA, Europe).zip
     timing:
-      # Category-based delays for different action types
-      categories:
-        navigation: 0.25 # For directional inputs (Up, Down, Left, Right)
-        confirm: 0.35 # For A button (jump/fly)
-        cancel: 0.3 # For B button (shoot)
-        menu: 0.4 # For Start button (pause)
-        special: 0.3 # For Select button (rarely used)
-        wait: 0.2 # For "None" action (waiting)
-      # Specific action overrides for Kid Icarus
       actions:
-        A: 0.4 # Jump/fly needs slightly more time
-        B: 0.3 # Shooting arrows
+        B: 0.5
+        Up: 0.6
+      categories:
+        cancel: 0.5
+        confirm: 0.4
+        menu: 0.4
+        navigation: 0.3
+        special: 0.3
+        wait: 0.2
+  final_fantasy_legend:
+    action_delay: 0.5
+    actions:
+      - Up
+      - Down
+      - Left
+      - Right
+      - A
+      - B
+      - Start
+      - Select
+    emulator: pyboy
+    example_json:
+      "{\n  \"action\": \"A\",\n  \"reasoning\": \"I'm pressing A to confirm\
+      \ interaction with the NPC standing directly in front of my character. The screen\
+      \ shows my party in what appears to be a town environment, and there's a townsperson\
+      \ character positioned one tile in front of my party leader. In Final Fantasy\
+      \ Legend, the A button is used to interact with NPCs, doors, chests and other\
+      \ objects. Based on the dialogue box at the bottom of the screen, which is currently\
+      \ empty but ready for text, this interaction will likely provide important information\
+      \ about the current quest objective or town features. The NPC's appearance (looks\
+      \ like a merchant or information giver) suggests they may have valuable information.\
+      \ There are no visible threats or combat situations, making this a safe interaction.\"\
+      ,\n  \"game_summary\": \"I'm in the second world of Final Fantasy Legend, having\
+      \ already obtained the first SPHERE from World 1. My party consists of a Human\
+      \ fighter, a Mutant with magic abilities, and two Monster characters. The team\
+      \ is around level 12 with decent equipment (steel sword, chainmail). I'm currently\
+      \ in the main town of World 2, gathering information about where to find this\
+      \ world's SPHERE before proceeding to the next door in the Tower.\"\n}\n"
     prompt_additions:
-      - "This is Kid Icarus: Of Myths and Monsters for Game Boy, a challenging action platformer sequel to the NES classic."
-      - "STORY: You control Pit, an angel tasked with retrieving the Three Sacred Treasures to defeat the demon Orcos, who threatens Angel Land."
-      - "GAME STRUCTURE: Four worlds (Underworld fortress, Overworld fortress, Skyworld fortress, and Skyworld palace), each with 3 areas and a fortress."
+      - This is Final Fantasy Legend (SaGa in Japan) for Game Boy, a challenging turn-based
+        RPG with unique character progression systems.
+      - "MAIN GOAL: Climb the tower connecting worlds, collect the SPHERE items from
+        each world, and reach paradise to confront the Creator."
+      - "CHARACTER TYPES: Party consists of 4 members with distinct advancement systems:"
+      - "HUMANS: Gain stats through purchasable potions only. Strongest with weapons
+        but can't learn spells. Most reliable damage dealers."
+      - "MUTANTS: Gain/lose abilities randomly after battles. Can learn up to 8 powerful
+        abilities but are unpredictable. Balance physical and magical skills."
+      - "MONSTERS: Transform by eating meat from defeated monsters. Their form determines
+        all stats and abilities. No equipment slots."
+      - "COMBAT SYSTEM: Turn-based with agility determining action order. Each character
+        acts individually when their portrait is highlighted."
+      - "WEAPON DURABILITY: Most weapons have limited uses (shown as number next to
+        weapon). CRUCIAL: They break permanently when uses reach 0."
+      - "MAGIC SYSTEM: Spells have limited charges. Purchase new spell books when depleted.
+        Spells are organized by 4 elements (Fire, Water, Electricity, Earth)."
+      - "WORLD STRUCTURE: Begin in first world, find door to next world, repeat until
+        reaching paradise. Each world has different themes and monsters."
+      - "CRUCIAL STATS: HP (hit points), Str (physical damage), Agl (turn order speed),
+        Mana (magic damage), Def (physical defense)."
+      - "NAVIGATION: Towns have inns (restore HP/MP), shops (buy equipment), guild (recruit
+        new members if someone dies)."
+      - "ECONOMY TIPS: Money is scarce. Prioritize weapons for Humans, spell books for
+        Mutants, and saving meat for Monsters."
+      - "BUTTON FUNCTIONS: A confirms, B cancels, directional buttons navigate. START
+        shows status (rarely needed), SELECT not used."
+      - "DIALOGUE STRATEGY: Talk to all NPCs for critical hints about progression, hidden
+        items, and world mechanics."
+      - "DIFFICULTY NOTE: Game is notoriously hard. Grinding for money and experience
+        is often necessary before progressing to new areas."
+    rom: /Users/ericflo/Development/emuvlm/roms/gb/Final Fantasy Legend, The (USA).zip
+    timing:
+      actions:
+        A: 1.0
+      categories:
+        cancel: 0.6
+        confirm: 0.6
+        menu: 0.4
+        navigation: 0.3
+        special: 0.4
+        wait: 0.3
+  kid_icarus:
+    action_delay: 0.3
+    actions:
+      - Up
+      - Down
+      - Left
+      - Right
+      - A
+      - B
+      - Start
+      - Select
+    emulator: pyboy
+    example_json:
+      "{\n  \"action\": \"A\",\n  \"reasoning\": \"I'm pressing A to jump\
+      \ and then fly upward to reach the platform visible about 4-5 tiles above Pit's\
+      \ current position. The screen shows Pit in a vertically scrolling section of\
+      \ the Underworld fortress, with several platforms and a doorway visible at the\
+      \ top of the screen. The A button makes Pit jump, and holding it allows him\
+      \ to flap his wings and fly temporarily (as indicated by the flight meter at\
+      \ the bottom of the screen, which is currently about 70% full). There's a heart\
+      \ container visible on the upper platform, which would restore some of Pit's\
+      \ health. I can see that Pit's health bar in the top-left corner is at about\
+      \ 50%, so collecting this heart is important. There are no enemies directly\
+      \ in the flight path, making this a safe maneuver. The doorway at the top likely\
+      \ leads to the next area or a special room, which is my current objective.\"\
+      ,\n  \"game_summary\": \"I'm playing as Pit in Kid Icarus: Of Myths and Monsters,\
+      \ currently in the first world (Underworld fortress). I've acquired the bow\
+      \ weapon and can shoot arrows with the B button. Pit's health is at about 50%,\
+      \ and my flight meter is at 70% capacity. I'm working toward reaching the fortress\
+      \ guardian to obtain the first piece of the Three Sacred Treasures (likely the\
+      \ Light Arrow). My current strength level is 3, and defense level is 2, with\
+      \ no special items or abilities yet unlocked.\"\n}\n"
+    prompt_additions:
+      - "This is Kid Icarus: Of Myths and Monsters for Game Boy, a challenging action
+        platformer sequel to the NES classic."
+      - "STORY: You control Pit, an angel tasked with retrieving the Three Sacred Treasures
+        to defeat the demon Orcos, who threatens Angel Land."
+      - "GAME STRUCTURE: Four worlds (Underworld fortress, Overworld fortress, Skyworld
+        fortress, and Skyworld palace), each with 3 areas and a fortress."
       - "MOVEMENT CONTROLS:"
       - "- B button: Shoot arrows (your primary attack)."
       - "- A button: Jump. Hold A to flap wings and fly temporarily."
-      - "- Flight meter at screen bottom limits flying time. It refills when not using wings."
+      - "- Flight meter at screen bottom limits flying time. It refills when not using
+        wings."
       - "PROGRESSION SYSTEM:"
-      - "- Each level scrolls vertically or horizontally. Reach the exit door at the end of each area."
+      - "- Each level scrolls vertically or horizontally. Reach the exit door at the
+        end of each area."
       - "- Defeating fortress guardians (mini-bosses) earns you a sacred treasure piece."
-      - "- Collecting all Three Sacred Treasures (Wings of Pegasus, Silver Armor, Light Arrows) is essential for the final battle."
+      - "- Collecting all Three Sacred Treasures (Wings of Pegasus, Silver Armor, Light
+        Arrows) is essential for the final battle."
       - "UNIQUE MECHANICS:"
-      - "- Centurion Assistants: Can be rescued from stone statues. They help in combat by providing additional firepower."
-      - "- Credit System: Use hearts to purchase items, weapons, and health refills in shops."
-      - "- Temporary Weapons: Torch arrows (increased damage), Protective crystals (temporary invincibility), Bottles (healing items)."
+      - "- Centurion Assistants: Can be rescued from stone statues. They help in combat
+        by providing additional firepower."
+      - "- Credit System: Use hearts to purchase items, weapons, and health refills
+        in shops."
+      - "- Temporary Weapons: Torch arrows (increased damage), Protective crystals (temporary
+        invincibility), Bottles (healing items)."
       - "- Mallets: Used to free trapped Centurions from stone."
       - "SPECIAL ROOMS (accessed via doors):"
       - "- Hot Springs: Restore health."
@@ -531,51 +238,156 @@ games:
       - "CRITICAL TIPS:"
       - "- Save hearts to buy powerful items in shops."
       - "- Always check side rooms for power-ups."
-      - "- When fighting fortress guardians, learn their pattern and attack from a safe distance."
-      - "- Be cautious with flight - running out of flight power mid-air over a pit means death."
+      - "- When fighting fortress guardians, learn their pattern and attack from a safe
+        distance."
+      - "- Be cautious with flight - running out of flight power mid-air over a pit
+        means death."
       - "- Collect Centurion Helpers whenever possible for additional firepower."
-
-  mega_man_dr_wily:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Mega Man - Dr. Wily's Revenge (USA).zip"
-    emulator: "pyboy"
-    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.3 # Default seconds to wait after each action
-    example_json: |
-      {
-        "action": "B",
-        "reasoning": "I'm pressing B to fire Mega Man's arm cannon at the enemy robot that's visible about 5-6 tiles ahead. The screen shows Mega Man in what appears to be Cut Man's stage, with a Met (small hard hat enemy) approaching. These enemies are shielded when crouched but vulnerable when they pop up to attack. The Met has just exposed itself, making this the perfect time to shoot. The B button is Mega Man's primary attack button and fires the standard Mega Buster. I can see Mega Man is standing on a solid platform with no pits nearby, and there are no other immediate threats visible. The health meter at the top of the screen shows Mega Man with approximately 60% health remaining, so engaging this enemy is safer than trying to jump over it, which could result in a collision and damage.",
-        "game_summary": "I'm playing through Mega Man: Dr. Wily's Revenge, currently in Cut Man's stage (one of the first four Robot Masters). I haven't defeated any Robot Masters yet, so I only have the standard Mega Buster weapon. Mega Man has about 60% health remaining, with no E-Tanks in inventory. My objective is to reach and defeat Cut Man at the end of this stage to acquire his Rolling Cutter weapon, which will help against other Robot Masters due to the weapon weakness system."
-      }
-    # Game-specific timing configurations
+    rom:
+      /Users/ericflo/Development/emuvlm/roms/gb/Kid Icarus - Of Myths and Monsters
+      (USA, Europe).zip
     timing:
-      # Category-based delays for different action types
-      categories:
-        navigation: 0.25 # For directional inputs (Up, Down, Left, Right)
-        confirm: 0.35 # For A button (jump)
-        cancel: 0.3 # For B button (shoot)
-        menu: 0.4 # For Start button (weapon selection)
-        special: 0.3 # For Select button (rarely used)
-        wait: 0.2 # For "None" action (waiting)
-      # Specific action overrides for Mega Man
       actions:
-        B: 0.35 # Shooting needs slightly more time
-        Start: 0.5 # Weapon selection screen needs more time
+        A: 0.4
+        B: 0.3
+      categories:
+        cancel: 0.3
+        confirm: 0.35
+        menu: 0.4
+        navigation: 0.25
+        special: 0.3
+        wait: 0.2
+  kirby_dream_land:
+    action_delay: 0.3
+    actions:
+      - Up
+      - Down
+      - Left
+      - Right
+      - A
+      - B
+      - Start
+      - Select
+    emulator: pyboy
+    example_json:
+      "{\n  \"action\": \"B\",\n  \"reasoning\": \"I'm pressing B to inhale\
+      \ the enemy that's visible about 3 tiles ahead of Kirby. The screen shows Kirby\
+      \ in what appears to be Green Greens stage with a Waddle Dee enemy approaching\
+      \ from the right. The B button activates Kirby's signature inhale ability, which\
+      \ will suck in the enemy. Once inhaled, I can either swallow the enemy by pressing\
+      \ B again (eliminating it) or spit it out as a projectile by pressing B while\
+      \ moving the D-pad. This enemy doesn't grant Kirby a copy ability in this game,\
+      \ but eliminating it is necessary to progress safely. Kirby currently has 5\
+      \ health points as shown by the stars at the top of the screen, and there are\
+      \ no other immediate hazards visible.\",\n  \"game_summary\": \"I'm in the first\
+      \ stage (Green Greens) of Kirby's Dream Land. I've just started the game and\
+      \ am working toward reaching King Dedede's castle to recover the stolen food\
+      \ from Dream Land. Kirby has full health (5 points) and no special power-ups.\
+      \ This game doesn't feature copy abilities like later Kirby games, so the main\
+      \ attacks are inhaling enemies and spitting them out as projectiles.\"\n}\n"
     prompt_additions:
-      - "This is Mega Man: Dr. Wily's Revenge for Game Boy, the first portable Mega Man action platformer combining elements from Mega Man 1 and 2."
-      - "GAME STRUCTURE: Four initial Robot Masters, then Dr. Wily's fortress with four more Robot Masters (from Mega Man 2) and final confrontations."
-      - "INITIAL ROBOT MASTERS: Cut Man, Elec Man, Ice Man, and Fire Man. Choose any order to fight them."
-      - "WILY FORTRESS ROBOT MASTERS: Bubble Man, Flash Man, Quick Man, and Heat Man from Mega Man 2."
+      - This is Kirby's Dream Land for Game Boy, HAL Laboratory's first Kirby game -
+        a lighthearted platformer with unique floating mechanics.
+      - "MAIN GOAL: King Dedede has stolen all the food from Dream Land. Travel through
+        5 stages to recover the food and defeat King Dedede."
+      - "STAGE PROGRESSION: Green Greens \u2192 Castle Lololo \u2192 Float Islands \u2192\
+        \ Bubbly Clouds \u2192 Mt. Dedede (final stage)."
+      - "CORE MECHANICS - INHALING: Press and hold B to inhale enemies and objects.
+        Release B while inhaling to swallow them."
+      - "CORE MECHANICS - STAR SPITTING: Press B again after inhaling (before swallowing)
+        to spit enemies as damaging star projectiles."
+      - "CORE MECHANICS - FLOATING: Press A to jump, then press Up to inflate and float.
+        While floating, you can press A repeatedly to gain height."
+      - "CORE MECHANICS - DEFLATING: Press Down while floating or continue pressing
+        A to gradually descend. This creates a small puff that damages enemies below."
+      - "SPECIAL ITEMS:"
+      - "- Mint Leaf: Enables rapid-fire air puffs (press B repeatedly)."
+      - "- Microphone: Press B to emit a sound wave that destroys all on-screen enemies
+        (limited to 3 uses per life)."
+      - "- Candy: Temporary invincibility."
+      - "- Maximum Tomato: Fully restores health."
+      - "- 1UP: Grants an extra life."
+      - "BOSS STRATEGIES:"
+      - "- Whispy Woods: Dodge apples, inhale puffs of air and shoot them back."
+      - "- Lololo & Lalala: Dodge blocks, push them off the edge to damage the bosses."
+      - "- Kaboola: Dodge cannonballs, inhale and spit back the stars to damage it."
+      - "- Kracko: Avoid lightning bolts, inhale mini-clouds and spit them back."
+      - "- King Dedede: Dodge his jumps and hammer, inhale his stars and shoot them
+        back at him."
+      - "SCORING: Collect stars for points, aim for 1UP at 300,000 points."
+      - "CONTROLS NOTE: Unlike later Kirby games, there is NO ability copying in this
+        first game."
+      - "HIDDEN CONTENT: Complete the game once to unlock 'Extra Game' - a harder
+        difficulty with faster enemies and less health."
+      - "MOVEMENT TIP: Float over difficult obstacles and enemies. Kirby's floating
+        ability is key to navigating many challenges safely."
+    rom: /Users/ericflo/Development/emuvlm/roms/gb/Kirby's Dream Land (USA, Europe).zip
+    timing:
+      actions:
+        Up: 0.5
+      categories:
+        cancel: 0.5
+        confirm: 0.4
+        menu: 0.3
+        navigation: 0.25
+        special: 0.3
+        wait: 0.2
+  mega_man_dr_wily:
+    action_delay: 0.3
+    actions:
+      - Up
+      - Down
+      - Left
+      - Right
+      - A
+      - B
+      - Start
+      - Select
+    emulator: pyboy
+    example_json:
+      "{\n  \"action\": \"B\",\n  \"reasoning\": \"I'm pressing B to fire\
+      \ Mega Man's arm cannon at the enemy robot that's visible about 5-6 tiles ahead.\
+      \ The screen shows Mega Man in what appears to be Cut Man's stage, with a Met\
+      \ (small hard hat enemy) approaching. These enemies are shielded when crouched\
+      \ but vulnerable when they pop up to attack. The Met has just exposed itself,\
+      \ making this the perfect time to shoot. The B button is Mega Man's primary\
+      \ attack button and fires the standard Mega Buster. I can see Mega Man is standing\
+      \ on a solid platform with no pits nearby, and there are no other immediate\
+      \ threats visible. The health meter at the top of the screen shows Mega Man\
+      \ with approximately 60% health remaining, so engaging this enemy is safer than\
+      \ trying to jump over it, which could result in a collision and damage.\",\n\
+      \  \"game_summary\": \"I'm playing through Mega Man: Dr. Wily's Revenge, currently\
+      \ in Cut Man's stage (one of the first four Robot Masters). I haven't defeated\
+      \ any Robot Masters yet, so I only have the standard Mega Buster weapon. Mega\
+      \ Man has about 60% health remaining, with no E-Tanks in inventory. My objective\
+      \ is to reach and defeat Cut Man at the end of this stage to acquire his Rolling\
+      \ Cutter weapon, which will help against other Robot Masters due to the weapon\
+      \ weakness system.\"\n}\n"
+    prompt_additions:
+      - "This is Mega Man: Dr. Wily's Revenge for Game Boy, the first portable Mega
+        Man action platformer combining elements from Mega Man 1 and 2."
+      - "GAME STRUCTURE: Four initial Robot Masters, then Dr. Wily's fortress with
+        four more Robot Masters (from Mega Man 2) and final confrontations."
+      - "INITIAL ROBOT MASTERS: Cut Man, Elec Man, Ice Man, and Fire Man. Choose any
+        order to fight them."
+      - "WILY FORTRESS ROBOT MASTERS: Bubble Man, Flash Man, Quick Man, and Heat Man
+        from Mega Man 2."
       - "CONTROLS:"
       - "- B button: Fire Mega Buster (standard weapon). Hold down to continuously fire."
-      - "- A button: Jump. Jump height is fixed regardless of how long you press the button."
+      - "- A button: Jump. Jump height is fixed regardless of how long you press the
+        button."
       - "- Start button: Pause game and access weapon selection menu."
       - "- Select button: Not used."
       - "WEAPONS SYSTEM:"
-      - "- After defeating a Robot Master, you gain their special weapon with limited energy (the weapon energy meter)."
-      - "- Cut Man: Rolling Cutter - A boomerang-like scissor blade that can hit enemies multiple times."
-      - "- Elec Man: Thunder Beam - A three-way electrical attack that travels horizontally and vertically."
+      - "- After defeating a Robot Master, you gain their special weapon with limited
+        energy (the weapon energy meter)."
+      - "- Cut Man: Rolling Cutter - A boomerang-like scissor blade that can hit enemies
+        multiple times."
+      - "- Elec Man: Thunder Beam - A three-way electrical attack that travels horizontally
+        and vertically."
       - "- Ice Man: Ice Slasher - A freezing projectile that can freeze some enemies."
-      - "- Fire Man: Fire Storm - Creates a shield of flames around Mega Man while firing forward."
+      - "- Fire Man: Fire Storm - Creates a shield of flames around Mega Man while firing
+        forward."
       - "- Additional weapons are gained later in Wily's fortress."
       - "ROBOT MASTER WEAKNESSES (critical for efficient play):"
       - "- Cut Man: Weakness to Elec Man's Thunder Beam"
@@ -583,7 +395,8 @@ games:
       - "- Ice Man: Weakness to Fire Man's Fire Storm"
       - "- Fire Man: Weakness to Cut Man's Rolling Cutter"
       - "SPECIAL ITEMS:"
-      - "- Energy Tanks (E-Tanks): Fully restore Mega Man's health when used. Access from weapon menu."
+      - "- Energy Tanks (E-Tanks): Fully restore Mega Man's health when used. Access
+        from weapon menu."
       - "- Small energy pellets: Restore small amount of health."
       - "- Large energy capsules: Restore large amount of health."
       - "- Small weapon energy pellets: Restore small amount of special weapon energy."
@@ -597,12 +410,437 @@ games:
       - "- Save E-Tanks for Wily Fortress bosses."
       - "- When low on health, farm respawning enemies for health drops before continuing."
       - "- Always use Robot Master weaknesses for faster, safer battles."
-      - "- Some standard enemies are also weak to specific weapons - experiment for effectiveness."
+      - "- Some standard enemies are also weak to specific weapons - experiment for
+        effectiveness."
       - "- Falling into pits causes instant death regardless of health."
-      - "- Disappearing block sections require precise timing - watch the pattern before attempting jumps."
-
-# Session configuration
+      - "- Disappearing block sections require precise timing - watch the pattern before
+        attempting jumps."
+    rom: /Users/ericflo/Development/emuvlm/roms/gb/Mega Man - Dr. Wily's Revenge (USA).zip
+    timing:
+      actions:
+        B: 0.35
+        Start: 0.5
+      categories:
+        cancel: 0.3
+        confirm: 0.35
+        menu: 0.4
+        navigation: 0.25
+        special: 0.3
+        wait: 0.2
+  metroid_ii:
+    action_delay: 0.4
+    actions:
+      - Up
+      - Down
+      - Left
+      - Right
+      - A
+      - B
+      - Start
+      - Select
+    emulator: pyboy
+    example_json:
+      "{\n  \"action\": \"B\",\n  \"reasoning\": \"I'm pressing B to shoot\
+      \ at the enemy that's visible about 4 tiles to the right of Samus. The screen\
+      \ shows Samus in what appears to be a cave-like environment on planet SR388\
+      \ with an approaching hostile creature (looks like a Gawron - the flying bug-like\
+      \ enemies). The B button fires Samus's arm cannon, which is necessary to eliminate\
+      \ threats. Based on the position of the enemy and its movement pattern (flying\
+      \ in a wave-like motion), a horizontal shot is most likely to hit it. Samus\
+      \ appears to be in a safe position with solid ground beneath her, and her energy\
+      \ meter in the top left shows approximately 60 energy remaining, so engaging\
+      \ this enemy is safer than trying to avoid it in the confined space. There are\
+      \ no other immediate threats visible on screen.\",\n  \"game_summary\": \"I'm\
+      \ in the early areas of SR388 in Metroid II: Return of Samus, hunting for the\
+      \ 39 Metroids on the planet. I've defeated 2 Metroids so far (shown by the counter\
+      \ at the bottom of the screen showing 37 remaining). Samus has 60 energy, 5\
+      \ missiles, and has acquired the Morph Ball and Bombs abilities. I'm currently\
+      \ exploring to find the next Metroid and potentially locate more upgrades to\
+      \ improve Samus's capabilities.\"\n}\n"
+    prompt_additions:
+      - "This is Metroid II: Return of Samus for Game Boy, a nonlinear action-adventure
+        platformer focused on exploration and upgrades."
+      - "MAIN OBJECTIVE: Hunt and eliminate 39 Metroids on planet SR388, moving deeper
+        into the planet as you kill them."
+      - "PROGRESSION SYSTEM: The planet has earthquake sequences that drain acid/lava
+        after certain Metroids are defeated, opening new areas."
+      - "MOVEMENT CONTROLS: B fires weapons, A jumps (hold for higher jumps), Down+A
+        while morphed places bombs."
+      - "ADVANCED MOVEMENT: Down twice activates morph ball. Morph ball is essential
+        for small passages. Use bombs to propel ball upward in tight spaces."
+      - "COUNTER AT BOTTOM: Shows remaining Metroids in the area. When it reaches zero,
+        an earthquake will occur, allowing deeper progression."
+      - "CRITICAL UPGRADES (in rough order):"
+      - "- Missiles (limited ammo): Required for colored doors and Metroid battles.
+        Collect tanks to increase capacity."
+      - "- Bombs: Essential for morph ball navigation and breaking certain blocks."
+      - "- Spider Ball: Allows morph ball to climb walls and ceilings. Hold B while
+        morphed to activate."
+      - "- Spring Ball: Lets you jump while in morph ball form. Press A while morphed."
+      - "- Space Jump: Allows continuous jumping in mid-air. Press A repeatedly while
+        airborne."
+      - "- Plasma Beam: Most powerful beam weapon. Penetrates multiple enemies."
+      - "- Screw Attack: Turns Space Jump into a deadly weapon. Automatically activates
+        during jumps."
+      - "STATUS DISPLAY: Bottom of screen shows Energy (health), Missile count, and
+        remaining Metroids."
+      - "METROID BATTLES: Metroids evolve through stages (Alpha, Gamma, Zeta, Omega,
+        Queen). Each requires different strategies:"
+      - "- Early Metroids: Fire missiles when they open their undersides."
+      - "- Later evolved forms: Aim for the head/nucleus, dodge lunge attacks."
+      - "SAVE STATIONS: Use these frequently! Appear as small rooms with a glowing structure.
+        Crouch and press Up to save."
+      - "ENERGY REFILL: Small energy balls restore 5 units, large ones restore 20. Energy
+        tanks increase max energy by 100."
+      - "MAPPING STRATEGY: The game has no in-game map. Mental mapping or noting landmarks
+        is essential to avoid getting lost."
+    rom: /Users/ericflo/Development/emuvlm/roms/gb/Metroid II - Return of Samus (World).zip
+    timing:
+      actions:
+        Down: 0.5
+      categories:
+        cancel: 0.4
+        confirm: 0.4
+        menu: 0.7
+        navigation: 0.3
+        special: 0.3
+        wait: 0.2
+  pokemon_blue:
+    action_delay: 0.5
+    actions:
+      - Up
+      - Down
+      - Left
+      - Right
+      - A
+      - B
+      - Start
+      - Select
+    emulator: pyboy
+    example_json:
+      "{\n  \"action\": \"Down\",\n  \"reasoning\": \"I'm pressing Down\
+      \ to navigate toward the tall grass visible at the bottom of the screen. The\
+      \ character is currently standing on a path in what appears to be Route 1, and\
+      \ I can see patches of tall grass about 2-3 tiles below. In Pok\xE9mon games,\
+      \ tall grass is where wild Pok\xE9mon encounters occur, which is essential for\
+      \ catching new Pok\xE9mon and gaining experience points to level up my current\
+      \ team. The screen shows no NPCs or obstacles between my character and the grass.\
+      \ My character appears to be at full health as there's no indication otherwise\
+      \ on the interface, and I have Pok\xE9balls in my inventory as shown by the\
+      \ item counter, making this an ideal time to look for wild Pok\xE9mon encounters.\"\
+      ,\n  \"game_summary\": \"I'm at the beginning of my Pok\xE9mon journey on Route\
+      \ 1 between Pallet Town and Viridian City. I've chosen my starter Pok\xE9mon\
+      \ (Squirtle) and received my Pok\xE9dex from Professor Oak. My current objective\
+      \ is to catch some wild Pok\xE9mon to build my team and then proceed to Viridian\
+      \ City to continue the main quest. My Squirtle is at level 5 with no status\
+      \ conditions.\"\n}\n"
+    game_type: pokemon
+    prompt_additions:
+      - This is Pokemon Blue for Game Boy, a classic turn-based RPG where you catch
+        and train Pokemon to battle other trainers.
+      - "MAIN GOALS: Collect 8 gym badges, defeat Elite Four, catch 150 Pokemon, and
+        complete the Pokedex."
+      - "STARTING SEQUENCE: Choose 'NEW GAME', enter your name. Select a starter Pokemon
+        (Bulbasaur, Charmander, or Squirtle)."
+      - "BATTLE MECHANICS: Pokemon take turns attacking. Choose 'FIGHT' for attacks,
+        'PKMN' to switch Pokemon, 'ITEM' for items, 'RUN' to escape wild battles."
+      - "TYPE EFFECTIVENESS: Critical knowledge for battle decisions! Water > Fire >
+        Grass > Water. Electric > Water. Ground > Electric. Psychic > Fighting/Poison."
+      - "KEY EARLY MOVES: Tackle, Growl (reduces opponent's attack), status moves like
+        Sleep Powder, Stun Spore, and Poison Powder."
+      - "CATCHING POKEMON: Weaken wild Pokemon (reduce HP to red bar, ~10-20% health),
+        apply status effects if possible, then use Pokeballs."
+      - "HEALING: Use Potions to restore health. Centers with red roofs fully heal your
+        team (talk to nurse at counter)."
+      - "PROGRESSION PATH: Pallet Town \u2192 Viridian City \u2192 Pewter City (1st\
+        \ gym) \u2192 Mt. Moon \u2192 Cerulean City (2nd gym) \u2192 and so on."
+      - "KEY ITEMS: HM01 (Cut) needed for obstacles, Bike for faster travel, Itemfinder
+        for hidden items, Old Rod/Good Rod for fishing."
+      - "LEVELING: Keep team balanced, grind before gyms if team is underleveled. First
+        gym (Brock) around level 10-12 is optimal."
+      - "BUTTON MECHANICS: A to confirm/interact, B to cancel/exit menus/run, Start
+        opens menu, Select used rarely."
+      - "ALWAYS CHECK TEXT: When text appears, WAIT (use 'None') until fully displayed
+        before pressing A to continue."
+      - "SAVING: Open menu with Start, select SAVE, then confirm. Save frequently, especially
+        after significant progress."
+    rom:
+      /Users/ericflo/Development/emuvlm/roms/gb/Pokemon - Blue Version (USA, Europe)
+      (SGB Enhanced).zip
+    timing:
+      actions: null
+      categories:
+        cancel: 0.8
+        confirm: 1.5
+        menu: 0.5
+        navigation: 0.3
+        special: 0.4
+        wait: 0.2
+  super_mario_land:
+    action_delay: 0.3
+    actions:
+      - Up
+      - Down
+      - Left
+      - Right
+      - A
+      - B
+      - Start
+      - Select
+    emulator: pyboy
+    example_json:
+      "{\n  \"action\": \"A\",\n  \"reasoning\": \"I'm pressing A to jump\
+      \ over the gap that's visible about 4-5 tiles ahead of Mario. The screen shows\
+      \ Mario in the first level (World 1-1) with a pit that needs to be cleared.\
+      \ Jumping is necessary to avoid falling into the pit, which would result in\
+      \ losing a life. I can see that the gap is approximately 2-3 tiles wide, which\
+      \ requires a standard jump with good timing. There are no enemies directly in\
+      \ the jump path, though I can see a Goomba-like enemy (called a Chibibo in this\
+      \ game) approaching from the right side of the screen beyond the gap. Mario\
+      \ is currently in his small form as indicated by his size on screen, so I need\
+      \ to be extra careful as taking damage would result in losing a life.\",\n \
+      \ \"game_summary\": \"I'm in World 1-1 of Super Mario Land, at the beginning\
+      \ of my quest to rescue Princess Daisy from the alien Tatanga. Mario is in his\
+      \ small form with 3 lives remaining and 0 coins collected so far. This is the\
+      \ first level of the game, and I'm working toward reaching the end-of-level\
+      \ flag to progress to World 1-2.\"\n}\n"
+    prompt_additions:
+      - This is Super Mario Land for Game Boy, a compact 2D platformer designed by Gunpei
+        Yokoi's team (not Shigeru Miyamoto).
+      - "MAIN GOAL: Rescue Princess Daisy from the alien Tatanga across 4 worlds with
+        3 levels each, for a total of 12 stages."
+      - "WORLD PROGRESSION: Birabuto (Egypt) \u2192 Muda (Marine) \u2192 Easton (Easter\
+        \ Island) \u2192 Chai (Ancient China) \u2192 Final Boss."
+      - "CONTROLS: B runs/shoots, A jumps. Hold B while moving for faster running speed.
+        Press Down to crouch."
+      - "JUMPING MECHANICS: Jump height depends on how long A is pressed. Hold longer
+        for higher jumps."
+      - "POWER-UPS:"
+      - "- Super Mushroom: Makes Mario grow, allowing him to take one hit without dying."
+      - "- Superball Flower: Transforms Mario and allows shooting bouncing Superballs
+        (unlike traditional fireballs)."
+      - "- Superballs can collect coins and defeat enemies by hitting them from any
+        angle, including bouncing off walls."
+      - "UNIQUE VEHICLE LEVELS:"
+      - "- World 2-3: The Marine Pop (submarine) - A shoots torpedoes, B ascends, submarine
+        descends automatically."
+      - "- World 4-3: The Sky Pop (airplane) - A shoots bullets, Up/Down controls altitude,
+        plane moves forward automatically."
+      - "SCORING SYSTEM:"
+      - "- Coins: Collect 100 for an extra life. Unlike other Mario games, coins are
+        destroyed when shot with Superballs."
+      - "- Timer: Each level has a countdown timer. If it reaches zero, Mario loses
+        a life."
+      - "- Hidden bonus rooms: Break blocks to find secret areas with coins and power-ups."
+      - "- End-of-level bonus: Timing your jump through the exit gate determines points
+        (30, 50, or 100 points)."
+      - "ENEMIES DIFFERENCES:"
+      - "- Koopa shells explode after being jumped on, unlike traditional Mario games
+        where they can be kicked."
+      - "- Some enemies are region-specific: Sphinx in Egypt world, octopi in marine
+        world, Moai heads in Easter Island, Chinese dragons in Chai."
+      - "LIFE SYSTEM: Start with 2 lives. Collect 100 coins or find hearts for extra
+        lives. Game Over returns to start of current world."
+      - "HIDDEN SECRETS: Look for blocks that contain power-ups or coins. Some invisible
+        blocks contain extra lives."
+      - "BOSS STRATEGY: Jump three times on each world boss. For final boss (Tatanga),
+        shoot his spaceship with Superballs or jump into him 3 times."
+    rom: /Users/ericflo/Development/emuvlm/roms/gb/Super Mario Land (World).zip
+    timing:
+      categories:
+        cancel: 0.3
+        confirm: 0.35
+        menu: 0.4
+        navigation: 0.25
+        special: 0.3
+        wait: 0.2
+  tetris2:
+    action_delay: 0.2
+    actions:
+      - Up
+      - Down
+      - Left
+      - Right
+      - A
+      - B
+      - Start
+      - Select
+    emulator: pyboy
+    example_json:
+      "{\n  \"action\": \"Left\",\n  \"reasoning\": \"I'm pressing Left\
+      \ to position the current falling block closer to the left side of the screen.\
+      \ The game shows a falling block that appears to be a colored square, and there's\
+      \ a matching block at the bottom left of the playing field. In Tetris 2, the\
+      \ goal is to match blocks of the same color to make them disappear, rather than\
+      \ completing horizontal lines as in traditional Tetris. Moving this block to\
+      \ the left will allow me to place it adjacent to the matching colored block,\
+      \ which will set up a potential match if I can get a third block of the same\
+      \ color. The next piece is shown in the preview window, and I need to plan ahead\
+      \ to create color matches efficiently. There are already several rows of mixed\
+      \ blocks at the bottom of the screen, and managing these well is crucial to\
+      \ avoid the stack reaching the top.\",\n  \"game_summary\": \"I'm playing Tetris\
+      \ 2 for Game Boy at level 3 with a current score of 15,420 points. Unlike traditional\
+      \ Tetris, this game focuses on matching blocks of the same color rather than\
+      \ completing lines. I need to create groups of three or more identical blocks\
+      \ to make them disappear. The game speed is moderate at this level, and I'm\
+      \ working to clear the existing stack of blocks by creating strategic color\
+      \ matches.\"\n}\n"
+    prompt_additions:
+      - This is Tetris 2 for Game Boy (1993), a puzzle game that evolves the classic
+        Tetris formula with color matching mechanics.
+      - "MAIN OBJECTIVE: Match blocks of the same color to clear them from the playing
+        field, rather than completing horizontal lines."
+      - "GAME MODES: End Round (arcade-style levels), VS. Round (2-player mode), and
+        Marathon (endless play)."
+      - "CONTROLS:"
+      - "- Left/Right: Move the current piece horizontally."
+      - "- Down: Soft drop (accelerate the piece's descent)."
+      - "- A or B: Rotate the piece (clockwise with A, counter-clockwise with B in this
+        version)."
+      - "PIECE PREVIEW: The next piece appears in the top-right corner. Plan ahead using
+        this information."
+      - "GAMEPLAY MECHANICS:"
+      - "- Blocks come in various colors (red, blue, yellow, etc.)"
+      - "- Match 3 or more blocks of the same color to make them disappear"
+      - "- Blocks float upward if there's nothing beneath them, allowing for chain
+        reactions"
+      - "- Special 'bomb' blocks can clear larger areas when matched"
+      - "LEVEL PROGRESSION: Progress through levels by clearing a certain number of
+        blocks, with speed increasing each level."
+      - "BLOCK TYPES:"
+      - "- Single blocks: Simple colored squares, easiest to place"
+      - "- Double blocks: Two connected squares of different colors"
+      - "- Triple blocks: Three connected squares in various configurations"
+      - "- Special blocks: Appear in later levels with unique behaviors"
+      - "CRITICAL STRATEGIES:"
+      - "- Focus on creating matches of the same color rather than completing lines"
+      - "- Set up 'chain reactions' where clearing one set of blocks causes others
+        to fall and match"
+      - "- Try to clear blocks from the bottom up to avoid the stack reaching the top"
+      - "- Place unmatched blocks strategically so they can be used in future matches"
+      - "- Watch for opportunities to use floating blocks for unexpected matches"
+      - "SCORING: Points are awarded based on the number of blocks cleared simultaneously
+        and chain reactions."
+      - "GAME OVER: Occurs when the stack of blocks reaches the top of the playing field."
+    rom: /Users/ericflo/Development/emuvlm/roms/gb/Tetris 2 (USA).zip
+    timing:
+      actions:
+        Down: 0.08
+      categories:
+        cancel: 0.15
+        confirm: 0.15
+        menu: 0.3
+        navigation: 0.15
+        special: 0.2
+        wait: 0.1
+  zelda_links_awakening:
+    action_delay: 0.4
+    actions:
+      - Up
+      - Down
+      - Left
+      - Right
+      - A
+      - B
+      - Start
+      - Select
+    emulator: pyboy
+    example_json:
+      "{\n  \"action\": \"Right\",\n  \"reasoning\": \"I'm pressing Right\
+      \ to move toward what appears to be a cave entrance visible at the right side\
+      \ of the screen. Link is currently in an outdoor area that looks like Koholint\
+      \ Island's mountainous region, and I can see a distinct dark opening in the\
+      \ rock face about 5-6 tiles to the right of Link's position. In Zelda games,\
+      \ caves often contain important items, heart pieces, or story elements. There\
+      \ are no enemies visible between Link and the cave entrance, making it safe\
+      \ to approach. Link's health shows 3 hearts at full capacity in the top-left\
+      \ corner of the screen, so we're in good condition to explore. The cave entrance\
+      \ matches the typical visual style of accessible doorways in this game, indicating\
+      \ it can be entered.\",\n  \"game_summary\": \"I'm exploring Koholint Island\
+      \ in search of the Tail Key needed to access the third dungeon (Key Cavern).\
+      \ I've already completed the Tail Cave and Bottle Grotto dungeons, obtaining\
+      \ the Full Moon Cello and Conch Horn instruments. Link has 3 heart containers,\
+      \ the Roc's Feather for jumping, and bombs for breaking cracked walls. My current\
+      \ location is in the Tal Tal Mountain Range to the north of Mabe Village.\"\n\
+      }\n"
+    game_type: zelda
+    prompt_additions:
+      - "This is The Legend of Zelda: Link's Awakening for Game Boy, a top-down action-adventure
+        game featuring puzzle-solving and combat."
+      - "MAIN GOAL: Collect 8 instruments from dungeons to awaken the Wind Fish and
+        escape Koholint Island."
+      - "CONTROLS: A button is your action button (sword slash, use items, talk). B
+        button is for shield and secondary items."
+      - "MOVEMENT STRATEGY: Walk with directional buttons, always approach enemies cautiously,
+        shield ready (B button) when facing them."
+      - "COMBAT TIPS: Time sword slashes carefully. Spin attack by holding sword button
+        then releasing. Block projectiles with shield."
+      - "DUNGEON SEQUENCE: Tail Cave \u2192 Bottle Grotto \u2192 Key Cavern \u2192 Angler's\
+        \ Tunnel \u2192 Catfish's Maw \u2192 Face Shrine \u2192 Eagle's Tower \u2192\
+        \ Turtle Rock."
+      - "ESSENTIAL ITEMS: Power Bracelet (lift heavy objects), Pegasus Boots (dash),
+        Hookshot (cross gaps), Flippers (swim), Ocarina (teleport)."
+      - "PROGRESSION BLOCKERS: Look for cracked walls (bomb them), rocks (lift with
+        bracelet), or suspicious tiles (push/pull)."
+      - "INVENTORY MANAGEMENT: Press Start for inventory, assign items to A/B buttons.
+        Sword always stays equipped once obtained."
+      - "MAP NAVIGATION: Press Select for map. Owl statues mark important locations.
+        Villages have shops and hint-giving NPCs."
+      - "HEART PIECES: Collect 4 pieces to gain a new heart container. Search for them
+        in hard-to-reach areas or complete mini-games."
+      - "TRADING SEQUENCE: Important side quest. Start with Yoshi Doll from crane game,
+        trade with NPCs in specific order for final reward."
+      - "BOSS STRATEGY: Most bosses have pattern-based attacks. Identify pattern, attack
+        during vulnerable moments, repeat."
+      - "SECRET SEASHELLS: Collect and bring to mansion in Ukuku Prairie. Reward at
+        20 shells is powerful L-2 Sword."
+      - "DANGER INDICATORS: Low health alarm beeps - find hearts or fairies immediately.
+        Blinking enemy means it's about to attack."
+    rom:
+      /Users/ericflo/Development/emuvlm/roms/gb/Legend of Zelda, The - Link's Awakening
+      (USA, Europe).zip
+    settings:
+      detect_loading_screens: true
+      frame_analysis: true
+      max_blank_frames: 5
+    timing:
+      actions:
+        A: 0.7
+      categories:
+        cancel: 1.0
+        confirm: 0.6
+        menu: 0.5
+        navigation: 0.3
+        special: 0.4
+        wait: 0.2
+logging:
+  frames_dir: output/logs/frames
+  level: INFO
+  log_file: output/logs/emuvlm.log
+  save_frames: true
+model:
+  api_key: null
+  api_url: http://127.0.0.1:8000
+  autostart_server: false
+  backend: auto
+  cache_dir: output/cache
+  enable_cache: true
+  json_schema_support: true
+  max_message_history: 20
+  max_tokens: 200
+  model_name: null
+  model_path: models/Model-7.6B-Q4_K_M.gguf
+  model_type: llava
+  model_url: https://huggingface.co/openbmb/MiniCPM-o-2_6-gguf/resolve/main/Model-7.6B-Q4_K_M.gguf
+  n_ctx: 2048
+  n_gpu_layers: -1
+  organization_id: null
+  provider: local
+  similarity_threshold: 0.95
+  summary_interval: 10
+  temperature: 0.2
+  try_json_schema: true
 sessions:
-  enable_save: true # Enable session saving/loading
-  save_dir: "output/sessions" # Directory to store session data
-  auto_save_interval: 50 # Auto-save session every X turns
+  auto_save_interval: 50
+  enable_save: true
+  save_dir: output/sessions

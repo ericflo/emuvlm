@@ -28,17 +28,19 @@ logger = logging.getLogger("emuvlm")
 
 def setup_logging(config):
     """Configure logging based on config settings."""
+    from emuvlm.constants import DEFAULT_LOG_FILE, DEFAULT_FRAMES_DIR
+    
     log_config = config.get('logging', {})
     log_level = getattr(logging, log_config.get('level', 'INFO'))
     
     # Create logs directory
-    log_file = log_config.get('log_file', 'output/logs/emuvlm.log')
+    log_file = log_config.get('log_file', DEFAULT_LOG_FILE)
     log_dir = os.path.dirname(log_file)
     os.makedirs(log_dir, exist_ok=True)
     
     # Create frames directory if frame saving is enabled
     if log_config.get('save_frames', False):
-        frames_dir = log_config.get('frames_dir', 'output/logs/frames')
+        frames_dir = log_config.get('frames_dir', DEFAULT_FRAMES_DIR)
         os.makedirs(frames_dir, exist_ok=True)
     
     # Set up file handler
@@ -119,6 +121,8 @@ def determine_delay(game_config, action):
     Returns:
         float: Delay in seconds
     """
+    from emuvlm.constants import ACTION_CATEGORIES, DEFAULT_ACTION_DELAYS
+    
     # Get timing config if available
     timing = game_config.get('timing', {})
     
@@ -134,23 +138,14 @@ def determine_delay(game_config, action):
     categories = timing.get('categories', {})
     
     # Map actions to categories
-    if action in ['Up', 'Down', 'Left', 'Right']:
-        category = 'navigation'
-    elif action == 'A':
-        category = 'confirm'
-    elif action == 'B':
-        category = 'cancel'
-    elif action == 'Start':
-        category = 'menu'
-    elif action == 'Select':
-        category = 'special'
-    elif action == 'None':
-        category = 'wait'
-    else:
-        category = 'default'
+    category = 'default'
+    for cat_name, actions in ACTION_CATEGORIES.items():
+        if action in actions:
+            category = cat_name
+            break
     
-    # Get delay from category or default
-    return categories.get(category, default_delay)
+    # Get delay from game config categories, or default category delays, or default delay
+    return categories.get(category, DEFAULT_ACTION_DELAYS.get(category, default_delay))
 
 def save_frame(frame, frame_dir, turn_count, action):
     """Save a frame to disk for debugging."""
@@ -173,6 +168,9 @@ def main():
                       help='Enable or disable frame caching')
     parser.add_argument('--session', type=str, default=None, 
                       help='Path to session file to resume a game')
+    from emuvlm.constants import VALID_MODEL_TYPES
+    parser.add_argument("--model-type", choices=VALID_MODEL_TYPES, default="llava", 
+                      help=f"Vision language model type ({', '.join(VALID_MODEL_TYPES)}). Default: llava")
     parser.add_argument('--session-save-interval', type=int, default=None,
                       help='Override auto-save interval from config')
     
@@ -214,10 +212,12 @@ def main():
     setup_logging(config)
     
     # Session configuration
+    from emuvlm.constants import DEFAULT_SESSION_DIR, DEFAULT_AUTO_SAVE_INTERVAL
+    
     session_config = config.get('sessions', {})
     enable_session_save = session_config.get('enable_save', False)
-    session_save_dir = session_config.get('save_dir', 'output/sessions')
-    auto_save_interval = args.session_save_interval or session_config.get('auto_save_interval', 50)
+    session_save_dir = session_config.get('save_dir', DEFAULT_SESSION_DIR)
+    auto_save_interval = args.session_save_interval or session_config.get('auto_save_interval', DEFAULT_AUTO_SAVE_INTERVAL)
     
     # Resume from session if provided
     session_data = None
@@ -228,6 +228,9 @@ def main():
         args.game = session_data.get('game', args.game)
         logger.info(f"Resuming {args.game} from turn {starting_turn}")
     
+    # Import constants
+    from emuvlm.constants import ROM_EXTENSIONS, DEFAULT_ACTIONS
+    
     # Determine which game to play
     if args.game in config['games']:
         game_config = config['games'][args.game]
@@ -236,22 +239,10 @@ def main():
         # Assume args.game is a direct path to ROM
         rom_path = args.game
         ext = Path(rom_path).suffix.lower()
-        if ext in ['.gb', '.gbc']:
-            emulator_type = "pyboy"
-        elif ext in ['.gba']:
-            emulator_type = "mgba"
-        elif ext in ['.nes']:
-            emulator_type = "fceux"
-        elif ext in ['.sfc', '.smc']:
-            emulator_type = "snes9x"
-        elif ext in ['.md', '.gen', '.smd']:
-            emulator_type = "genesis_plus_gx"
-        elif ext in ['.n64', '.z64', '.v64']:
-            emulator_type = "mupen64plus"
-        elif ext in ['.iso', '.bin', '.cue', '.img']:
-            emulator_type = "duckstation"
-        elif ext in ['.gg']:
-            emulator_type = "gamegear"
+        
+        # Determine emulator type from file extension
+        if ext in ROM_EXTENSIONS:
+            emulator_type = ROM_EXTENSIONS[ext]
         else:
             raise ValueError(f"Unsupported ROM type: {ext}")
         
@@ -259,7 +250,7 @@ def main():
         game_config = {
             'rom': rom_path,
             'emulator': emulator_type,
-            'actions': ['Up', 'Down', 'Left', 'Right', 'A', 'B', 'Start', 'Select'],
+            'actions': DEFAULT_ACTIONS,
             'action_delay': 1.0
         }
         game_name = os.path.basename(rom_path)
@@ -300,26 +291,50 @@ def main():
     model_config['enable_cache'] = args.cache.lower() == 'on'
     model_config['autostart_server'] = model_config.get('provider', 'local') == 'local'
     
+    # Process model type first as it may affect model_name
+    if args.model_type is not None:
+        from emuvlm.constants import MODEL_PATHS, VALID_MODEL_TYPES
+        
+        # Validate model type
+        if args.model_type not in VALID_MODEL_TYPES:
+            logger.warning(f"Unknown model type: {args.model_type}. Valid types are: {', '.join(VALID_MODEL_TYPES)}")
+            logger.warning(f"Defaulting to 'llava'")
+            args.model_type = "llava"
+            
+        model_config['model_type'] = args.model_type
+        logger.info(f"Using model type from command line: {args.model_type}")
+        
+        # If model_name is not explicitly provided, update model_path based on model_type
+        if not args.model_name and model_config.get('provider', 'local') == 'local':
+            # Update model_path if the selected model_type has a defined path
+            if args.model_type in MODEL_PATHS:
+                # Convert to absolute path if needed
+                model_path = MODEL_PATHS[args.model_type]
+                if not os.path.isabs(model_path):
+                    model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), model_path)
+                
+                model_config['model_path'] = model_path
+                logger.info(f"Using model path based on model type: {model_path}")
+    
     # Apply command-line model configuration overrides
     if args.provider:
         model_config['provider'] = args.provider
         logger.info(f"Using provider from command line: {args.provider}")
         
+        # Import default API URLs
+        from emuvlm.constants import DEFAULT_API_URLS
+        
         # Set default API URLs based on provider if not specified
-        if not args.api_url:
-            if args.provider == 'openai':
-                model_config['api_url'] = "https://api.openai.com"
-                logger.info(f"Setting default OpenAI API URL: {model_config['api_url']}")
-            elif args.provider == 'anthropic':
-                model_config['api_url'] = "https://api.anthropic.com"
-                logger.info(f"Setting default Anthropic API URL: {model_config['api_url']}")
-            elif args.provider == 'mistral':
-                model_config['api_url'] = "https://api.mistral.ai"
-                logger.info(f"Setting default Mistral API URL: {model_config['api_url']}")
+        if not args.api_url and args.provider in DEFAULT_API_URLS:
+            model_config['api_url'] = DEFAULT_API_URLS[args.provider]
+            logger.info(f"Setting default {args.provider.capitalize()} API URL: {model_config['api_url']}")
+        
+        # Import API key environment variable names
+        from emuvlm.constants import API_KEY_ENV_VARS
         
         # For OpenAI, Anthropic, and Mistral, read API key from environment variable if not in config
-        if args.provider in ['openai', 'anthropic', 'mistral'] and not model_config.get('api_key'):
-            env_var_name = f"{args.provider.upper()}_API_KEY"
+        if args.provider in API_KEY_ENV_VARS and not model_config.get('api_key'):
+            env_var_name = API_KEY_ENV_VARS.get(args.provider)
             api_key = os.environ.get(env_var_name)
             if api_key:
                 model_config['api_key'] = api_key

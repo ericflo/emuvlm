@@ -79,8 +79,9 @@ def start_llama_server():
     parser.add_argument("--ctx", type=int, help="Context size (auto-configured by default)")
     parser.add_argument("--gpu-layers", type=int, default=-1, help="Number of layers to run on GPU (-1 for all)")
     parser.add_argument("--direct", action="store_true", help="Run Python server directly instead of using the shell script")
-    parser.add_argument("--model-type", choices=["llava", "qwen", "minicpm"], default="llava", 
-                        help="Vision language model type (llava, qwen, minicpm). Default: llava")
+    from emuvlm.constants import VALID_MODEL_TYPES
+    parser.add_argument("--model-type", choices=VALID_MODEL_TYPES, default="llava", 
+                        help=f"Vision language model type ({', '.join(VALID_MODEL_TYPES)}). Default: llava")
     
     # Parse arguments
     args, unknown_args = parser.parse_known_args()
@@ -254,43 +255,19 @@ def download_model():
     import argparse
     from pathlib import Path
     from tqdm import tqdm
+    from emuvlm.constants import MODEL_PATHS, MODEL_URLS, MMPROJ_PATHS, MMPROJ_URLS, VALID_MODEL_TYPES
     
     # Parse arguments
     parser = argparse.ArgumentParser(description="Download a vision language model")
-    parser.add_argument("--model-type", choices=["llava", "qwen", "minicpm"], default="llava", 
-                       help="Vision language model type (llava, qwen, minicpm). Default: llava")
+    parser.add_argument("--model-type", choices=VALID_MODEL_TYPES, default="llava", 
+                       help=f"Vision language model type ({', '.join(VALID_MODEL_TYPES)}). Default: llava")
     args = parser.parse_args()
     
-    # Model URLs and paths for different model types
-    model_urls = {
-        "llava": "https://huggingface.co/second-state/Llava-v1.5-7B-GGUF/resolve/main/llava-v1.5-7b-Q4_K_S.gguf",
-        "qwen": "https://huggingface.co/bartowski/Qwen2-VL-7B-Instruct-GGUF/resolve/main/Qwen2-VL-7B-Instruct-Q4_K_M.gguf",
-        "minicpm": "https://huggingface.co/openbmb/MiniCPM-o-2_6-gguf/resolve/main/ggml-model-Q4_K_M.gguf"
-    }
-    
-    mmproj_urls = {
-        "llava": "https://huggingface.co/mys/ggml_llava-v1.5-7b/resolve/main/mmproj-model-f16.gguf",
-        "qwen": "https://huggingface.co/bartowski/Qwen2-VL-7B-Instruct-GGUF/resolve/main/mmproj-Qwen2-VL-7B-Instruct-f32.gguf",
-        "minicpm": "https://huggingface.co/openbmb/MiniCPM-o-2_6-gguf/resolve/main/mmproj-model-f16.gguf"
-    }
-    
-    model_paths = {
-        "llava": "models/llava-v1.5-7b-Q4_K_S.gguf",
-        "qwen": "models/Qwen2-VL-7B-Instruct-Q4_K_M.gguf",
-        "minicpm": "models/MiniCPM-o-2_6-Q4_K_M.gguf"
-    }
-    
-    mmproj_paths = {
-        "llava": "models/llava-v1.5-7b-mmproj-f16.gguf",
-        "qwen": "models/mmproj-Qwen2-VL-7B-Instruct-f32.gguf",
-        "minicpm": "models/mmproj-model-f16.gguf"
-    }
-    
     model_type = args.model_type
-    model_url = model_urls[model_type]
-    mmproj_url = mmproj_urls[model_type]
-    model_path = model_paths[model_type]
-    mmproj_path = mmproj_paths[model_type]
+    model_url = MODEL_URLS[model_type]
+    mmproj_url = MMPROJ_URLS[model_type]
+    model_path = MODEL_PATHS[model_type]
+    mmproj_path = MMPROJ_PATHS[model_type]
     
     # Resolve relative paths if needed
     if not os.path.isabs(model_path):

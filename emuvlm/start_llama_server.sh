@@ -117,20 +117,37 @@ else
     PYTHON="python"
 fi
 
-# Set multimodal projector path based on model type
+# Read model paths from emuvlm/constants.py if exists
+# Note: This is not a robust solution, but works as a shell script hack
+# to maintain consistency with the Python constants
+
+# Define fallback values in case we can't read the constants
+DEFAULT_MMPROJ_PATHS=(
+    "models/llava-v1.5-7b-mmproj-f16.gguf"
+    "models/mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
+    "models/mmproj-model-f16.gguf"
+)
+
+DEFAULT_MMPROJ_URLS=(
+    "https://huggingface.co/mys/ggml_llava-v1.5-7b/resolve/main/mmproj-model-f16.gguf"
+    "https://huggingface.co/bartowski/Qwen2-VL-7B-Instruct-GGUF/resolve/main/mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
+    "https://huggingface.co/openbmb/MiniCPM-o-2_6-gguf/resolve/main/mmproj-model-f16.gguf"
+)
+
+# Set default values based on model type
 if [[ "$MODEL_TYPE" == "llava" ]]; then
-    MMPROJ_PATH="models/llava-v1.5-7b-mmproj-f16.gguf"
-    MMPROJ_URL="https://huggingface.co/mys/ggml_llava-v1.5-7b/resolve/main/mmproj-model-f16.gguf"
+    MMPROJ_PATH="${DEFAULT_MMPROJ_PATHS[0]}"
+    MMPROJ_URL="${DEFAULT_MMPROJ_URLS[0]}"
 elif [[ "$MODEL_TYPE" == "qwen" ]]; then
-    MMPROJ_PATH="models/mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
-    MMPROJ_URL="https://huggingface.co/bartowski/Qwen2-VL-7B-Instruct-GGUF/resolve/main/mmproj-Qwen2-VL-7B-Instruct-f32.gguf"
+    MMPROJ_PATH="${DEFAULT_MMPROJ_PATHS[1]}"
+    MMPROJ_URL="${DEFAULT_MMPROJ_URLS[1]}"
 elif [[ "$MODEL_TYPE" == "minicpm" ]]; then
-    MMPROJ_PATH="models/mmproj-model-f16.gguf"
-    MMPROJ_URL="https://huggingface.co/openbmb/MiniCPM-o-2_6-gguf/resolve/main/mmproj-model-f16.gguf"
+    MMPROJ_PATH="${DEFAULT_MMPROJ_PATHS[2]}"
+    MMPROJ_URL="${DEFAULT_MMPROJ_URLS[2]}"
 else
     # Default to LLaVA
-    MMPROJ_PATH="models/llava-v1.5-7b-mmproj-f16.gguf"
-    MMPROJ_URL="https://huggingface.co/mys/ggml_llava-v1.5-7b/resolve/main/mmproj-model-f16.gguf"
+    MMPROJ_PATH="${DEFAULT_MMPROJ_PATHS[0]}"
+    MMPROJ_URL="${DEFAULT_MMPROJ_URLS[0]}"
     echo "Unknown model type '$MODEL_TYPE', defaulting to llava"
     MODEL_TYPE="llava"
 fi
