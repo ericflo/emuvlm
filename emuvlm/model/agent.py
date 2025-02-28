@@ -289,7 +289,7 @@ class LLMAgent:
                     
                     # Log the reasoning if available
                     if 'reasoning' in response_json:
-                        logger.debug(f"Agent reasoning: {response_json['reasoning']}")
+                        logger.info(f"Agent reasoning: {response_json['reasoning']}")
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"Failed to parse JSON response: {e}")
             # Continue with text-based parsing if JSON parsing fails
@@ -392,60 +392,13 @@ class LLMAgent:
         
         # Get additional prompt pieces from model config
         prompt_additions = self.model_config.get('prompt_additions', [])
-        
-        # Base system message that's used for all games
-        base_system_message = f"""You are an AI playing a turn-based video game.
-Analyze the game screen and decide the best action to take next.
-You can choose from these actions: {action_list}, or choose "None" to do nothing.
-
-IMPORTANT INSTRUCTION ABOUT "NONE":
-- If you see a loading screen, choose "None"
-- If text tells you to wait or not press buttons, choose "None"
-- If the game is processing something and no input is needed, choose "None"
-- Only press buttons when it's clearly required by the game state
-
-EXAMPLES:
-1. If you see a battle menu with options, choose an appropriate button ("A" to select, etc.)
-2. If you see a character that needs to move, choose a direction ("Up", "Down", etc.)
-3. If you see text saying "Loading..." or "Please wait", choose "None"
-4. If you see a warning saying "Do not press buttons", choose "None"
-"""
 
         # Game-specific instructions based on game_type
         game_specific_instructions = ""
         
-        # Add game-specific instructions based on the game type
-        if game_type == 'pokemon':
-            game_specific_instructions = """POKÉMON GAMEPLAY INSTRUCTIONS:
-- Press A to advance through dialog text and make selections in menus
-- Use Up/Down to navigate menus, and Left/Right to change pages sometimes
-- Press B to cancel or go back
-- Press Start to open the game menu
-- In battles, choose Attack, Pokémon, Item, or Run using directional keys and A to select
-
-POKÉMON-SPECIFIC EXAMPLES:
-1. If you see a battle menu with options like "FIGHT", "PKMN", "ITEM", "RUN", navigate with directional buttons and select with A
-2. If you see dialog text that has finished appearing, press A to continue
-3. If you see dialog text still being typed out, choose "None" and wait
-4. If you're in the overworld, use directional buttons to navigate
-5. If you see a menu, use Up/Down to navigate and A to select
-"""
-        elif game_type == 'zelda':
-            game_specific_instructions = """ZELDA GAMEPLAY INSTRUCTIONS:
-- Press A to use your sword or interact with objects and people
-- Press B to use your selected item
-- Use directional buttons to move Link around the world
-- Press Start to open the inventory to select different items
-- Pay attention to the environment for clues about where to go next
-
-ZELDA-SPECIFIC EXAMPLES:
-1. If you see enemies, press A to swing your sword to attack
-2. If you see NPCs, press A to talk to them
-3. If you see a chest, move Link toward it and press A to open
-4. If you're in a menu, use directional buttons to navigate and A to select
-5. If you see signs or text appearing, wait for it to finish then press A to continue
-"""
-        # Add more game types as needed
+        # Get game-specific instructions from the model config
+        if game_type:
+            game_specific_instructions = self.model_config.get('game_specific_instructions', '')
         
         # Add any custom prompt additions from the config
         custom_instructions = "\n".join(prompt_additions) if prompt_additions else ""
@@ -456,156 +409,49 @@ ZELDA-SPECIFIC EXAMPLES:
             if self.custom_system_message:
                 system_message = self.custom_system_message
             else:
-                # Enhanced Pokémon-specific instructions
-                system_message = f"""You are an AI playing a Pokémon game (likely Pokémon Red, Blue, or Yellow).
-Analyze the game screen and decide the best action to take next.
-You can choose from these actions: {action_list}, or choose "None" to do nothing.
-
-IMPORTANT INSTRUCTION ABOUT POKÉMON GAMEPLAY:
-- Press A to advance through dialog text and make selections in menus
-- Use Up/Down to navigate menus, and Left/Right to change pages sometimes
-- Press B to cancel or go back
-- Press Start to open the game menu
-- In battles, choose Attack, Pokémon, Item, or Run using directional keys and A to select
-
-IMPORTANT INSTRUCTION ABOUT "NONE":
-- If you see a loading screen, choose "None"
-- If text is still appearing (being typed out), choose "None"
-- If an animation is playing, choose "None"
-- Only press buttons when it's clearly required by the game state
-
-POKÉMON-SPECIFIC EXAMPLES:
-1. If you see a battle menu with options like "FIGHT", "PKMN", "ITEM", "RUN", navigate with directional buttons and select with A
-2. If you see dialog text that has finished appearing, press A to continue
-3. If you see dialog text still being typed out, choose "None" and wait
-4. If you're in the overworld, use directional buttons to navigate
-5. If you see a menu, use Up/Down to navigate and A to select
-
-You MUST respond ONLY with a JSON object in this EXACT format, with no other text:
-{{
-  "action": "A",
-  "reasoning": "I'm pressing A to select the attack option in this Pokémon battle. The battle menu is open and my cursor is on the attack option."
-}}
-
-or
-
-{{
-  "action": "None",
-  "reasoning": "I'm choosing to do nothing because the text is still appearing on screen and I should wait until it's finished."
-}}
-
-Where "action" is EXACTLY one of: {', '.join(self.valid_actions + ['None'])}"""
-            # Set system message based on game type
-            if game_type == 'zelda':
-                # Zelda-specific instructions
-                system_message = f"""You are an AI playing The Legend of Zelda: Link's Awakening for Game Boy.
-Analyze the game screen and decide the best action to take next.
-You can choose from these actions: {action_list}, or choose "None" to do nothing.
-
-{game_specific_instructions}
-
-IMPORTANT INSTRUCTION ABOUT "NONE":
-- If you see a loading screen, choose "None"
-- If text tells you to wait or not press buttons, choose "None"
-- If the game is processing something and no input is needed, choose "None"
-- Only press buttons when it's clearly required by the game state
-
-EXAMPLES:
-1. If you see a battle menu with options, choose an appropriate button ("A" to select, etc.)
-2. If you see a character that needs to move, choose a direction ("Up", "Down", etc.)
-3. If you see text saying "Loading..." or "Please wait", choose "None"
-4. If you see a warning saying "Do not press buttons", choose "None"
-
-You MUST respond ONLY with a JSON object in this EXACT format, with no other text:
-{{
-  "action": "A",
-  "reasoning": "I'm pressing A to select an attack in this battle. The screen shows that I'm in a battle and need to choose an action."
-}}
-
-or
-
-{{
-  "action": "None",
-  "reasoning": "I'm choosing to do nothing because the screen shows a loading message and indicates I should wait."
-}}
-
-Where "action" is EXACTLY one of: {', '.join(self.valid_actions + ['None'])}"""
-        else:
-            # For vLLM, the json_schema enforces the format, but we still improve the instructions
-            if game_type == 'pokemon':
-                # Pokémon-specific instructions for vLLM
-                system_message = f"""You are an AI playing a Pokémon game (likely Pokémon Red, Blue, or Yellow).
-Analyze the game screen and decide the best action to take next.
-You can choose from these actions: {action_list}, or choose "None" to do nothing.
-
-IMPORTANT INSTRUCTION ABOUT POKÉMON GAMEPLAY:
-- Press A to advance through dialog text and make selections in menus
-- Use Up/Down to navigate menus, and Left/Right to change pages sometimes
-- Press B to cancel or go back
-- Press Start to open the game menu
-- In battles, choose Attack, Pokémon, Item, or Run using directional keys and A to select
-
-IMPORTANT INSTRUCTION ABOUT "NONE":
-- If you see a loading screen, choose "None"
-- If text is still appearing (being typed out), choose "None"
-- If an animation is playing, choose "None"
-- Only press buttons when it's clearly required by the game state
-
-POKÉMON-SPECIFIC EXAMPLES:
-1. If you see a battle menu with options like "FIGHT", "PKMN", "ITEM", "RUN", navigate with directional buttons and select with A
-2. If you see dialog text that has finished appearing, press A to continue
-3. If you see dialog text still being typed out, choose "None" and wait
-4. If you're in the overworld, use directional buttons to navigate
-5. If you see a menu, use Up/Down to navigate and A to select
-
-You MUST respond with a JSON object containing exactly two fields:
-- 'action': EXACTLY one of: {', '.join(self.valid_actions + ['None'])}
-- 'reasoning': A brief explanation of your choice
-
-Your response will be automatically validated against a JSON schema."""
-            elif game_type == 'zelda':
-                # Zelda-specific instructions for vLLM
-                system_message = f"""You are an AI playing The Legend of Zelda: Link's Awakening for Game Boy.
-Analyze the game screen and decide the best action to take next.
-You can choose from these actions: {action_list}, or choose "None" to do nothing.
-
-{game_specific_instructions}
-
-IMPORTANT INSTRUCTION ABOUT "NONE":
-- If you see a loading screen, choose "None"
-- If text is still appearing (being typed out), choose "None"
-- If an animation is playing, choose "None"
-- Only press buttons when it's clearly required by the game state
-
-ZELDA-SPECIFIC EXAMPLES:
-1. If you see enemies, press A to swing your sword to attack
-2. If you see NPCs, press A to talk to them
-3. If you see a chest, move Link toward it and press A to open
-4. If you're in a menu, use directional buttons to navigate and A to select
-5. If you see signs or text appearing, wait for it to finish then press A to continue
-
-You MUST respond with a JSON object containing exactly two fields:
-- 'action': EXACTLY one of: {', '.join(self.valid_actions + ['None'])}
-- 'reasoning': A brief explanation of your choice
-
-Your response will be automatically validated against a JSON schema."""
-            else:
-                # Standard instructions for vLLM
                 system_message = f"""You are an AI playing a turn-based video game.
 Analyze the game screen and decide the best action to take next.
 You can choose from these actions: {action_list}, or choose "None" to do nothing.
 
+{game_specific_instructions}
+
 IMPORTANT INSTRUCTION ABOUT "NONE":
 - If you see a loading screen, choose "None"
-- If text tells you to wait or not press buttons, choose "None"
-- If the game is processing something and no input is needed, choose "None"
+- If text is still appearing (being typed out), choose "None"
+- If an animation is playing, choose "None"
 - Only press buttons when it's clearly required by the game state
 
-EXAMPLES:
-1. If you see a battle menu with options, choose an appropriate button ("A" to select, etc.)
-2. If you see a character that needs to move, choose a direction ("Up", "Down", etc.) 
-3. If you see text saying "Loading..." or "Please wait", choose "None"
-4. If you see a warning saying "Do not press buttons", choose "None"
+{custom_instructions}
+
+You MUST respond ONLY with a JSON object in this EXACT format, with no other text:
+{{
+  "action": "A",
+  "reasoning": "I'm pressing A to select this option because..."
+}}
+
+or
+
+{{
+  "action": "None",
+  "reasoning": "I'm choosing to do nothing because..."
+}}
+
+Where "action" is EXACTLY one of: {', '.join(self.valid_actions + ['None'])}"""
+        else:
+            # For vLLM, the json_schema enforces the format
+            system_message = f"""You are an AI playing a turn-based video game.
+Analyze the game screen and decide the best action to take next.
+You can choose from these actions: {action_list}, or choose "None" to do nothing.
+
+{game_specific_instructions}
+
+IMPORTANT INSTRUCTION ABOUT "NONE":
+- If you see a loading screen, choose "None"
+- If text is still appearing (being typed out), choose "None"
+- If an animation is playing, choose "None"
+- Only press buttons when it's clearly required by the game state
+
+{custom_instructions}
 
 You MUST respond with a JSON object containing exactly two fields:
 - 'action': EXACTLY one of: {', '.join(self.valid_actions + ['None'])}
@@ -803,9 +649,9 @@ Your response will be automatically validated against a JSON schema."""
                                 
                                 # Log reasoning if available
                                 if 'reasoning' in json_data:
-                                    logger.debug(f"Agent reasoning: {json_data['reasoning']}")
+                                    logger.info(f"Agent reasoning: {json_data['reasoning']}")
                                 elif 'Reasoning' in json_data:
-                                    logger.debug(f"Agent reasoning: {json_data['Reasoning']}")
+                                    logger.info(f"Agent reasoning: {json_data['Reasoning']}")
                                 
                                 return chosen_action
                             
