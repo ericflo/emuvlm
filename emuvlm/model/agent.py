@@ -530,70 +530,114 @@ class LLMAgent:
             # Fallback to basic user message
             user_message = "What action should I take in this game? Choose one of the available actions or 'None' to do nothing. Remember to always provide detailed reasoning for your choice with specific visual evidence from the screen."
         
+        # First, prepare the message history we want to include between the system message and final user message
+        history_messages = []
+        
+        # Process message history - make sure to redact image data
+        if self.message_history:
+            for i, (action, frame_num) in enumerate(self.message_history):
+                if frame_num >= 0:  # Ensure it's a valid frame number
+                    # Create a history message - assistant's response from previous turns
+                    history_messages.append({"role": "assistant", "content": f"Action: {action}"})
+                    
+                    # Add a simple acknowledgment from user to maintain the conversation flow
+                    history_messages.append({"role": "user", "content": "What should I do next?"})
+        
         # Construct the prompt based on the provider and backend
         if self.provider == 'openai':
             # OpenAI GPT-4o format
             messages = [
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": [
-                    {"type": "text", "text": user_message},
-                    {"type": "image_url", 
-                     "image_url": {"url": f"data:image/png;base64,{image_data}"}}
-                ]}
+                {"role": "system", "content": system_message}
             ]
+            
+            # Add history messages between system and current user message
+            messages.extend(history_messages)
+            
+            # Add the current user message with image
+            messages.append({"role": "user", "content": [
+                {"type": "text", "text": user_message},
+                {"type": "image_url", 
+                 "image_url": {"url": f"data:image/png;base64,{image_data}"}}
+            ]})
         elif self.provider == 'anthropic':
-            # Claude format 
-            messages = [
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": [
-                    {"type": "text", "text": user_message},
-                    {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": image_data}}
-                ]}
-            ]
+            # For Anthropic, we handle the system message as a separate parameter later
+            # Start with history messages if any
+            messages = []
+            
+            # Add history messages (without the system message)
+            messages.extend(history_messages)
+            
+            # Add the current user message with image
+            messages.append({"role": "user", "content": [
+                {"type": "text", "text": user_message},
+                {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": image_data}}
+            ]})
+            
+            # We'll add system as a top-level parameter later after params is initialized
         elif self.provider == 'mistral':
             # Mistral Pixtral format (similar to OpenAI format)
             messages = [
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": [
-                    {"type": "text", "text": user_message},
-                    {"type": "image_url", 
-                     "image_url": {"url": f"data:image/png;base64,{image_data}"}}
-                ]}
+                {"role": "system", "content": system_message}
             ]
+            
+            # Add history messages between system and current user message
+            messages.extend(history_messages)
+            
+            # Add the current user message with image
+            messages.append({"role": "user", "content": [
+                {"type": "text", "text": user_message},
+                {"type": "image_url", 
+                 "image_url": {"url": f"data:image/png;base64,{image_data}"}}
+            ]})
         elif self.provider == 'local':
             # Local backends (llama.cpp or vLLM)
             if self.backend == 'llama.cpp':
                 # For llama.cpp, format based on OpenAI Vision API
                 messages = [
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": [
-                        {"type": "text", "text": user_message},
-                        {"type": "image_url", 
-                         "image_url": {"url": f"data:image/png;base64,{image_data}"}}
-                    ]}
+                    {"role": "system", "content": system_message}
                 ]
-            else:
-                # For vLLM, use the standard format
-                messages = [
-                    {"role": "system", "content": system_message},
-                    {
-                        "role": "user", 
-                        "content": [
-                            {"type": "image", "image": f"data:image/png;base64,{image_data}"},
-                            {"type": "text", "text": user_message}
-                        ]
-                    }
-                ]
-        else:
-            # Custom OpenAI API-compatible server format (default to OpenAI format)
-            messages = [
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": [
+                
+                # Add history messages between system and current user message
+                messages.extend(history_messages)
+                
+                # Add the current user message with image
+                messages.append({"role": "user", "content": [
                     {"type": "text", "text": user_message},
                     {"type": "image_url", 
                      "image_url": {"url": f"data:image/png;base64,{image_data}"}}
-                ]}
+                ]})
+            else:
+                # For vLLM, use the standard format
+                messages = [
+                    {"role": "system", "content": system_message}
+                ]
+                
+                # Add history messages between system and current user message
+                messages.extend(history_messages)
+                
+                # Add the current user message with image
+                messages.append({
+                    "role": "user", 
+                    "content": [
+                        {"type": "image", "image": f"data:image/png;base64,{image_data}"},
+                        {"type": "text", "text": user_message}
+                    ]
+                })
+        else:
+            # Custom OpenAI API-compatible server format (default to OpenAI format)
+            messages = [
+                {"role": "system", "content": system_message}
             ]
+            
+            # Add history messages between system and current user message
+            messages.extend(history_messages)
+            
+            # Add the current user message with image
+            messages.append({"role": "user", "content": [
+                {"type": "text", "text": user_message},
+                {"type": "image_url", 
+                 "image_url": {"url": f"data:image/png;base64,{image_data}"}}
+            ]})
         
         # Set base model parameters
         params = {
@@ -602,6 +646,11 @@ class LLMAgent:
             "temperature": self.model_config.get('temperature', 0.2),  # Lower temperature for more focused responses
             "stream": False
         }
+        
+        # Handle Anthropic's special system parameter requirement
+        if self.provider == 'anthropic':
+            # For Anthropic, the system message goes as a top-level parameter, not in the messages array
+            params["system"] = system_message
         
         # Add model name for external APIs if specified
         if self.model_name and self.provider != 'local':
