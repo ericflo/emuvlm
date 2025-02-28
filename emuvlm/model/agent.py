@@ -220,7 +220,7 @@ class LLMAgent:
             if self.last_frame is not None:
                 similarity = self._calculate_frame_similarity(frame, self.last_frame)
                 if similarity > self.similarity_threshold:
-                    logger.info(f"Frame is similar to previous frame (similarity: {similarity:.4f})")
+                    logger.debug(f"Frame is similar to previous frame (similarity: {similarity:.4f})")
                     # We've removed the cached action feature as it was causing more trouble than it's worth
             
             # Calculate frame hash for caching
@@ -493,7 +493,7 @@ class LLMAgent:
             )
         
         # The summary is already included in the template if needed
-        user_message = "What action should I take in this game? Choose one of the available actions or 'None' to do nothing."
+        user_message = "What action should I take in this game? Choose one of the available actions or 'None' to do nothing. Remember to always provide detailed reasoning for your choice with specific visual evidence from the screen."
         
         # Construct the prompt based on the provider and backend
         if self.provider == 'openai':

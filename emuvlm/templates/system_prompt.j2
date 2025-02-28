@@ -51,6 +51,8 @@ or
   "game_summary": "Brief summary of current game progress and situation"
 }
 
+It is CRITICAL that you ALWAYS include detailed reasoning for your choice, even when selecting "None".
+
 The "action" field MUST be EXACTLY one of these values: {{ valid_actions_with_none }}
 The "reasoning" field MUST explain your decision with specific visual evidence from the screen
 The "game_summary" field MUST contain a concise summary of the current game state and progress
@@ -60,6 +62,8 @@ You MUST respond with a JSON object containing exactly three fields:
 - 'action': EXACTLY one of: {{ valid_actions_with_none }}
 - 'reasoning': A thorough explanation of your choice with specific visual evidence
 - 'game_summary': A concise summary of the current game state and progress (1-2 sentences)
+
+It is CRITICAL that you ALWAYS include detailed reasoning for your choice, even when selecting "None".
 
 Your response will be automatically validated against a JSON schema.
 {% endif %}
