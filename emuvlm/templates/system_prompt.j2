@@ -51,12 +51,17 @@ or
   "game_summary": "Brief summary of current game progress and situation"
 }
 
+{% if example_json %}
+EXAMPLE HIGH-QUALITY RESPONSE:
+{{ example_json }}
+{% else %}
 EXAMPLE HIGH-QUALITY RESPONSE:
 {
   "action": "Right",
   "reasoning": "I'm pressing Right to explore the eastern path because I can see a treasure chest in that direction, approximately 3-4 tiles away from my character. The screen shows my character at a junction in what appears to be a cave or dungeon, with three possible paths: north, east, and west. The eastern path has a visible treasure chest which may contain important items like keys, healing potions, or equipment upgrades. There are no visible enemies or hazards between my character and the chest, making it safe to approach. The character's health bar at the top of the screen is currently at about 70%, so obtaining possible healing items would be beneficial before continuing deeper into the dungeon.",
   "game_summary": "I'm currently in the second level of the Mountain Cave dungeon, having defeated the first mini-boss and obtained the Bronze Key. I'm exploring the maze-like eastern section searching for the Silver Key which will unlock the door to the main boss. My character has level 12 with 70% health remaining and a basic sword and shield equipment setup."
 }
+{% endif %}
 
 It is CRITICAL that you ALWAYS include detailed reasoning for your choice, even when selecting "None".
 
@@ -70,12 +75,17 @@ You MUST respond with a JSON object containing exactly three fields:
 - 'reasoning': A thorough explanation of your choice with specific visual evidence
 - 'game_summary': A concise summary of the current game state and progress (1-2 sentences)
 
+{% if example_json %}
+EXAMPLE HIGH-QUALITY RESPONSE:
+{{ example_json }}
+{% else %}
 EXAMPLE HIGH-QUALITY RESPONSE:
 {
   "action": "Right",
   "reasoning": "I'm pressing Right to explore the eastern path because I can see a treasure chest in that direction, approximately 3-4 tiles away from my character. The screen shows my character at a junction in what appears to be a cave or dungeon, with three possible paths: north, east, and west. The eastern path has a visible treasure chest which may contain important items like keys, healing potions, or equipment upgrades. There are no visible enemies or hazards between my character and the chest, making it safe to approach. The character's health bar at the top of the screen is currently at about 70%, so obtaining possible healing items would be beneficial before continuing deeper into the dungeon.",
   "game_summary": "I'm currently in the second level of the Mountain Cave dungeon, having defeated the first mini-boss and obtained the Bronze Key. I'm exploring the maze-like eastern section searching for the Silver Key which will unlock the door to the main boss. My character has level 12 with 70% health remaining and a basic sword and shield equipment setup."
 }
+{% endif %}
 
 It is CRITICAL that you ALWAYS include detailed reasoning for your choice, even when selecting "None".
 

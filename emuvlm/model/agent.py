@@ -490,6 +490,9 @@ class LLMAgent:
         else:
             # Render the system message from the template
             template = self.jinja_env.get_template("system_prompt.j2")
+            # Check if there's a game-specific JSON example
+            example_json = self.model_config.get('games', {}).get(game_type, {}).get('example_json', '')
+            
             system_message = template.render(
                 action_list=action_list,
                 valid_actions_with_none=valid_actions_with_none,
@@ -497,7 +500,8 @@ class LLMAgent:
                 custom_instructions=custom_instructions,
                 reasoning_prompt=reasoning_prompt,
                 backend=self.backend,
-                summary=summary
+                summary=summary,
+                example_json=example_json
             )
         
         # Prepare previous actions for the user message template

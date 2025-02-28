@@ -86,6 +86,12 @@ games:
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.5 # Default seconds to wait after each action
     game_type: "pokemon" # Set game type to identify it as Pokemon
+    example_json: |
+      {
+        "action": "Down",
+        "reasoning": "I'm pressing Down to navigate toward the tall grass visible at the bottom of the screen. The character is currently standing on a path in what appears to be Route 1, and I can see patches of tall grass about 2-3 tiles below. In Pokémon games, tall grass is where wild Pokémon encounters occur, which is essential for catching new Pokémon and gaining experience points to level up my current team. The screen shows no NPCs or obstacles between my character and the grass. My character appears to be at full health as there's no indication otherwise on the interface, and I have Pokéballs in my inventory as shown by the item counter, making this an ideal time to look for wild Pokémon encounters.",
+        "game_summary": "I'm at the beginning of my Pokémon journey on Route 1 between Pallet Town and Viridian City. I've chosen my starter Pokémon (Squirtle) and received my Pokédex from Professor Oak. My current objective is to catch some wild Pokémon to build my team and then proceed to Viridian City to continue the main quest. My Squirtle is at level 5 with no status conditions."
+      }
     # Game-specific timing configurations
     timing:
       # Category-based delays for different action types
@@ -121,6 +127,12 @@ games:
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.4 # Default seconds to wait after each action
     game_type: "zelda" # Game type for specific handling
+    example_json: |
+      {
+        "action": "Right",
+        "reasoning": "I'm pressing Right to move toward what appears to be a cave entrance visible at the right side of the screen. Link is currently in an outdoor area that looks like Koholint Island's mountainous region, and I can see a distinct dark opening in the rock face about 5-6 tiles to the right of Link's position. In Zelda games, caves often contain important items, heart pieces, or story elements. There are no enemies visible between Link and the cave entrance, making it safe to approach. Link's health shows 3 hearts at full capacity in the top-left corner of the screen, so we're in good condition to explore. The cave entrance matches the typical visual style of accessible doorways in this game, indicating it can be entered.",
+        "game_summary": "I'm exploring Koholint Island in search of the Tail Key needed to access the third dungeon (Key Cavern). I've already completed the Tail Cave and Bottle Grotto dungeons, obtaining the Full Moon Cello and Conch Horn instruments. Link has 3 heart containers, the Roc's Feather for jumping, and bombs for breaking cracked walls. My current location is in the Tal Tal Mountain Range to the north of Mabe Village."
+      }
     # Game-specific timing configurations
     timing:
       # Category-based delays for different action types
@@ -161,6 +173,12 @@ games:
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.5 # Default seconds to wait after each action
+    example_json: |
+      {
+        "action": "A",
+        "reasoning": "I'm pressing A to confirm interaction with the NPC standing directly in front of my character. The screen shows my party in what appears to be a town environment, and there's a townsperson character positioned one tile in front of my party leader. In Final Fantasy Legend, the A button is used to interact with NPCs, doors, chests and other objects. Based on the dialogue box at the bottom of the screen, which is currently empty but ready for text, this interaction will likely provide important information about the current quest objective or town features. The NPC's appearance (looks like a merchant or information giver) suggests they may have valuable information. There are no visible threats or combat situations, making this a safe interaction.",
+        "game_summary": "I'm in the second world of Final Fantasy Legend, having already obtained the first SPHERE from World 1. My party consists of a Human fighter, a Mutant with magic abilities, and two Monster characters. The team is around level 12 with decent equipment (steel sword, chainmail). I'm currently in the main town of World 2, gathering information about where to find this world's SPHERE before proceeding to the next door in the Tower."
+      }
     # Game-specific timing configurations
     timing:
       # Category-based delays for different action types
@@ -197,6 +215,12 @@ games:
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.4 # Default seconds to wait after each action
+    example_json: |
+      {
+        "action": "B",
+        "reasoning": "I'm pressing B to shoot at the enemy that's visible about 4 tiles to the right of Samus. The screen shows Samus in what appears to be a cave-like environment on planet SR388 with an approaching hostile creature (looks like a Gawron - the flying bug-like enemies). The B button fires Samus's arm cannon, which is necessary to eliminate threats. Based on the position of the enemy and its movement pattern (flying in a wave-like motion), a horizontal shot is most likely to hit it. Samus appears to be in a safe position with solid ground beneath her, and her energy meter in the top left shows approximately 60 energy remaining, so engaging this enemy is safer than trying to avoid it in the confined space. There are no other immediate threats visible on screen.",
+        "game_summary": "I'm in the early areas of SR388 in Metroid II: Return of Samus, hunting for the 39 Metroids on the planet. I've defeated 2 Metroids so far (shown by the counter at the bottom of the screen showing 37 remaining). Samus has 60 energy, 5 missiles, and has acquired the Morph Ball and Bombs abilities. I'm currently exploring to find the next Metroid and potentially locate more upgrades to improve Samus's capabilities."
+      }
     # Game-specific timing configurations
     timing:
       # Category-based delays for different action types
@@ -238,6 +262,12 @@ games:
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.3 # Default seconds to wait after each action
+    example_json: |
+      {
+        "action": "B",
+        "reasoning": "I'm pressing B to inhale the enemy that's visible about 3 tiles ahead of Kirby. The screen shows Kirby in what appears to be Green Greens stage with a Waddle Dee enemy approaching from the right. The B button activates Kirby's signature inhale ability, which will suck in the enemy. Once inhaled, I can either swallow the enemy by pressing B again (eliminating it) or spit it out as a projectile by pressing B while moving the D-pad. This enemy doesn't grant Kirby a copy ability in this game, but eliminating it is necessary to progress safely. Kirby currently has 5 health points as shown by the stars at the top of the screen, and there are no other immediate hazards visible.",
+        "game_summary": "I'm in the first stage (Green Greens) of Kirby's Dream Land. I've just started the game and am working toward reaching King Dedede's castle to recover the stolen food from Dream Land. Kirby has full health (5 points) and no special power-ups. This game doesn't feature copy abilities like later Kirby games, so the main attacks are inhaling enemies and spitting them out as projectiles."
+      }
     # Game-specific timing configurations
     timing:
       # Category-based delays for different action types
@@ -281,6 +311,12 @@ games:
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.3 # Default seconds to wait after each action
+    example_json: |
+      {
+        "action": "A",
+        "reasoning": "I'm pressing A to jump over the gap that's visible about 4-5 tiles ahead of Mario. The screen shows Mario in the first level (World 1-1) with a pit that needs to be cleared. Jumping is necessary to avoid falling into the pit, which would result in losing a life. I can see that the gap is approximately 2-3 tiles wide, which requires a standard jump with good timing. There are no enemies directly in the jump path, though I can see a Goomba-like enemy (called a Chibibo in this game) approaching from the right side of the screen beyond the gap. Mario is currently in his small form as indicated by his size on screen, so I need to be extra careful as taking damage would result in losing a life.",
+        "game_summary": "I'm in World 1-1 of Super Mario Land, at the beginning of my quest to rescue Princess Daisy from the alien Tatanga. Mario is in his small form with 3 lives remaining and 0 coins collected so far. This is the first level of the game, and I'm working toward reaching the end-of-level flag to progress to World 1-2."
+      }
     # Game-specific timing configurations
     timing:
       # Category-based delays for different action types
@@ -322,6 +358,12 @@ games:
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.2 # Default seconds to wait after each action
+    example_json: |
+      {
+        "action": "Left",
+        "reasoning": "I'm pressing Left to position the current falling piece (which appears to be an L-piece/orange piece) closer to the left wall. The game screen shows the Tetris playing field with the L-piece currently falling near the center of the screen. Moving it left will allow me to place it flush against the left wall and complete a row. Looking at the playing field, there's a gap at the bottom left that perfectly fits this L-piece. The next piece shown in the preview window in the top-right corner is an I-piece (cyan long piece), which I'll want to save for a potential Tetris (4-line clear) if I can create a column for it. There are currently about 10-12 rows of blocks at the bottom of the screen, with most gaps on the left side, making left placement of this L-piece optimal for maintaining a balanced stack.",
+        "game_summary": "I'm playing Tetris A-Type mode at level 4 with a current score of 24,680 points. I've cleared 32 lines so far and am working on building a well on the right side to set up for a Tetris (4-line clear) with the upcoming I-piece. The game speed is moderate at this level, giving me sufficient time to position pieces precisely."
+      }
     # Game-specific timing configurations
     timing:
       # Category-based delays for different action types
@@ -372,6 +414,12 @@ games:
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.4 # Default seconds to wait after each action
+    example_json: |
+      {
+        "action": "B",
+        "reasoning": "I'm pressing B to attack the skeleton enemy that's approaching from the right side of the screen. The B button activates Christopher Belmont's whip attack, which is the primary way to defeat enemies. The skeleton is approximately 3-4 tiles away and moving toward Belmont, posing an immediate threat. The screen shows we're in what appears to be the Plant Castle, with vines and plant-like elements in the background. Belmont is standing on a solid platform with no pits nearby, making it safe to stand ground and attack. His health meter in the top left shows about 12 units remaining (out of 16), so we're in good shape to engage in combat. The whip appears to be at the Chain Whip upgrade level based on its length when attacking, giving us decent range to hit the skeleton before it comes within damaging distance.",
+        "game_summary": "I'm playing as Christopher Belmont in Castlevania II: Belmont's Revenge, currently exploring the Plant Castle (one of the four elemental castles). I've already obtained the Chain Whip upgrade, which extends attack range, and have collected the Cross sub-weapon (usable with Up+B). My health is at 12 units, and I'm progressing through the castle to eventually face the boss and obtain one of the sacred treasures needed to access Dracula's Castle for the final confrontation."
+      }
     # Game-specific timing configurations
     timing:
       # Category-based delays for different action types
@@ -430,6 +478,12 @@ games:
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.3 # Default seconds to wait after each action
+    example_json: |
+      {
+        "action": "A",
+        "reasoning": "I'm pressing A to jump and then fly upward to reach the platform visible about 4-5 tiles above Pit's current position. The screen shows Pit in a vertically scrolling section of the Underworld fortress, with several platforms and a doorway visible at the top of the screen. The A button makes Pit jump, and holding it allows him to flap his wings and fly temporarily (as indicated by the flight meter at the bottom of the screen, which is currently about 70% full). There's a heart container visible on the upper platform, which would restore some of Pit's health. I can see that Pit's health bar in the top-left corner is at about 50%, so collecting this heart is important. There are no enemies directly in the flight path, making this a safe maneuver. The doorway at the top likely leads to the next area or a special room, which is my current objective.",
+        "game_summary": "I'm playing as Pit in Kid Icarus: Of Myths and Monsters, currently in the first world (Underworld fortress). I've acquired the bow weapon and can shoot arrows with the B button. Pit's health is at about 50%, and my flight meter is at 70% capacity. I'm working toward reaching the fortress guardian to obtain the first piece of the Three Sacred Treasures (likely the Light Arrow). My current strength level is 3, and defense level is 2, with no special items or abilities yet unlocked."
+      }
     # Game-specific timing configurations
     timing:
       # Category-based delays for different action types
@@ -488,6 +542,12 @@ games:
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.3 # Default seconds to wait after each action
+    example_json: |
+      {
+        "action": "B",
+        "reasoning": "I'm pressing B to fire Mega Man's arm cannon at the enemy robot that's visible about 5-6 tiles ahead. The screen shows Mega Man in what appears to be Cut Man's stage, with a Met (small hard hat enemy) approaching. These enemies are shielded when crouched but vulnerable when they pop up to attack. The Met has just exposed itself, making this the perfect time to shoot. The B button is Mega Man's primary attack button and fires the standard Mega Buster. I can see Mega Man is standing on a solid platform with no pits nearby, and there are no other immediate threats visible. The health meter at the top of the screen shows Mega Man with approximately 60% health remaining, so engaging this enemy is safer than trying to jump over it, which could result in a collision and damage.",
+        "game_summary": "I'm playing through Mega Man: Dr. Wily's Revenge, currently in Cut Man's stage (one of the first four Robot Masters). I haven't defeated any Robot Masters yet, so I only have the standard Mega Buster weapon. Mega Man has about 60% health remaining, with no E-Tanks in inventory. My objective is to reach and defeat Cut Man at the end of this stage to acquire his Rolling Cutter weapon, which will help against other Robot Masters due to the weapon weakness system."
+      }
     # Game-specific timing configurations
     timing:
       # Category-based delays for different action types
