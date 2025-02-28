@@ -573,6 +573,9 @@ class LLMAgent:
                 {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": image_data}}
             ]})
             
+            # Add an assistant message with pre-filled JSON to guide the response format
+            messages.append({"role": "assistant", "content": "{\"reasoning\": \""})
+            
             # We'll add system as a top-level parameter later after params is initialized
         elif self.provider == 'mistral':
             # Mistral Pixtral format (similar to OpenAI format)
