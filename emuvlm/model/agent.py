@@ -104,10 +104,8 @@ class LLMAgent:
         self.message_history = []
         self.max_message_history = model_config.get('max_message_history', 5)  # Number of past turns to keep
         
-        # For summary feature
-        self.history = []
-        self.summary = ""
-        self.summary_interval = model_config.get('summary_interval', 10)  # Summarize every X turns
+        # For game summary storage
+        self.summary = ""  # Store the latest game summary from model response
         self.turn_count = 0
         
         # For frame storage and comparison
@@ -131,7 +129,7 @@ class LLMAgent:
         logger.info(f"API URL: {self.api_url}")
         logger.info(f"Valid actions: {len(valid_actions)} possible actions")
         logger.info(f"Message history: keeping last {self.max_message_history} interactions")
-        logger.info(f"Summary feature is {'enabled' if use_summary else 'disabled'}")
+        logger.info(f"Game summary storage is {'enabled' if use_summary else 'disabled'}")
         logger.info(f"Frame saving is {'enabled' if self.enable_cache else 'disabled'}")
         logger.info(f"JSON schema support is {'enabled' if model_config.get('json_schema_support', True) else 'disabled'}")
     
@@ -273,26 +271,18 @@ class LLMAgent:
         while len(self.message_history) > self.max_message_history:
             self.message_history.pop()
         
-        # Update history if summary feature is enabled
-        if self.use_summary:
-            self._update_history(frame, valid_action)
-            
-            # Also store the reasoning and game summary if available and the response is JSON
-            try:
-                if response and response.strip().startswith('{'):
-                    json_data = json.loads(response)
-                    
-                    # Extract reasoning
-                    if 'reasoning' in json_data:
-                        reason = json_data['reasoning']
-                        # Append reasoning to the latest history entry
-                        if self.history:
-                            self.history[-1] += f" - Reasoning: {reason}"
-                    
-                    # We've already stored the game_summary in parse_action if it was available
-            except (json.JSONDecodeError, KeyError):
-                # Ignore any JSON parsing errors here
-                pass
+        # Extract the game summary if available in the response and JSON format
+        try:
+            if response and response.strip().startswith('{'):
+                json_data = json.loads(response)
+                
+                # Store the game summary if available
+                if 'game_summary' in json_data:
+                    self.summary = json_data['game_summary']
+                    logger.info(f"Updated game summary: {self.summary[:100]}...")
+        except (json.JSONDecodeError, KeyError):
+            # Ignore any JSON parsing errors here
+            pass
         
         # Increment turn counter
         self.turn_count += 1
@@ -340,11 +330,10 @@ class LLMAgent:
                     else:
                         logger.warning("No reasoning provided in JSON response")
                     
-                    # Store the game summary if available
+                    # Store the game summary if available and enabled
                     if 'game_summary' in response_json and self.use_summary:
                         game_summary = response_json['game_summary']
-                        logger.info(f"Game summary from agent: {game_summary}")
-                        # Update our summary with the agent's summary
+                        logger.info(f"Game summary from agent: {game_summary[:100]}...")
                         self.summary = game_summary
 
                     # If the action is in our valid actions list, return it
@@ -972,65 +961,8 @@ class LLMAgent:
             
             return "Error connecting to model server"
     
-    def _update_history(self, frame: Image.Image, response: str) -> None:
-        """
-        Update the history and generate summaries if needed.
-        This is only used when the summary feature is enabled.
-        
-        Args:
-            frame: Current game frame
-            response: Model's action response
-        """
-        # Add this turn to history
-        self.history.append(f"Turn {self.turn_count}: Model chose action '{response}'")
-        
-        # Check if it's time to generate a summary
-        if self.use_summary and self.turn_count % self.summary_interval == 0 and self.history:
-            self._generate_summary()
-    
-    def _generate_summary(self) -> None:
-        """
-        Generate a summary of the game history so far using the model.
-        This is an additional call to the model.
-        
-        Note: This method is now only used as a fallback if we don't receive
-        a game_summary from the agent's responses.
-        """
-        if not self.history:
-            return
-            
-        # Prepare a prompt asking for a summary
-        history_text = "\n".join(self.history)
-        summary_prompt = {
-            "messages": [
-                {"role": "system", "content": "Summarize the following game history in a concise paragraph. Focus on key events, current game state, and player progress."},
-                {"role": "user", "content": history_text}
-            ],
-            "max_tokens": 250,
-            "temperature": 0.3,
-        }
-        
-        try:
-            # Call the model for summarization
-            response = requests.post(
-                f"{self.api_url}/v1/chat/completions",
-                json=summary_prompt,
-                headers={"Content-Type": "application/json"},
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                self.summary = result["choices"][0]["message"]["content"].strip()
-                logger.info(f"Generated new summary: {self.summary}")
-                
-                # After summarizing, clear the detailed history
-                self.history = []
-            else:
-                logger.error(f"Summary generation failed: {response.status_code} - {response.text}")
-                
-        except requests.RequestException as e:
-            logger.error(f"Summary request failed: {e}")
+    # Summary generation from history has been removed.
+    # We now only use the game_summary from the model's JSON response.
     
     def _calculate_frame_hash(self, frame: Image.Image) -> str:
         """
