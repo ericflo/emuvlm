@@ -571,12 +571,30 @@ class LLMAgent:
                 # Claude uses a different response format parameter
                 params["response_format"] = {"type": "json_object"}
             elif self.provider == 'openai':
-                # OpenAI supports json_schema format now
+                # OpenAI expects the schema in a different format
                 params["response_format"] = {
-                    "type": "json_schema",
-                    "schema": json_schema
+                    "type": "json_object",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "reasoning": {
+                                "type": "string",
+                                "description": "Detailed explanation of why this action was chosen based on the game state with visual evidence"
+                            },
+                            "action": {
+                                "type": "string",
+                                "enum": action_enum,
+                                "description": f"The selected action from the list: {action_list} or None to do nothing"
+                            },
+                            "game_summary": {
+                                "type": "string",
+                                "description": "A concise summary of the current game state and progress"
+                            }
+                        },
+                        "required": ["action", "reasoning", "game_summary"]
+                    }
                 }
-                logger.debug("Using JSON schema response format with OpenAI")
+                logger.debug("Using JSON object schema format with OpenAI")
             elif self.provider == 'mistral':
                 # Mistral currently supports json_object type
                 params["response_format"] = {"type": "json_object"}
