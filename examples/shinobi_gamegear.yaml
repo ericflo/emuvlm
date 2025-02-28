@@ -1,0 +1,38 @@
+# Configuration for Shinobi (Game Gear)
+game_name: "Shinobi"
+platform: "gamegear"
+emulator: "GameGearEmulator"
+rom_path: "roms/gamegear/shinobi.gg"
+
+# Model configuration
+model_server: "http://localhost:8000/v1"
+model_name: "llava-v1.5-7b"
+temperature: 0.7
+top_p: 0.9
+max_tokens: 800
+
+# Game-specific details
+description: >
+  Shinobi is a classic action platformer for the Sega Game Gear released in 1991. 
+  You play as Joe Musashi, a skilled ninja who must rescue the children of the Oboro clan 
+  who have been kidnapped by the criminal organization Zeed.
+
+controls_description: >
+  - D-pad: Move Joe left/right and crouch (down) or look up (up)
+  - Button 1 (A): Jump
+  - Button 2 (B): Attack with shuriken (at a distance) or sword (up close)
+  - Start: Pause/unpause the game
+  
+gameplay_tips: >
+  - Free hostages by approaching them in each level.
+  - You can perform a special ninja jump by pressing jump while in mid-air.
+  - Your sword attack is for close combat, while shurikens are for ranged attacks.
+  - Crouch to avoid certain enemy attacks.
+  - You have limited shurikens, so use them wisely.
+  - Collect power-ups that increase your attack power and health.
+  - Each level has a boss at the end that requires specific strategies to defeat.
+  
+initial_objective: >
+  You are at the beginning of the first level. Your goal is to navigate through the level,
+  defeating enemies, rescuing hostages, and ultimately reaching and defeating the boss at the end.
+  Watch out for traps and use your ninja skills to overcome obstacles.

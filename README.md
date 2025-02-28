@@ -9,6 +9,7 @@ Our system now supports game-specific configurations that enhance AI gameplay fo
 - Support for multiple gaming platforms with dedicated emulators:
   - Game Boy / Game Boy Color (PyBoy)
   - Game Boy Advance (mGBA)
+  - Sega Game Gear (PyBoy)
   - Nintendo Entertainment System (FCEUX)
   - Super Nintendo / SNES (Snes9x)
   - Sega Genesis / Mega Drive (Genesis Plus GX)
@@ -492,6 +493,7 @@ emuvlm/
 │   ├── __init__.py
 │   ├── base.py                    - Base emulator interface
 │   ├── pyboy_emulator.py          - Game Boy/GBC emulator implementation
+│   ├── gamegear_emulator.py       - Sega Game Gear emulator implementation
 │   ├── mgba_emulator.py           - Game Boy Advance emulator implementation
 │   ├── fceux_emulator.py          - NES emulator implementation 
 │   ├── snes9x_emulator.py         - SNES emulator implementation

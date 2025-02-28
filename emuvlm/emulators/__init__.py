@@ -14,3 +14,4 @@ from emuvlm.emulators.snes9x_emulator import SNES9xEmulator
 from emuvlm.emulators.genesis_plus_gx_emulator import GenesisPlusGXEmulator
 from emuvlm.emulators.mupen64plus_emulator import Mupen64PlusEmulator
 from emuvlm.emulators.duckstation_emulator import DuckstationEmulator
+from emuvlm.emulators.gamegear_emulator import GameGearEmulator

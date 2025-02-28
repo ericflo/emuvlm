@@ -1,0 +1,36 @@
+# Configuration for Sonic Chaos (Game Gear)
+game_name: "Sonic Chaos"
+platform: "gamegear"
+emulator: "GameGearEmulator"
+rom_path: "roms/gamegear/sonic_chaos.gg"
+
+# Model configuration
+model_server: "http://localhost:8000/v1"
+model_name: "llava-v1.5-7b"
+temperature: 0.8
+top_p: 0.9
+max_tokens: 800
+
+# Game-specific details
+description: >
+  Sonic Chaos (also known as Sonic & Tails in Japan) is a platform game released for the Sega Game Gear in 1993. 
+  The game follows Sonic the Hedgehog and Miles "Tails" Prower as they attempt to recover the red Chaos Emerald from Dr. Robotnik.
+  
+controls_description: >
+  - D-pad: Move Sonic left/right, look up/down
+  - Button 1 (A): Jump
+  - Button 2 (B): Spin dash (press while holding down)
+  - Start: Pause/unpause the game
+  
+gameplay_tips: >
+  - Collect rings for protection. If you have at least one ring, you won't lose a life when hit.
+  - Jump on enemies to defeat them.
+  - Hold down and press button 1 (A) to charge a spin dash.
+  - Some stages have multiple paths - explore to find the fastest route and hidden secrets.
+  - Sonic is faster than Tails, but Tails can fly briefly by jumping and pressing the jump button repeatedly.
+  - Get at least 50 rings and then touch a checkpoint post to enter a Special Stage.
+  
+initial_objective: >
+  You are at the beginning of Turquoise Hill Zone, the first zone in Sonic Chaos. Navigate through the level,
+  collecting rings, avoiding obstacles, and defeating enemies. Your goal is to reach the end of the level
+  where Dr. Robotnik awaits in a boss battle.
