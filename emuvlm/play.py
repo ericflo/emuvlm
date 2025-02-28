@@ -295,15 +295,27 @@ def main():
     # Initialize LLM agent
     use_summary = args.summary.lower() == 'on'
     
-    # Update model config for caching and enable autostart
+    # Update model config for caching and enable autostart (only for local provider)
     model_config = config.get('model', {}).copy()
     model_config['enable_cache'] = args.cache.lower() == 'on'
-    model_config['autostart_server'] = True
+    model_config['autostart_server'] = model_config.get('provider', 'local') == 'local'
     
     # Apply command-line model configuration overrides
     if args.provider:
         model_config['provider'] = args.provider
         logger.info(f"Using provider from command line: {args.provider}")
+        
+        # Set default API URLs based on provider if not specified
+        if not args.api_url:
+            if args.provider == 'openai':
+                model_config['api_url'] = "https://api.openai.com"
+                logger.info(f"Setting default OpenAI API URL: {model_config['api_url']}")
+            elif args.provider == 'anthropic':
+                model_config['api_url'] = "https://api.anthropic.com"
+                logger.info(f"Setting default Anthropic API URL: {model_config['api_url']}")
+            elif args.provider == 'mistral':
+                model_config['api_url'] = "https://api.mistral.ai"
+                logger.info(f"Setting default Mistral API URL: {model_config['api_url']}")
         
         # For OpenAI, Anthropic, and Mistral, read API key from environment variable if not in config
         if args.provider in ['openai', 'anthropic', 'mistral'] and not model_config.get('api_key'):
