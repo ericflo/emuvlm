@@ -319,35 +319,28 @@ class LLMAgent:
                 if 'action' in response_json:
                     chosen_action = response_json['action']
                     
+                    # Log reasoning first (for all action types)
+                    if 'reasoning' in response_json:
+                        logger.info(f"Agent reasoning: {response_json['reasoning']}")
+                    else:
+                        logger.warning("No reasoning provided in JSON response")
+                    
+                    # Store the game summary if available
+                    if 'game_summary' in response_json and self.use_summary:
+                        game_summary = response_json['game_summary']
+                        logger.info(f"Game summary from agent: {game_summary}")
+                        # Update our summary with the agent's summary
+                        self.summary = game_summary
+
                     # If the action is in our valid actions list, return it
                     if chosen_action in self.valid_actions:
                         logger.info(f"Parsed valid action from JSON: {chosen_action}")
-                        
-                        # Store the game summary if available
-                        if 'game_summary' in response_json and self.use_summary:
-                            game_summary = response_json['game_summary']
-                            logger.info(f"Game summary from agent: {game_summary}")
-                            # Update our summary with the agent's summary
-                            self.summary = game_summary
-                            
                         return chosen_action
                     # Handle "None" action specifically
                     elif chosen_action == "None":
                         logger.info("Agent chose to do nothing (None action)")
-                        
-                        # Store the game summary if available
-                        if 'game_summary' in response_json and self.use_summary:
-                            game_summary = response_json['game_summary']
-                            logger.info(f"Game summary from agent: {game_summary}")
-                            # Update our summary with the agent's summary
-                            self.summary = game_summary
-                            
                         # Return None to indicate no action should be taken
                         return None
-                    
-                    # Log the reasoning if available
-                    if 'reasoning' in response_json:
-                        logger.info(f"Agent reasoning: {response_json['reasoning']}")
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"Failed to parse JSON response: {e}")
             # Continue with text-based parsing if JSON parsing fails
@@ -577,18 +570,41 @@ class LLMAgent:
             if self.provider == 'anthropic':
                 # Claude uses a different response format parameter
                 params["response_format"] = {"type": "json_object"}
-            elif self.provider == 'openai' or self.provider == 'mistral' or (self.provider == 'local' and self.backend == 'llama.cpp'):
-                # OpenAI, Mistral and llama.cpp use json_object type format
-                params["response_format"] = {"type": "json_object"}
-            elif self.provider == 'local' and self.backend != 'llama.cpp':
-                # vLLM uses json_schema type format
+            elif self.provider == 'openai':
+                # OpenAI supports json_schema format now
                 params["response_format"] = {
                     "type": "json_schema",
                     "schema": json_schema
                 }
+                logger.debug("Using JSON schema response format with OpenAI")
+            elif self.provider == 'mistral':
+                # Mistral currently supports json_object type
+                params["response_format"] = {"type": "json_object"}
+            elif self.provider == 'local':
+                if self.backend == 'llama.cpp':
+                    # Some llama.cpp versions support schema, some don't - try schema first
+                    try_schema = self.model_config.get('try_json_schema', True)
+                    if try_schema:
+                        params["response_format"] = {
+                            "type": "json_schema",
+                            "schema": json_schema
+                        }
+                        logger.debug("Trying JSON schema response format with llama.cpp")
+                    else:
+                        params["response_format"] = {"type": "json_object"}
+                else:
+                    # vLLM and other local backends use json_schema format
+                    params["response_format"] = {
+                        "type": "json_schema",
+                        "schema": json_schema
+                    }
             else:
                 # Default for other providers (custom OpenAI API-compatible)
-                params["response_format"] = {"type": "json_object"}
+                # Try schema first, since most modern implementations support it
+                params["response_format"] = {
+                    "type": "json_schema",
+                    "schema": json_schema
+                }
         
         return params
     
@@ -685,6 +701,9 @@ class LLMAgent:
                             # Find the last valid closing brace
                             json_str = text_response.strip()
                             
+                            # Log the raw JSON for debugging
+                            logger.debug(f"Raw JSON response: {json_str[:200]}...")
+                            
                             # First try: Look for a complete JSON object
                             try:
                                 # Try to find a valid JSON object by looking for matching brackets
@@ -700,6 +719,7 @@ class LLMAgent:
                                             break
                                         
                                 # Now try to parse the cleaned JSON
+                                logger.debug(f"Attempting to parse JSON: {json_str[:200]}...")
                                 json_data = json.loads(json_str)
                             except json.JSONDecodeError:
                                 # Second try: Look for a partial JSON with just the action key
@@ -751,16 +771,24 @@ class LLMAgent:
                                 else:
                                     chosen_action = None
                                 
+                            # Log reasoning if available - do this for ALL actions
+                            if 'reasoning' in json_data:
+                                logger.info(f"Agent reasoning: {json_data['reasoning']}")
+                            elif 'Reasoning' in json_data:
+                                logger.info(f"Agent reasoning: {json_data['Reasoning']}")
+                            else:
+                                logger.warning("No reasoning provided in JSON response")
+                                
+                            # Log game summary if available
+                            if 'game_summary' in json_data:
+                                logger.info(f"Game summary: {json_data['game_summary']}")
+                            elif 'Game_summary' in json_data or 'game_state' in json_data:
+                                summary_key = 'Game_summary' if 'Game_summary' in json_data else 'game_state'
+                                logger.info(f"Game summary: {json_data[summary_key]}")
+                            
                             # If it's a valid action, return it directly
                             if chosen_action in self.valid_actions:
                                 logger.info(f"Valid JSON action response: {chosen_action}")
-                                
-                                # Log reasoning if available
-                                if 'reasoning' in json_data:
-                                    logger.info(f"Agent reasoning: {json_data['reasoning']}")
-                                elif 'Reasoning' in json_data:
-                                    logger.info(f"Agent reasoning: {json_data['Reasoning']}")
-                                
                                 return chosen_action
                             
                             # If it's "None", return None to indicate no action

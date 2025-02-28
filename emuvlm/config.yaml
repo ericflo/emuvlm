@@ -17,6 +17,7 @@ model:
 
   # Response format configuration
   json_schema_support: true # Whether the model supports JSON schema responses
+  try_json_schema: true     # Try using JSON schema with llama.cpp and local providers
 
   # Frame caching configuration
   enable_cache: true # Enable frame caching to reduce API calls
