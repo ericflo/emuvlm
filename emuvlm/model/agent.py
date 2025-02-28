@@ -571,30 +571,35 @@ class LLMAgent:
                 # Claude uses a different response format parameter
                 params["response_format"] = {"type": "json_object"}
             elif self.provider == 'openai':
-                # OpenAI expects the schema in a different format
+                # OpenAI supports json_schema format
                 params["response_format"] = {
-                    "type": "json_object",
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            "reasoning": {
-                                "type": "string",
-                                "description": "Detailed explanation of why this action was chosen based on the game state with visual evidence"
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "game_action",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "reasoning": {
+                                    "type": "string",
+                                    "description": "Detailed explanation of why this action was chosen based on the game state with visual evidence"
+                                },
+                                "action": {
+                                    "type": "string",
+                                    "enum": action_enum,
+                                    "description": f"The selected action from the list: {action_list} or None to do nothing"
+                                },
+                                "game_summary": {
+                                    "type": "string",
+                                    "description": "A concise summary of the current game state and progress"
+                                }
                             },
-                            "action": {
-                                "type": "string",
-                                "enum": action_enum,
-                                "description": f"The selected action from the list: {action_list} or None to do nothing"
-                            },
-                            "game_summary": {
-                                "type": "string",
-                                "description": "A concise summary of the current game state and progress"
-                            }
+                            "required": ["action", "reasoning", "game_summary"],
+                            "additionalProperties": False
                         },
-                        "required": ["action", "reasoning", "game_summary"]
+                        "strict": True
                     }
                 }
-                logger.debug("Using JSON object schema format with OpenAI")
+                logger.debug("Using JSON schema format with OpenAI")
             elif self.provider == 'mistral':
                 # Mistral currently supports json_object type
                 params["response_format"] = {"type": "json_object"}
