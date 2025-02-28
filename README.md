@@ -1,671 +1,136 @@
 # EmuVLM
 
-EmuVLM (Emulator Vision-Language Model) is a Python framework that combines emulators and vision-language models (VLMs) to play turn-based games. The system uses vision capabilities of the VLM to analyze game screens and decide on optimal in-game actions.
+EmuVLM lets AI play retro games by "seeing" the game screen and choosing actions. It connects emulators with vision language models (VLMs) that can understand images.
 
-Our system now supports game-specific configurations that enhance AI gameplay for different game genres, with specialized detection and prompt systems for Pokémon, Zelda, and other game types.
+![EmuVLM Demo](https://github.com/yourusername/emuvlm/raw/main/docs/images/demo.gif)
 
-## Features
+## What it does
 
-- Support for multiple gaming platforms with dedicated emulators:
-  - Game Boy / Game Boy Color (PyBoy) - **Fully Supported**
-  - Game Boy Advance (mGBA) - **Beta**
-  - Sega Game Gear - **Beta** (limited support via various emulators)
-  - Nintendo Entertainment System (FCEUX) - **Beta**
-  - Super Nintendo / SNES (Snes9x) - **Beta**
-  - Sega Genesis / Mega Drive (Genesis Plus GX) - **Beta**
-  - Nintendo 64 (Mupen64Plus) - **Beta**
-  - PlayStation (DuckStation) - **Beta**
+- 🎮 AI plays Game Boy, Game Boy Color, and other retro games
+- 👁️ Uses vision models to analyze game screens and make decisions
+- 🧠 Works with multiple AI models (LLaVA, Qwen, MiniCPM)
+- 💾 Supports saving/loading game sessions
+- 🖥️ Works on macOS and Linux
 
-**NOTE: Only Game Boy/Game Boy Color emulation is fully supported at this time. All other emulators are in beta and may have limited functionality or stability issues.**
-- Multi-platform VLM support:
-  - Linux: Integration with Qwen2.5-VL via vLLM
-  - macOS: Integration with LLaVA via llama.cpp
-  - Cross-platform compatibility with automatic backend selection
-- Frame caching to reduce redundant model calls and improve performance
-- Session management for saving and resuming gameplay
-- Hierarchical timing system that adjusts delays based on action categories and specific buttons
-- Enhanced logging with frame capture for debugging
-- Demo mode with built-in simple game (no ROM required)
-- Monitoring interface for viewing and intervening in gameplay
-- Game-specific enhancements:
-  - Genre-specific instruction prompts (RPG, action-adventure, etc.)
-  - Specialized loading screen detection for different game types
-  - Game-type configuration system for customized AI behavior
-  - Anti-stalling mechanisms to prevent getting stuck
-
-## Installation
+## Quick Start
 
 ### Prerequisites
 
-#### System Requirements
-- Linux (Ubuntu 20.04+, Debian 11+) or macOS (12.0+)
-- CUDA-compatible GPU with at least 16GB VRAM (for vLLM server with Qwen2.5-VL model)
-- 16GB RAM minimum, 32GB recommended
-- 25GB free disk space (mostly for model storage)
-
-#### Python Environment
 - Python 3.8+ (3.10 recommended)
-- pip 21.0+
-- virtualenv or conda (recommended for environment isolation)
+- Game Boy/GBC ROMs (legally obtained)
+- macOS or Linux
 
-#### Required Python Packages
-- torch>=2.0.0
-- numpy>=1.20.0
-- pillow>=9.0.0
-- opencv-python>=4.5.0
-- requests>=2.25.0
-- pyyaml>=6.0
-- tqdm>=4.62.0
-- imagehash>=4.3.0
-- psutil>=5.9.0
-
-#### Emulator Dependencies
-- For PyBoy (Game Boy/Game Boy Color):
-  - SDL2 development libraries
-  - NumPy
-  - PyPNG
-  - PySDL2
-  
-- For mGBA (Game Boy Advance):
-  - Qt5 development libraries
-  - SDL2 development libraries
-  - libzip development libraries
-  - CMake (build dependency)
-
-#### VLM Requirements
-
-**Option 1: vLLM server (Linux recommended)**
-- vLLM server (v0.2.5+)
-- Qwen2.5-VL-3B-Instruct model
-- HuggingFace Transformers (4.35.0+)
-- CUDA-compatible GPU with at least 16GB VRAM
-
-**Option 2: llama.cpp (macOS, Windows, Linux)**
-- llama-cpp-python (v0.2.50+)
-- llama-cpp-python-server (v0.2.0+)
-- LLaVA compatible GGUF model (e.g., llava-v1.6-mistral-7b.Q5_K_M.gguf)
-- Metal GPU acceleration on macOS (optional but recommended)
-
-### Platform-Specific Installation Instructions
-
-#### Linux (Ubuntu/Debian)
-
-1. **Install system dependencies**
-   ```bash
-   # For PyBoy
-   sudo apt update
-   sudo apt install -y python3-dev python3-pip python3-venv libsdl2-dev
-   
-   # For mGBA
-   sudo apt install -y build-essential cmake libzip-dev libsdl2-dev qtbase5-dev libqt5opengl5-dev
-   ```
-
-2. **Set up Python environment**
-   ```bash
-   python3 -m venv emuvlm-env
-   source emuvlm-env/bin/activate
-   pip install --upgrade pip setuptools wheel
-   ```
-
-3. **Install PyBoy**
-   ```bash
-   pip install pyboy==1.6.0
-   ```
-
-4. **Install mGBA Python bindings**
-   ```bash
-   git clone https://github.com/mgba-emu/mgba.git
-   cd mgba
-   mkdir build && cd build
-   cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_PYTHON=ON ..
-   make -j$(nproc)
-   sudo make install
-   cd ../..
-   ```
-
-5. **Install other emulator dependencies**
-   ```bash
-   # The easiest way is to use our helper script
-   ./install_emulators.sh
-   
-   # Or install manually:
-   # For NES (FCEUX)
-   sudo apt install fceux lua5.1 liblua5.1-dev  # Linux
-   brew install fceux lua                       # macOS
-   
-   # For SNES (Snes9x)
-   sudo apt install snes9x-gtk                  # Linux
-   brew install snes9x                          # macOS
-   
-   # For Nintendo 64 (Mupen64Plus)
-   sudo apt install mupen64plus-ui-console      # Linux
-   brew install mupen64plus                     # macOS
-   
-   # For PlayStation (DuckStation)
-   # Download from: https://github.com/stenzek/duckstation/releases
-   ```
-
-5. **Install CUDA and PyTorch** (for GPU support)
-   ```bash
-   # For CUDA 12.1
-   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-   ```
-
-6. **Install vLLM and set up Qwen2.5-VL model**
-   ```bash
-   pip install vllm==0.2.5
-   # Download model (requires huggingface-cli)
-   pip install huggingface_hub
-   huggingface-cli download Qwen/Qwen2.5-VL-3B-Instruct --local-dir ./models/Qwen2.5-VL-3B-Instruct
-   ```
-
-7. **Install EmuVLM**
-   ```bash
-   git clone https://github.com/yourusername/emuvlm.git
-   cd emuvlm
-   pip install -e .
-   ```
-
-#### macOS
-
-1. **Install system dependencies**
-   ```bash
-   # Install Homebrew if not already installed
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-   
-   # For PyBoy
-   brew install sdl2 sdl2_ttf
-   
-   # For mGBA
-   brew install cmake qt5 sdl2 libzip
-   # Link Qt5 (needed for build process)
-   export PATH="/usr/local/opt/qt@5/bin:$PATH"
-   ```
-
-2. **Set up Python environment**
-   ```bash
-   python3 -m venv emuvlm-env
-   source emuvlm-env/bin/activate
-   pip install --upgrade pip setuptools wheel
-   ```
-
-3. **Install PyBoy**
-   ```bash
-   pip install pyboy==1.6.1
-   ```
-
-4. **Install mGBA Python bindings**
-   ```bash
-   git clone https://github.com/mgba-emu/mgba.git
-   cd mgba
-   mkdir build && cd build
-   cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_PYTHON=ON -DCMAKE_PREFIX_PATH=$(brew --prefix qt5) ..
-   make -j$(sysctl -n hw.ncpu)
-   sudo make install
-   cd ../..
-   ```
-
-5. **Install PyTorch**
-   ```bash
-   pip install torch torchvision torchaudio
-   ```
-
-6. **Install llama-cpp-python for macOS compatibility**
-   ```bash
-   pip install llama-cpp-python>=0.2.50
-   ```
-
-7. **Install EmuVLM with macOS dependencies**
-   ```bash
-   git clone https://github.com/yourusername/emuvlm.git
-   cd emuvlm
-   pip install -e ".[macos]"  # Install with macOS-specific dependencies
-   
-   # Download the recommended LLaVA model
-   emuvlm-download-model
-   ```
-
-Note: macOS users will use llama.cpp with LLaVA model for VLM functions, which is fully supported and optimized for Apple Silicon with Metal GPU acceleration.
-
-### Verifying Installation
-
-To verify that your installation is working correctly:
-
-1. Start the vLLM server as described in the "Starting the VLM Server" section
-2. Run the demo game (no ROMs required):
-   ```bash
-   emuvlm-demo
-   ```
-3. Test your model connection:
-   ```bash
-   emuvlm-test-model --image test_data/sample_screen.png
-   ```
-   If you don't have a test image, you can use the demo to generate one first.
-
-### Automated Emulator Installation
-
-For convenience, you can use the provided installation script to help install all emulator dependencies:
+### Installation
 
 ```bash
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install EmuVLM
+git clone https://github.com/yourusername/emuvlm.git
+cd emuvlm
+pip install -e .
+
+# Install emulator dependencies
 ./install_emulators.sh
-```
 
-This interactive script will:
-1. Detect your operating system (Linux or macOS)
-2. Install system dependencies for each emulator
-3. Guide you through the installation of each emulator (PyBoy, mGBA, FCEUX, Snes9x, Genesis Plus GX, Mupen64Plus, DuckStation)
-4. Install required Python packages
-
-After running the script, you can verify your emulator installations using the test script:
-
-```bash
-# After editing ROM paths in the script
-./scripts/test_emulator_example.sh
-```
-
-### Troubleshooting
-
-#### Common Issues
-
-1. **PyBoy Installation Errors**
-   - **Problem**: SDL2 initialization errors
-   - **Solution**: Ensure SDL2 libraries are properly installed with `sudo apt install libsdl2-dev libsdl2-ttf-dev` (Linux) or `brew install sdl2 sdl2_ttf` (macOS)
-   
-   - **Problem**: "No module named 'pyboy'"
-   - **Solution**: Verify installation with `pip show pyboy`, reinstall if needed with `pip install pyboy==1.6.0`
-
-2. **mGBA Compilation Issues**
-   - **Problem**: Qt5 not found during cmake
-   - **Solution**: Install Qt5 and set CMAKE_PREFIX_PATH, e.g., `-DCMAKE_PREFIX_PATH=$(brew --prefix qt5)` on macOS
-   
-   - **Problem**: libzip not found
-   - **Solution**: Install libzip-dev with `sudo apt install libzip-dev` (Linux) or `brew install libzip` (macOS)
-
-3. **vLLM Server Errors**
-   - **Problem**: CUDA out of memory
-   - **Solution**: Reduce batch size or try a smaller model variant
-   
-   - **Problem**: Model not found
-   - **Solution**: Verify the model path is correct and that all files were properly downloaded
-   
-   - **Problem**: "Cannot connect to vLLM server"
-   - **Solution**: Check that the server is running on the expected host and port (default: http://localhost:8000)
-
-4. **Python Version Conflicts**
-   - **Problem**: ModuleNotFoundError or version conflicts
-   - **Solution**: Use a fresh virtual environment with `python -m venv emuvlm-env && source emuvlm-env/bin/activate`
-
-#### Additional Resources
-
-If you encounter persistent issues:
-- Check the project GitHub Issues page
-- Consult the documentation for [PyBoy](https://github.com/Baekalfen/PyBoy), [mGBA](https://mgba.io/), [vLLM](https://github.com/vllm-project/vllm), or [Qwen2-VL](https://github.com/QwenLM/Qwen2-VL) depending on where the problem lies
-- Run with debug logging: `emuvlm --debug`
-
-## Usage
-
-### Starting the VLM Server
-
-You can start one of the two supported VLM servers:
-
-#### Option 1: vLLM server (Linux)
-
-Start the vLLM server with the Qwen2.5-VL model:
-
-```bash
-emuvlm-vllm-server
-```
-
-This will start a vLLM server with the Qwen2.5-VL-3B-Instruct model on port 8000.
-
-#### Option 2: llama.cpp server (macOS, Windows, Linux)
-
-Start the llama.cpp server with a LLaVA model:
-
-```bash
-# First, download the recommended LLaVA model:
+# Download a model (LLaVA is the default)
 emuvlm-download-model
-
-# Then start the server
-emuvlm-llama-server
 ```
 
-This will start a llama.cpp server with OpenAI-compatible API endpoints on port 8000.
+### Play Games
 
-The system will automatically select the appropriate backend based on your platform.
-
-### Playing a Game
-
-To play a game defined in your config:
-
-```bash
-emuvlm --game pokemon_blue --summary on
-```
-
-Or directly using a ROM path:
-
-```bash
-emuvlm --game /path/to/your/rom.gb
-```
-
-Additional options:
-- `--summary on/off`: Enable/disable game state summarization
-- `--cache on/off`: Enable/disable frame caching
-- `--max-turns N`: Set maximum number of turns
-- `--session PATH`: Resume a saved session
-- `--config PATH`: Specify a custom config file
-
-### Demo Mode
-
-Try the built-in demo game (no ROM required):
-
-```bash
-emuvlm-demo
-```
-
-### Monitor Mode
-
-To monitor and interact with a game manually:
-
-```bash
-emuvlm-monitor --game pokemon_red
-```
-
-### Testing Tools
-
-Test emulator implementations:
-
-```bash
-# Test a single emulator
-emuvlm-test-emulators --rom /path/to/rom.gb --emulator pyboy
-
-# Test all emulators with different ROMs
-emuvlm-test-emulators --all \
-  --pyboy-rom /path/to/gb_rom.gb \
-  --mgba-rom /path/to/gba_rom.gba \
-  --fceux-rom /path/to/nes_rom.nes \
-  --snes9x-rom /path/to/snes_rom.sfc \
-  --genesis-rom /path/to/genesis_rom.md \
-  --mupen64plus-rom /path/to/n64_rom.z64 \
-  --duckstation-rom /path/to/psx_rom.bin
-```
-
-A sample script for testing all emulators is provided in `scripts/test_emulator_example.sh`.
-
-Test the VLM model with a specific image:
-
-```bash
-# Test with the default VLM backend
-emuvlm-test-model --image /path/to/game_screenshot.png
-
-# Test specifically with llama.cpp backend
-emuvlm-test-llama --model /path/to/llava-v1.5-7b-q4_k_s.gguf --image /path/to/game_screenshot.png
-```
-
-### Using the ROM Helper Utility
-
-To create placeholder ROMs for testing or download ROMs for legally owned cartridges:
-
-```bash
-# Create a placeholder Pokemon ROM for testing
-emuvlm-download-rom --game pokemon
-
-# Create a placeholder Zelda ROM for testing
-emuvlm-download-rom --game zelda
-```
-
-## Configuration
-
-You can configure games, model parameters, and more in the `config.yaml` file:
-
-```yaml
-model:
-  # Common settings
-  api_url: "http://localhost:8000"
-  backend: "auto"                   # "auto", "vllm", or "llama.cpp"
-  summary_interval: 10
-  max_tokens: 100
-  temperature: 0.2
-  enable_cache: true
-  cache_dir: "output/cache"
-  similarity_threshold: 0.95
-  
-  # Response format configuration
-  json_schema_support: true         # Whether the model supports JSON schema responses
-  max_tokens: 200                   # Increased for JSON responses
-  
-  # llama.cpp specific settings
-  autostart_server: false
-  model_path: "/path/to/llava-v1.5-7b-q4_k_s.gguf"
-  n_gpu_layers: -1                  # -1 means use all available layers
-
-games:
-  pokemon_blue:
-    rom: "/path/to/PokemonBlue.gb"
-    emulator: "pyboy"
-    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.5
-    game_type: "pokemon"            # Game type for specialized handling
-    timing:
-      # Category-based delays for different action types
-      categories:
-        navigation: 0.3             # For directional inputs (Up, Down, Left, Right)
-        confirm: 1.5                # For A button (confirm actions, often triggers animations)
-        cancel: 0.8                 # For B button (cancel/back actions, often skips text)
-        menu: 0.5                   # For Start button (menu operations)
-        special: 0.4                # For Select button (special functions)
-        wait: 0.2                   # For "None" action (waiting)
-      # Specific action overrides when needed
-      actions:
-        A: 2.0                      # Override specific button timing if needed
-    settings:
-      detect_loading_screens: true  # Enable loading screen detection
-      max_blank_frames: 5           # Anti-stalling setting
-
-  zelda_links_awakening:
-    rom: "/path/to/ZeldaLinksAwakening.gb"
-    emulator: "pyboy"
-    actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
-    action_delay: 0.4
-    game_type: "zelda"              # Game type identifier
-    timing:
-      # Category-based delays for different action types
-      categories:
-        navigation: 0.3             # For directional inputs (Up, Down, Left, Right)
-        confirm: 0.6                # For A button (confirm, attack, interact)
-        cancel: 1.0                 # For B button (cancel, dialog, shield)
-        menu: 0.5                   # For Start button (menu operations, inventory)
-        special: 0.4                # For Select button (map)
-        wait: 0.2                   # For "None" action (waiting)
-      # Specific action overrides for common Zelda situations
-      actions:
-        A: 0.7                      # Attack/interact needs more time
-    settings:
-      detect_loading_screens: true
-      frame_analysis: true          # More detailed frame analysis
-    prompt_additions:
-      - "This is The Legend of Zelda: Link's Awakening for Game Boy."
-      - "Press A to use your sword or interact with objects and people."
-      - "Press B to use your equipped item."
-```
-
-## Project Structure
-
-```
-emuvlm/
-├── __init__.py          - Package initialization
-├── cli.py               - Command-line interface
-├── play.py              - Main game playing logic
-├── monitor.py           - GUI monitor for games
-├── demo_game.py         - Simple built-in demo game
-├── test_emulators.py    - Emulator testing utilities
-├── test_model.py        - VLM testing utilities
-├── config.yaml          - Default configuration
-├── utils/               - Utility modules
-│   ├── __init__.py
-│   └── download_rom.py  - ROM download/creation utility
-├── start_vllm_server.sh  - Script to start vLLM server
-├── start_llama_server.sh - Script to start llama.cpp server
-├── emulators/           - Emulator implementations
-│   ├── __init__.py
-│   ├── base.py                    - Base emulator interface
-│   ├── pyboy_emulator.py          - Game Boy/GBC emulator implementation
-│   ├── mgba_emulator.py           - Game Boy Advance emulator implementation
-│   ├── fceux_emulator.py          - NES emulator implementation 
-│   ├── snes9x_emulator.py         - SNES emulator implementation
-│   ├── genesis_plus_gx_emulator.py - Sega Genesis emulator implementation
-│   ├── mupen64plus_emulator.py    - Nintendo 64 emulator implementation
-│   └── duckstation_emulator.py    - PlayStation emulator implementation
-└── model/               - AI model components
-    ├── __init__.py
-    ├── agent.py         - VLM agent implementation
-    └── llama_cpp/       - llama.cpp integration
-        ├── __init__.py
-        └── server.py    - llama.cpp server management
-
-output/                  - All generated files (gitignored)
-├── boot_frames/         - Frames captured during game initialization
-├── cache/               - Cached frames for performance optimization
-├── debug_frames/        - Debug frames for development
-├── logs/                - Log files
-│   └── frames/          - Frames captured during gameplay
-├── sessions/            - Saved game sessions
-└── test_output/         - Test output files and frames
-```
-
-Additional scripts:
-- `install_emulators.sh` - Helper script to install all emulator dependencies
-- `scripts/test_emulator_example.sh` - Example script to test all emulator implementations
-
-## Hierarchical Timing System
-
-EmuVLM uses a sophisticated timing system that determines appropriate delays after each action based on the context:
-
-### Delay Determination Logic
-
-1. **Action-Specific Delays**: The highest priority. Define exact delays for specific buttons:
-   ```yaml
-   timing:
-     actions:
-       A: 0.7       # Override A button specifically
-       Start: 1.0   # Override Start button specifically
-   ```
-
-2. **Category-Based Delays**: Used when no action-specific delay is defined. Buttons are grouped into functional categories:
-   ```yaml
-   timing:
-     categories:
-       navigation: 0.3  # Used for Up, Down, Left, Right
-       confirm: 0.6     # Used for A button (confirm actions)
-       cancel: 0.8      # Used for B button (cancel actions)
-       menu: 0.5        # Used for Start button (menu operations)
-       special: 0.4     # Used for Select button
-       wait: 0.2        # Used for "None" action (waiting)
-   ```
-
-3. **Default Action Delay**: Fallback when neither of the above is specified:
-   ```yaml
-   action_delay: 0.5  # Default delay for all actions if not overridden
-   ```
-
-This system allows fine-tuning the timing for each game's specific requirements. For example, in platformers like Mario, directional inputs need faster responses than in turn-based RPGs like Pokemon.
-
-## Game-Specific Enhancements
-
-EmuVLM now uses a configuration-driven approach to provide specialized AI behaviors for different game genres.
-
-### Configuration-Driven Game Agents
-
-Instead of hardcoding game-specific logic, we use the configuration file to define game behaviors:
-
-```yaml
-# In config.yaml:
-games:
-  pokemon_blue:
-    rom: "/path/to/PokemonBlue.gb"
-    emulator: "pyboy"
-    game_type: "pokemon"  # Specifies the game type
-    prompt_additions:
-      - "This is Pokemon Blue for Game Boy, a classic RPG."
-      - "Use A to interact and confirm, B to cancel."
-      - "During battles, select FIGHT to use moves against opponents."
-    settings:
-      detect_loading_screens: true  # Enable loading screen detection
-```
-
-Supported game types include:
-- `pokemon` - For Pokemon games (GB, GBC, GBA)
-- `zelda` - For Legend of Zelda games
-- Additional types can be added as needed
-
-### Pokemon-Specific Improvements
-
-We've enhanced EmuVLM to better handle Pokemon gameplay:
-
-1. **Automatic Loading Screen Detection**
-   - Detects loading screens based on image statistics
-   - Chooses "None" action automatically without model query
-   - Prevents unnecessary actions during transitions
-
-2. **Pokemon-Specific Knowledge**
-   - Battle mechanics (FIGHT, PKMN, ITEM, RUN)
-   - Dialog handling (wait for text to finish)
-   - Menu navigation patterns
-
-3. **Intelligent "None" Action Handling**
-   - Improved waiting during text scrolling
-   - Better handling of battle animations
-   - Specialized delay timing for Pokemon gameplay
-
-### Zelda-Specific Improvements
-
-For action-adventure games like Zelda:
-
-1. **Enhanced Loading Screen Detection**
-   - Grid-based screen section analysis for complex transitions
-   - Black screen detection for area transitions
-   - Tracking of consecutive blank frames
-
-2. **Zelda-Specific Prompting**
-   - Instructions for sword combat using A button
-   - Guidance for NPC interactions and chest opening
-   - Examples of common Zelda gameplay scenarios
-
-3. **Anti-Stalling Mechanisms**
-   - Consecutive action tracking
-   - Fallback actions when the system gets stuck
-   - Customizable thresholds for different game types
-
-## macOS Compatibility
-
-EmuVLM supports two VLM backends:
-
-1. **vLLM with Qwen2.5-VL-3B (Linux)**: The original implementation which requires CUDA.
-2. **llama.cpp with LLaVA (macOS, Windows, Linux)**: Implementation that works on any platform, ideal for macOS.
-
-The system automatically selects the appropriate backend based on your platform.
-
-### Using on macOS
-
-1. Install with macOS dependencies:
-   ```bash
-   pip install -e ".[macos]"
-   ```
-
-2. Download the recommended LLaVA model:
-   ```bash
-   emuvlm-download-model
-   ```
-
-3. Start the server:
+1. Start the model server:
    ```bash
    emuvlm-llama-server
    ```
 
-4. Play games:
+2. Run the built-in demo (no ROM needed):
    ```bash
-   emuvlm --game pokemon_blue
+   emuvlm-demo
    ```
+
+3. Or play with your own ROM:
+   ```bash
+   emuvlm --game /path/to/pokemon.gb
+   ```
+
+## Supported Games
+
+EmuVLM works best with turn-based games:
+
+- **Fully Supported:** Game Boy/GBC games (especially Pokémon, Zelda)
+- **Beta Support:** Game Boy Advance, NES, SNES, Genesis, N64, PlayStation
+
+## Configuration
+
+Configure your setup in `config.yaml`:
+
+```yaml
+model:
+  # Use LLaVA (default), Qwen, or MiniCPM
+  model_type: "llava"
+  # Adjust temperature (0.0-1.0)
+  temperature: 0.2
+
+games:
+  pokemon_blue:
+    rom: "/path/to/PokemonBlue.gb"
+    emulator: "pyboy"
+```
+
+## Command Reference
+
+| Command | Description |
+|---------|-------------|
+| `emuvlm --game pokemon_blue` | Play a configured game |
+| `emuvlm-demo` | Run the built-in demo game |
+| `emuvlm-llama-server` | Start the model server |
+| `emuvlm-download-model` | Download the default model |
+| `emuvlm-download-model --model-type qwen` | Download the Qwen model |
+| `emuvlm-monitor --game pokemon_blue` | Watch and intervene in gameplay |
+| `emuvlm-download-rom --game pokemon` | Create a placeholder ROM |
+
+## Advanced Options
+
+- **Select different model types:**
+  ```bash
+  emuvlm-download-model --model-type qwen
+  emuvlm-llama-server --model-type qwen
+  ```
+
+- **Enable game state summarization:**
+  ```bash
+  emuvlm --game zelda --summary on
+  ```
+
+- **Resume a saved session:**
+  ```bash
+  emuvlm --game pokemon_blue --session path/to/session.session
+  ```
+
+## Troubleshooting
+
+- **Model server not starting:** 
+  - Check you have enough disk space for the model (~5GB)
+  - Make sure you've downloaded the model with `emuvlm-download-model`
+
+- **Game not responding correctly:**
+  - Try adjusting timing in config.yaml (action_delay)
+  - Make sure your ROM is compatible
+
+- **Installation problems:**
+  - Use the install script: `./install_emulators.sh`
+  - Check error messages for missing dependencies
+
+## Project Structure
+
+- `emuvlm/` - Main package
+  - `emulators/` - Emulator integrations
+  - `model/` - AI model code
+  - `cli.py` - Command-line interface
+  - `config.yaml` - Default configuration
 
 ## License
 
@@ -673,17 +138,8 @@ MIT License
 
 ## Acknowledgments
 
-- [PyBoy](https://github.com/Baekalfen/PyBoy) - Game Boy/Game Boy Color emulator
-- [mGBA](https://mgba.io/) - Game Boy Advance emulator
-- [FCEUX](https://fceux.com/) - Nintendo Entertainment System emulator
-- [Snes9x](https://github.com/snes9xgit/snes9x) - Super Nintendo emulator
-- [Genesis Plus GX](https://github.com/ekeeke/Genesis-Plus-GX) - Sega Genesis/Mega Drive emulator
-- [Mupen64Plus](https://mupen64plus.org/) - Nintendo 64 emulator
-- [DuckStation](https://github.com/stenzek/duckstation) - PlayStation emulator
-- [Qwen2.5-VL](https://github.com/QwenLM/Qwen2-VL) - Vision-language model
-- [vLLM](https://github.com/vllm-project/vllm) - LLM inference engine
-- [llama.cpp](https://github.com/ggerganov/llama.cpp) - Efficient LLM inference
-- [LLaVA](https://github.com/haotian-liu/LLaVA) - Large language and vision assistant
+- PyBoy, mGBA, and other emulator projects
+- LLaVA, Qwen, and MiniCPM model creators
 
-For more details on implementation and design decisions, see `PLAN.md`.
-For current development status and upcoming features, see `TODO.md`.
+For more details on implementation, see `PLAN.md`.
+For development status and upcoming features, see `TODO.md`.
