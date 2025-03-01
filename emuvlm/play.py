@@ -129,9 +129,13 @@ def determine_delay(game_config, action):
     # Default to the general action_delay
     default_delay = game_config.get('action_delay', 1.0)
     
+    # Handle None action
+    if action is None:
+        return timing.get('categories', {}).get('wait', 0.2)
+        
     # First check if there's a specific delay defined for this exact action
     action_delays = timing.get('actions', {})
-    if action in action_delays:
+    if action_delays and action in action_delays:
         return action_delays[action]
     
     # Then check for category-based delays

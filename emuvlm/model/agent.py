@@ -40,7 +40,7 @@ class LLMAgent:
     - OpenAI GPT-4o models with vision
     - Claude with vision (Haiku, Sonnet, Opus)
     - Mistral Pixtral series of models
-    - Qwen2.5-VL-3B-Instruct via vLLM server (Linux)
+    - Qwen2.5-VL-3B-Instruct-AWQ via vLLM server (Linux)
     - LLaVA via llama.cpp (macOS, Windows, Linux)
     - Custom OpenAI API-compatible servers
     """
@@ -659,8 +659,11 @@ class LLMAgent:
                     {
                         "role": "user",
                         "content": [
-                            {"type": "image", "image": f"data:image/png;base64,{image_data}"},
                             {"type": "text", "text": user_message},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/png;base64,{image_data}"},
+                            },
                         ],
                     }
                 )
@@ -700,9 +703,10 @@ class LLMAgent:
             # For Anthropic, the system message goes as a top-level parameter, not in the messages array
             params["system"] = system_message
 
-        # Add model name for external APIs if specified
-        if self.model_name and self.provider != "local":
-            params["model"] = self.model_name
+        # Add model name for external APIs and vLLM if specified
+        if self.model_name:
+            if self.provider != "local" or (self.provider == "local" and self.backend == "vllm"):
+                params["model"] = self.model_name
 
         # Add response format if JSON schema is supported
         if self.model_config.get("json_schema_support", True):
@@ -770,8 +774,9 @@ class LLMAgent:
                         else:
                             params["response_format"] = {"type": "json_object"}
                 else:
-                    # vLLM and other local backends use json_schema format
-                    params["response_format"] = {"type": "json_schema", "schema": json_schema}
+                    # For vLLM, use json_object format instead of json_schema
+                    # vLLM has issues with json_schema currently
+                    params["response_format"] = {"type": "json_object"}
             else:
                 # Default for other providers (custom OpenAI API-compatible)
                 # Try schema first, since most modern implementations support it

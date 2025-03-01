@@ -6,9 +6,9 @@ model:
   api_url: "http://127.0.0.1:8000" # API server URL
   provider: "local" # Provider options: "local", "openai", "anthropic", "mistral", or "custom"
   backend: "auto" # Local backend: "auto", "vllm", or "llama.cpp" (only used when provider is "local")
-  model_name: null # Model name for external providers (e.g., "gpt-4o", "claude-3-haiku-20240307", "pixtral-12b-2409")
+  model_name: "Qwen/Qwen2.5-VL-3B-Instruct-AWQ" # Model name for both external providers and vLLM
   summary_interval: 10 # Generate summary every X turns when summary feature is enabled
-  max_tokens: 200 # Max tokens to generate for action decision (increased for JSON responses)
+  max_tokens: 2048 # Max tokens to generate for action decision (increased for JSON responses)
   temperature: 0.2 # Lower temperature for more focused responses
 
   # Message history settings
@@ -52,11 +52,13 @@ sessions:
 games:
   # Game Boy / Game Boy Color game configuration - Fully Supported
   pokemon_blue:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Pokemon - Blue Version (USA, Europe) (SGB Enhanced).zip"
+    rom: "roms/gb/Pokemon - Blue Version (USA, Europe) (SGB Enhanced).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.5 # Default seconds to wait after each action
     game_type: "pokemon" # Set game type to identify it as Pokemon
+    model:
+      model_name: "Qwen/Qwen2.5-VL-3B-Instruct-AWQ" # Specify the model name for vLLM
     example_json: |
       {
         "action": "Down",
@@ -92,7 +94,7 @@ games:
       - "SAVING: Open menu with Start, select SAVE, then confirm. Save frequently, especially after significant progress."
 
   zelda_links_awakening:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Legend of Zelda, The - Link's Awakening (USA, Europe).zip"
+    rom: "roms/gb/Legend of Zelda, The - Link's Awakening (USA, Europe).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.4 # Default seconds to wait after each action
@@ -139,7 +141,7 @@ games:
       - "DANGER INDICATORS: Low health alarm beeps - find hearts or fairies immediately. Blinking enemy means it's about to attack."
 
   castlevania_ii:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Castlevania II - Belmont's Revenge (USA, Europe).zip"
+    rom: "roms/gb/Castlevania II - Belmont's Revenge (USA, Europe).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.4 # Default seconds to wait after each action
@@ -200,7 +202,7 @@ games:
       - "IMPROVEMENTS OVER FIRST GAME: Faster movement, better controls, ability to climb ropes, sub-weapons, no time limit on stages."
 
   final_fantasy_legend:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Final Fantasy Legend, The (USA).zip"
+    rom: "roms/gb/Final Fantasy Legend, The (USA).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.5 # Default seconds to wait after each action
@@ -239,7 +241,7 @@ games:
       - "DIFFICULTY NOTE: Game is notoriously hard. Grinding for money and experience is often necessary before progressing to new areas."
 
   kid_icarus:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Kid Icarus - Of Myths and Monsters (USA, Europe).zip"
+    rom: "roms/gb/Kid Icarus - Of Myths and Monsters (USA, Europe).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.3 # Default seconds to wait after each action
@@ -300,7 +302,7 @@ games:
       - "- Collect Centurion Helpers whenever possible for additional firepower."
 
   kirby_dream_land:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Kirby's Dream Land (USA, Europe).zip"
+    rom: "roms/gb/Kirby's Dream Land (USA, Europe).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.3 # Default seconds to wait after each action
@@ -346,7 +348,7 @@ games:
       - "MOVEMENT TIP: Float over difficult obstacles and enemies. Kirby's floating ability is key to navigating many challenges safely."
 
   mega_man_dr_wily:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Mega Man - Dr. Wily's Revenge (USA).zip"
+    rom: "roms/gb/Mega Man - Dr. Wily's Revenge (USA).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.3 # Default seconds to wait after each action
@@ -409,7 +411,7 @@ games:
       - "- Disappearing block sections require precise timing - watch the pattern before attempting jumps."
 
   metroid_ii:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Metroid II - Return of Samus (World).zip"
+    rom: "roms/gb/Metroid II - Return of Samus (World).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.4 # Default seconds to wait after each action
@@ -453,7 +455,7 @@ games:
       - "MAPPING STRATEGY: The game has no in-game map. Mental mapping or noting landmarks is essential to avoid getting lost."
 
   super_mario_land:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Super Mario Land (World).zip"
+    rom: "roms/gb/Super Mario Land (World).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.3 # Default seconds to wait after each action
@@ -497,7 +499,7 @@ games:
       - "BOSS STRATEGY: Jump three times on each world boss. For final boss (Tatanga), shoot his spaceship with Superballs or jump into him 3 times."
 
   tetris2:
-    rom: "/Users/ericflo/Development/emuvlm/roms/gb/Tetris 2 (USA).zip"
+    rom: "roms/gb/Tetris 2 (USA).zip"
     emulator: "pyboy"
     actions: ["Up", "Down", "Left", "Right", "A", "B", "Start", "Select"]
     action_delay: 0.2 # Default seconds to wait after each action

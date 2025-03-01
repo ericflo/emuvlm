@@ -68,3 +68,5 @@ roms/*/*.sms
 .vscode/
 *.swp
 *.swo
+
+*Zone.Identifier

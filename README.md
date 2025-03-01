@@ -18,7 +18,7 @@ EmuVLM lets AI play retro games by "seeing" the game screen and choosing actions
 - 👁️ Uses vision models to analyze game screens and make decisions
 - 🧠 Works with multiple AI models (LLaVA, Qwen, MiniCPM)
 - 💾 Supports saving/loading game sessions
-- 🖥️ Works on macOS and Linux
+- 🖥️ Works on macOS, Linux, and Windows (via WSL)
 
 ## Quick Start
 
@@ -26,7 +26,7 @@ EmuVLM lets AI play retro games by "seeing" the game screen and choosing actions
 
 - Python 3.8+ (3.10 recommended)
 - Game Boy/GBC ROMs (legally obtained)
-- macOS or Linux
+- macOS, Linux, or Windows with WSL2
 
 ### Installation
 
@@ -132,6 +132,10 @@ games:
   - Use the install script: `./install_emulators.sh`
   - Check error messages for missing dependencies
 
+- **Platform-specific issues:**
+  - For macOS: See [MAC_COMPATIBILITY.md](MAC_COMPATIBILITY.md)
+  - For Windows WSL: See [WSL_COMPATIBILITY.md](WSL_COMPATIBILITY.md)
+
 ## Project Structure
 
 - `emuvlm/` - Main package
@@ -163,4 +167,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [llama.cpp](https://github.com/ggerganov/llama.cpp) for local model inference
 
 For more details on implementation, see [PLAN.md](PLAN.md).
-For macOS compatibility details, see [MAC_COMPATIBILITY.md](MAC_COMPATIBILITY.md).
+For platform-specific compatibility details, see:
+- [MAC_COMPATIBILITY.md](MAC_COMPATIBILITY.md) for macOS
+- [WSL_COMPATIBILITY.md](WSL_COMPATIBILITY.md) for Windows WSL
