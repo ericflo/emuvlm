@@ -74,152 +74,23 @@ class PyBoyEmulator(EmulatorBase):
         # Store rom type information for use in other methods
         self.is_zelda_rom = is_zelda_rom
         
-        # Special game initialization for Zelda vs other games
-        if is_zelda_rom:
-            logger.info("Starting Zelda-specific initialization sequence...")
-            self._initialize_zelda_game()
-        else:
-            # Standard initialization sequence for other games
-            logger.info("Starting game initialization sequence...")
+        # Simple initialization - just boot the emulator without trying to navigate menus
+        logger.info("Starting minimal game initialization sequence...")
         
-        # Game Boot Phase: Set up debugging directory for frames
-        # Use an absolute path based on the current package location for better cross-platform support
+        # Set up debugging directory for frames (just in case we want to save debug frames)
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         boot_frames_dir = os.path.join(base_dir, "output", "boot_frames")
         os.makedirs(boot_frames_dir, exist_ok=True)
-        logger.debug(f"Saving boot frames to: {boot_frames_dir}")
         
-        # Initial Advance - Wait for ROM to load and initialize
-        logger.info("Phase 1: Initial boot...")
-        for i in range(120):
+        # Initial ticks to let the emulator boot and stabilize
+        logger.info("Performing minimal initialization ticks...")
+        for i in range(60):
             self.emulator.tick()
-            if i % 60 == 0:  # Save a debug frame every second
-                frame = self.emulator.screen_image()
-                frame.save(os.path.join(boot_frames_dir, f"phase1_frame_{i}.png"))
         
-        # Actively navigate from title to gameplay through a series of known patterns:
-        
-        # Pattern 1: Press START repeatedly to get past title screens
-        logger.info("Phase 2: Title screen navigation - START button...")
-        for i in range(8):
-            # Press START
-            self.emulator.send_input(WindowEvent.PRESS_BUTTON_START)
-            for _ in range(5): 
-                self.emulator.tick()
-            self.emulator.send_input(WindowEvent.RELEASE_BUTTON_START)
-            
-            # Wait and check
-            for _ in range(30):
-                self.emulator.tick()
-                
-            # Save a debug frame
-            if i % 2 == 0:
-                frame = self.emulator.screen_image()
-                frame.save(os.path.join(boot_frames_dir, f"phase2_start_{i}.png"))
-        
-        # Pattern 2: A button navigation (for most menu confirmations)
-        logger.info("Phase 3: Menu navigation - A button...")
-        for i in range(15):
-            # Press A
-            self.emulator.send_input(WindowEvent.PRESS_BUTTON_A)
-            for _ in range(5):
-                self.emulator.tick()
-            self.emulator.send_input(WindowEvent.RELEASE_BUTTON_A)
-            
-            # Wait for menu transitions
-            for _ in range(20):
-                self.emulator.tick()
-                
-            # Every few tries, save a frame
-            if i % 3 == 0:
-                frame = self.emulator.screen_image()
-                frame.save(os.path.join(boot_frames_dir, f"phase3_a_{i}.png"))
-        
-        # Pattern 3: Try a standard RPG "New Game" selection pattern
-        # (Usually Down to select "New Game" + A to confirm)
-        logger.info("Phase 4: RPG New Game selection...")
-        
-        # Press Down to navigate to "New Game" option
-        for _ in range(2):
-            self.emulator.send_input(WindowEvent.PRESS_ARROW_DOWN)
-            for _ in range(5):
-                self.emulator.tick()
-            self.emulator.send_input(WindowEvent.RELEASE_ARROW_DOWN)
-            for _ in range(10):
-                self.emulator.tick()
-        
-        # Press A to select "New Game"
-        for _ in range(3):
-            self.emulator.send_input(WindowEvent.PRESS_BUTTON_A)
-            for _ in range(5):
-                self.emulator.tick()
-            self.emulator.send_input(WindowEvent.RELEASE_BUTTON_A)
-            for _ in range(20):
-                self.emulator.tick()
-        
-        # Save this critical point
-        frame = self.emulator.screen_image()
-        frame.save(os.path.join(boot_frames_dir, "phase4_new_game.png"))
-        
-        # Pattern, 4: For Pokémon Games - handle Professor Oak intro
-        logger.info("Phase 5: Pokémon-specific sequence...")
-        
-        # Press A several times to get through the intro dialogue
-        for i in range(15):
-            self.emulator.send_input(WindowEvent.PRESS_BUTTON_A)
-            for _ in range(3):
-                self.emulator.tick()
-            self.emulator.send_input(WindowEvent.RELEASE_BUTTON_A)
-            
-            # Longer wait for text animations
-            for _ in range(25):
-                self.emulator.tick()
-                
-            # Save occasionally
-            if i % 5 == 0:
-                frame = self.emulator.screen_image()
-                frame.save(os.path.join(boot_frames_dir, f"phase5_pokemon_{i}.png"))
-        
-        # Pattern 5: Final advance to let animations complete
-        logger.info("Phase 6: Final settling...")
-        for i in range(120):
-            self.emulator.tick()
-            if i % 60 == 0:
-                frame = self.emulator.screen_image()
-                frame.save(os.path.join(boot_frames_dir, f"phase6_final_{i}.png"))
-        
-        # Save the final boot frame
-        final_frame = self.emulator.screen_image()
-        os.makedirs(os.path.dirname(os.path.join(boot_frames_dir, "final_boot_frame.png")), exist_ok=True)
-        final_frame.save(os.path.join(boot_frames_dir, "final_boot_frame.png"))
-        logger.info("Game initialization sequence completed")
-        
-        # Try to detect if we're still at a title screen
-        # If so, try one more START + A sequence
-        img_array = np.array(final_frame)
-        unique_colors = np.unique(img_array.reshape(-1, 3), axis=0)
-        
-        if len(unique_colors) < 15:  # Still might be at title
-            logger.info("Still might be at title screen, trying final keypresses...")
-            
-            # Press START
-            self.emulator.send_input(WindowEvent.PRESS_BUTTON_START)
-            for _ in range(10): 
-                self.emulator.tick()
-            self.emulator.send_input(WindowEvent.RELEASE_BUTTON_START)
-            
-            # Wait
-            for _ in range(30):
-                self.emulator.tick()
-                
-            # Press A multiple times
-            for _ in range(10):
-                self.emulator.send_input(WindowEvent.PRESS_BUTTON_A)
-                for _ in range(5):
-                    self.emulator.tick()
-                self.emulator.send_input(WindowEvent.RELEASE_BUTTON_A)
-                for _ in range(15):
-                    self.emulator.tick()
+        # Save a single boot frame for debugging
+        boot_frame = self.emulator.screen_image()
+        boot_frame.save(os.path.join(boot_frames_dir, "boot_frame.png"))
+        logger.info("Game minimally initialized")
         
         # Define input mapping from action names to PyBoy events
         self.input_mapping = {
@@ -291,83 +162,7 @@ class PyBoyEmulator(EmulatorBase):
         else:
             logger.warning(f"Unsupported action for PyBoy: {action}")
     
-    def _initialize_zelda_game(self) -> None:
-        """
-        Special initialization sequence for Zelda games.
-        This uses different keypresses and timing than the standard sequence.
-        """
-        # Set up debugging directory for frames using absolute path
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        boot_frames_dir = os.path.join(base_dir, "output", "boot_frames", "zelda")
-        os.makedirs(boot_frames_dir, exist_ok=True)
-        logger.debug(f"Saving Zelda boot frames to: {boot_frames_dir}")
-        
-        # Phase 1: Initial boot - just advance for a while to let the boot logo finish
-        for i in range(200):  # Longer initial wait for boot sequence
-            self.emulator.tick()
-            if i % 60 == 0:
-                frame = self.emulator.screen_image()
-                frame.save(os.path.join(boot_frames_dir, f"zelda_boot_{i}.png"))
-        
-        # Phase 2: Press START on title screen
-        logger.info("Zelda phase 2: Title screen navigation...")
-        for i in range(5):
-            # Press START button
-            self.emulator.send_input(WindowEvent.PRESS_BUTTON_START)
-            for _ in range(10):  # Hold button longer 
-                self.emulator.tick()
-            self.emulator.send_input(WindowEvent.RELEASE_BUTTON_START)
-            
-            # Wait longer between presses
-            for _ in range(60):
-                self.emulator.tick()
-                
-            # Save debug frame
-            frame = self.emulator.screen_image()
-            frame.save(os.path.join(boot_frames_dir, f"zelda_title_{i}.png"))
-        
-        # Phase 3: Menu navigation - more conservative
-        logger.info("Zelda phase 3: Initial menu navigation...")
-        for i in range(3):
-            # Try different keypress combinations
-            key_sequences = [
-                # Down then A (for selecting file in Zelda)
-                (WindowEvent.PRESS_ARROW_DOWN, WindowEvent.RELEASE_ARROW_DOWN, 30),
-                (WindowEvent.PRESS_BUTTON_A, WindowEvent.RELEASE_BUTTON_A, 30),
-                
-                # Just A (for confirming)
-                (WindowEvent.PRESS_BUTTON_A, WindowEvent.RELEASE_BUTTON_A, 30),
-                
-                # B (for back/cancel if needed)
-                (WindowEvent.PRESS_BUTTON_B, WindowEvent.RELEASE_BUTTON_B, 30)
-            ]
-            
-            for press, release, wait in key_sequences:
-                self.emulator.send_input(press)
-                for _ in range(5):
-                    self.emulator.tick()
-                self.emulator.send_input(release)
-                
-                # Wait between keypresses
-                for _ in range(wait):
-                    self.emulator.tick()
-                    
-            # Save debug frame
-            frame = self.emulator.screen_image()
-            frame.save(os.path.join(boot_frames_dir, f"zelda_menu_{i}.png"))
-        
-        # Phase 4: Final advance - long wait to allow game to initialize
-        logger.info("Zelda phase 4: Final initialization...")
-        for i in range(180):
-            self.emulator.tick()
-            if i % 60 == 0:
-                frame = self.emulator.screen_image()
-                frame.save(os.path.join(boot_frames_dir, f"zelda_final_{i}.png"))
-        
-        # Save the final initialization frame
-        final_frame = self.emulator.screen_image()
-        final_frame.save(os.path.join(boot_frames_dir, "zelda_final_frame.png"))
-        logger.info("Zelda initialization sequence completed")
+    # Removed _initialize_zelda_game method as it's no longer needed with simplified boot process
 
     def close(self) -> None:
         """
