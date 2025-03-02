@@ -722,26 +722,7 @@ class LLMAgent:
                     "type": "json_schema",
                     "json_schema": {
                         "name": "game_action",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "reasoning": {
-                                    "type": "string",
-                                    "description": "Detailed explanation of why this action was chosen based on the game state with visual evidence",
-                                },
-                                "action": {
-                                    "type": "string",
-                                    "enum": action_enum,
-                                    "description": f"The selected action from the list: {action_list} or None to do nothing",
-                                },
-                                "game_summary": {
-                                    "type": "string",
-                                    "description": "A concise summary of the current game state and progress",
-                                },
-                            },
-                            "required": ["action", "reasoning", "game_summary"],
-                            "additionalProperties": False,
-                        },
+                        "schema": json_schema,
                         "strict": True,
                     },
                 }
@@ -765,8 +746,14 @@ class LLMAgent:
                         try_schema = self.model_config.get("try_json_schema", True)
                         if try_schema:
                             params["response_format"] = {
+                                # "type": "json_schema",
+                                # "schema": json_schema,
                                 "type": "json_schema",
-                                "schema": json_schema,
+                                "json_schema": {
+                                    "name": "game_action",
+                                    "schema": json_schema,
+                                    "strict": True,
+                                },
                             }
                             logger.debug(
                                 "Trying JSON schema response format with external llama.cpp"
