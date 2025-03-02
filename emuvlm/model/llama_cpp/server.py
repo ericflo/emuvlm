@@ -112,9 +112,19 @@ def start_server(
     if platform.system() == "Darwin":  # macOS
         os.environ["LLAMA_METAL"] = "1"
         logger.info("Enabling Metal acceleration for macOS")
-    elif platform.system() == "Linux" and os.path.exists("/dev/nvidia0"):
-        os.environ["LLAMA_CUBLAS"] = "1"
-        logger.info("Enabling CUDA acceleration for Linux")
+    elif platform.system() == "Linux":
+        # Check multiple GPU indicators for Linux/WSL
+        if (os.path.exists("/dev/nvidia0") or 
+            shutil.which("nvidia-smi") is not None or 
+            os.environ.get("CUDA_VISIBLE_DEVICES") is not None):
+            os.environ["LLAMA_CUBLAS"] = "1"
+            # Force CUDA environment variables that may be needed in WSL
+            if "WSL" in platform.uname().release:
+                # Additional WSL-specific settings
+                if os.environ.get("CUDA_VISIBLE_DEVICES") is None:
+                    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+            logger.info("Enabling CUDA acceleration for Linux/WSL")
 
     # Determine if this is a multimodal model
     is_multimodal_model = True if multimodal else False
@@ -171,6 +181,7 @@ def start_server(
             stdout=subprocess.PIPE if not verbose else None,
             stderr=subprocess.STDOUT if not verbose else None,
             text=True,
+            env=os.environ.copy(),  # Make sure environment variables like LLAMA_CUBLAS are passed to subprocess
         )
 
         # Register shutdown handler

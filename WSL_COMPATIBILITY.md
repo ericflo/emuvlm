@@ -34,6 +34,8 @@ chmod +x setup_wsl.sh
 
 # Run the setup script (will install dependencies and configure for WSL)
 ./setup_wsl.sh
+
+export LIBGL_ALWAYS_INDIRECT=1
 ```
 
 ### Manual Setup
@@ -106,6 +108,16 @@ To verify your GPU is being used:
 - Make sure NVIDIA drivers are properly installed in WSL
 - Verify CUDA is working by running `nvidia-smi`
 - If you encounter GPU memory issues, adjust `--tensor-parallel-size` in the vLLM server script
+- When using llama.cpp backend, add the following environment variables for better GPU detection:
+  ```bash
+  export CUDA_VISIBLE_DEVICES=0
+  export CUDA_DEVICE_ORDER=PCI_BUS_ID
+  export LLAMA_CUBLAS=1
+  ```
+- For optimal GPU performance with llama.cpp, consider reinstalling the package with CUDA support:
+  ```bash
+  CMAKE_ARGS="-DLLAMA_CUBLAS=on -DLLAMA_CUDA_F16=1" pip install --force-reinstall --no-binary llama-cpp-python llama-cpp-python
+  ```
 
 ### Missing Libraries
 - If you encounter SDL-related errors, make sure SDL libraries are installed: `sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev`

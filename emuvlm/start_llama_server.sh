@@ -60,10 +60,25 @@ if [[ "$(uname)" == "Darwin" ]]; then
     # macOS - use Metal
     export LLAMA_METAL=1
     echo "Enabling Metal acceleration for macOS"
-elif [[ "$(uname)" == "Linux" && -e "/dev/nvidia0" ]]; then
-    # Linux with NVIDIA GPU
-    export LLAMA_CUBLAS=1
-    echo "Enabling CUDA acceleration for Linux"
+elif [[ "$(uname)" == "Linux" ]]; then
+    # Check multiple GPU indicators for Linux/WSL
+    if [[ -e "/dev/nvidia0" || -n "$(command -v nvidia-smi)" || -n "$CUDA_VISIBLE_DEVICES" ]]; then
+        # Linux with NVIDIA GPU or WSL with GPU passthrough
+        export LLAMA_CUBLAS=1
+        
+        # Additional settings for WSL
+        if [[ "$(uname -r)" == *"WSL"* ]]; then
+            # Force CUDA device if not already set
+            if [[ -z "$CUDA_VISIBLE_DEVICES" ]]; then
+                export CUDA_VISIBLE_DEVICES=0
+            fi
+            # Set device order to ensure correct GPU selection
+            export CUDA_DEVICE_ORDER=PCI_BUS_ID
+            echo "WSL detected, applying additional CUDA settings for WSL"
+        fi
+        
+        echo "Enabling CUDA acceleration for Linux/WSL"
+    fi
 fi
 
 # Check file exists and is readable
